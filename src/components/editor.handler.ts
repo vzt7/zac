@@ -1,8 +1,10 @@
 import { transparentBackground } from '@/assets/transparent';
+import { debug } from '@/utils/debug';
 import { SceneContext } from 'konva/lib/Context';
 import { KonvaEventObject } from 'konva/lib/Node';
 import { Stage } from 'konva/lib/Stage';
 import { debounce } from 'lodash-es';
+import { v4 as uuidv4 } from 'uuid';
 
 import { Shape, getEditorCenter } from './editor.store';
 import { useEditorStore } from './editor.store';
@@ -249,7 +251,6 @@ export const handleDragEnd = (e: any) => {
   debouncedAddToHistory(newShapes);
 };
 
-// 添加保存/加载功能
 export const handleSave = () => {
   const { shapes } = useEditorStore.getState();
   const data = JSON.stringify(shapes);
@@ -304,76 +305,131 @@ export const handleTextEdit = (id: string, newText: string) => {
   addToHistory(newShapes);
 };
 
-// 添加图片上传处理
+// 创建一个统一的图片处理函数
+const createImageShape = (
+  imageUrl: string,
+  position: { x: number; y: number },
+  callback: (shape: Shape) => void,
+) => {
+  const { shapes, safeArea } = useEditorStore.getState();
+
+  const img = new Image();
+  img.src = imageUrl;
+
+  img.onload = () => {
+    const maxWidth = safeArea.width * 0.95;
+    const maxHeight = safeArea.height * 0.95;
+    const minWidth = safeArea.width * 0.2;
+    const minHeight = safeArea.height * 0.2;
+
+    let finalWidth = img.width;
+    let finalHeight = img.height;
+
+    if (img.width > maxWidth || img.height > maxHeight) {
+      const ratioWidth = maxWidth / img.width;
+      const ratioHeight = maxHeight / img.height;
+      const scale = Math.min(ratioWidth, ratioHeight);
+      finalWidth = img.width * scale;
+      finalHeight = img.height * scale;
+    }
+
+    if (img.width < minWidth && img.height < minHeight) {
+      const ratioWidth = minWidth / img.width;
+      const ratioHeight = minHeight / img.height;
+      const scale = Math.min(ratioWidth, ratioHeight);
+      finalWidth = img.width * scale;
+      finalHeight = img.height * scale;
+    }
+
+    // 调整位置，使拖放点位于图片中心
+    const newShape: Shape = {
+      id: `image-${Date.now()}`,
+      type: 'image',
+      x: position.x - finalWidth / 2, // 从拖放位置减去宽度的一半
+      y: position.y - finalHeight / 2, // 从拖放位置减去高度的一半
+      width: finalWidth,
+      height: finalHeight,
+      rotation: 0,
+      scaleX: 1,
+      scaleY: 1,
+      zIndex: shapes.length,
+      src: imageUrl,
+      fill: 'transparent',
+    };
+
+    callback(newShape);
+  };
+};
+
+// 处理文件上传
 export const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
   const file = e.target.files?.[0];
   if (file) {
-    const { shapes, setShapes, safeArea, editorProps } =
+    const { safeArea, editorProps, shapes, setShapes } =
       useEditorStore.getState();
     const editorCenter = getEditorCenter(safeArea, editorProps);
 
     const reader = new FileReader();
     reader.onload = () => {
-      const newShape: Shape = {
-        id: `image-${Date.now()}`,
-        type: 'image',
-        x: editorCenter.x + Math.random() * 50,
-        y: editorCenter.y + Math.random() * 50,
-        width: 200,
-        height: 200,
-        rotation: 0,
-        scaleX: 1,
-        scaleY: 1,
-        zIndex: shapes.length,
-        src: reader.result as string,
-        fill: 'transparent',
-      };
-
-      const newShapes = [...shapes, newShape];
-      setShapes(newShapes);
-      addToHistory(newShapes);
+      createImageShape(
+        reader.result as string,
+        { x: editorCenter.x, y: editorCenter.y },
+        (newShape) => {
+          const newShapes = [...shapes, newShape];
+          setShapes(newShapes);
+          addToHistory(newShapes);
+        },
+      );
     };
     reader.readAsDataURL(file);
   }
 };
 
-export const handleDrop = (e: React.DragEvent) => {
+// 处理拖拽放置
+export const handleImageDrop = (e: React.DragEvent<HTMLDivElement>) => {
   e.preventDefault();
+  const { shapes, setShapes, stageRef } = useEditorStore.getState();
 
-  const { shapes, setShapes, safeArea, editorProps } =
-    useEditorStore.getState();
-  const editorCenter = getEditorCenter(safeArea, editorProps);
+  // 获取舞台的位置和缩放信息
+  const stage = stageRef?.current;
+  if (!stage) return;
 
-  const files = Array.from(e.dataTransfer.files);
-  files.forEach((file) => {
+  // 计算相对于舞台的准确位置
+  const stageBox = stage.container().getBoundingClientRect();
+  const scale = stage.scaleX();
+
+  // 计算鼠标相对于舞台的实际位置
+  const dropPosition = {
+    x: (e.clientX - stageBox.left) / scale,
+    y: (e.clientY - stageBox.top) / scale,
+  };
+
+  // 处理拖拽文件
+  if (e.dataTransfer.files?.length) {
+    const file = e.dataTransfer.files[0];
     if (file.type.startsWith('image/')) {
       const reader = new FileReader();
-      reader.onload = (event) => {
-        const imageUrl = event.target?.result as string;
-        // 创建新的图片元素
-        const newImage: Shape = {
-          id: `image-${Date.now()}`,
-          type: 'image',
-          x: editorCenter.x + Math.random() * 50,
-          y: editorCenter.y + Math.random() * 50,
-          src: imageUrl,
-          width: 100,
-          height: 100,
-          scaleX: 1,
-          scaleY: 1,
-          rotation: 0,
-          isLocked: false,
-          zIndex: shapes.length,
-          fill: 'transparent',
-        };
-
-        const newShapes = [...shapes, newImage];
-        setShapes(newShapes);
-        addToHistory(newShapes);
+      reader.onload = () => {
+        createImageShape(reader.result as string, dropPosition, (newShape) => {
+          const newShapes = [...shapes, newShape];
+          setShapes(newShapes);
+          addToHistory(newShapes);
+        });
       };
       reader.readAsDataURL(file);
     }
-  });
+  }
+  // 处理拖拽图片URL
+  else if (
+    e.dataTransfer.getData('text').match(/\.(jpg|jpeg|png|gif|webp)$/i)
+  ) {
+    const imageUrl = e.dataTransfer.getData('text');
+    createImageShape(imageUrl, dropPosition, (newShape) => {
+      const newShapes = [...shapes, newShape];
+      setShapes(newShapes);
+      addToHistory(newShapes);
+    });
+  }
 };
 
 export const handleDelete = (id: string | string[]) => {
@@ -518,44 +574,65 @@ export const handleBackgroundClip = (ctx: SceneContext) => {
 
 /** Stage/Shape 点击事件 */
 export const handleClick = (e: KonvaEventObject<MouseEvent>) => {
-  const { keepShiftKey, selectedIds } = useEditorStore.getState();
-  const _selectedIds = getSelectedIdsByClickEvent(e);
-  if (keepShiftKey) {
-    handleSelect([...selectedIds, ..._selectedIds]);
-  } else {
-    handleSelect(_selectedIds);
+  // 阻止事件冒泡，避免触发父级Group的点击事件
+  e.cancelBubble = true;
+
+  const isRightClick = e.evt.button === 2;
+  // 如果是右键点击
+  if (isRightClick) {
+    return;
   }
+
+  // 获取实际点击的目标元素和其所属组
+  const clickedShape = e.target;
+  const clickedGroup = clickedShape.getParent();
+
+  // 判断是否点击的是组内元素
+  const isGroupElement = clickedGroup?.nodeType === 'Group';
+
+  // 如果点击的是组内元素，使用组ID，否则使用元素自身ID
+  const targetId = isGroupElement ? clickedGroup.attrs.id : undefined;
+
+  // 获取需要选中的元素ID列表
+  const newSelectedIds = getSelectedIdsByClickEvent(e, targetId);
+
+  handleSelect(newSelectedIds);
+  debug('handleClick', {
+    isGroupElement,
+    targetId,
+    newSelectedIds,
+  });
 };
 
 export const getSelectedIdsByClickEvent = (
-  e: KonvaEventObject<MouseEvent, unknown>,
+  e: KonvaEventObject<MouseEvent>,
+  forceTargetId?: string,
 ) => {
   const { shapes, safeArea, selectedIds } = useEditorStore.getState();
-  // 检查是否为右键点击
+
+  const keepShiftKey = e.evt.shiftKey;
   const isRightClick = e.evt.button === 2;
 
-  // 已选择（>=2个）时右键直接返回，兼容右键菜单
-  if (isRightClick && selectedIds.length > 1) {
-    return selectedIds;
-  }
-  // TODO: 当选中多个元素时，判断右键点击是否在选中区域内
-
-  // 右键"非基础画布"等元素时可选中
-  const targetId = e.target.id();
+  // 检查是否为不可选择的元素
+  const targetId = forceTargetId ?? e.target.attrs.id;
   const notAllowedSelection =
     e.target === e.target.getStage() || targetId === safeArea.id;
-  if (isRightClick && !notAllowedSelection) {
-    return [targetId];
+
+  // 如果是右键点击且已有选中元素，保持当前选中状态
+  if (isRightClick && selectedIds.length > 0) {
+    return selectedIds;
   }
+
+  const _selectedIds = keepShiftKey ? selectedIds : [];
 
   if (
     notAllowedSelection ||
     shapes.some((shape) => shape.id === targetId && shape.isLocked)
   ) {
-    return [];
-  } else {
-    return [targetId];
+    return [..._selectedIds];
   }
+
+  return [..._selectedIds, targetId].filter(Boolean) as string[];
 };
 
 export const handleEyeToggle = (id: string | string[]) => {
@@ -572,23 +649,97 @@ export const handleEyeToggle = (id: string | string[]) => {
   addToHistory(newShapes);
 };
 
-export const handleStageWheel = (e: KonvaEventObject<WheelEvent>) => {
-  e.evt.preventDefault();
+interface GroupShape extends Shape {
+  type: 'group';
+  children: Shape[];
+}
 
-  const scaleBy = 1.1;
-  const stage = e.target as Stage;
+export const handleGroup = (selectedShapes: Shape[]) => {
+  const { shapes, setShapes, setSelectedIds } = useEditorStore.getState();
 
-  if (!stage) return;
+  if (selectedShapes.length <= 1) return;
 
-  const oldScale = stage.scaleX();
+  // 计算组的边界框
+  const bounds = selectedShapes.reduce(
+    (acc, shape) => {
+      const left = shape.x;
+      const right = shape.x + (shape.width || 0);
+      const top = shape.y;
+      const bottom = shape.y + (shape.height || 0);
 
-  // 根据滚轮方向确定新的缩放值
-  const newScale = e.evt.deltaY > 0 ? oldScale / scaleBy : oldScale * scaleBy;
+      return {
+        left: Math.min(acc.left, left),
+        right: Math.max(acc.right, right),
+        top: Math.min(acc.top, top),
+        bottom: Math.max(acc.bottom, bottom),
+      };
+    },
+    { left: Infinity, right: -Infinity, top: Infinity, bottom: -Infinity },
+  );
 
-  // 限制最小和最大缩放
-  const MIN_SCALE = 0.5;
-  const MAX_SCALE = 1.5;
-  const boundedScale = Math.min(Math.max(newScale, MIN_SCALE), MAX_SCALE);
+  // 创建新的组合
+  const groupId = `group-${uuidv4()}`;
+  const group: GroupShape = {
+    id: groupId,
+    type: 'group',
+    children: selectedShapes.map((shape) => ({
+      ...shape,
+      // 调整子元素相对于组的位置
+      x: shape.x - bounds.left,
+      y: shape.y - bounds.top,
+    })),
+    x: bounds.left,
+    y: bounds.top,
+    width: bounds.right - bounds.left,
+    height: bounds.bottom - bounds.top,
+    isLocked: false,
+    rotation: 0,
+    scaleX: 1,
+    scaleY: 1,
+    zIndex: Math.max(...selectedShapes.map((s) => s.zIndex || 0)),
+    fill: 'transparent',
+  };
 
-  useEditorStore.setState({ scale: boundedScale });
+  // 从画布中移除原始图形
+  const newShapes = shapes.filter(
+    (shape) => !selectedShapes.find((s) => s.id === shape.id),
+  );
+
+  // 添加组合
+  newShapes.push(group);
+
+  setShapes(newShapes);
+  setSelectedIds([groupId]);
+  addToHistory(newShapes);
+};
+
+export const handleUngroup = (selectedShapes: Shape[]) => {
+  const { shapes, setShapes, setSelectedIds } = useEditorStore.getState();
+
+  // 找出所有需要解组的组合
+  const groupsToUngroup = selectedShapes.filter(
+    (shape) => shape.type === 'group',
+  );
+  if (groupsToUngroup.length === 0) return;
+
+  let newShapes = [...shapes];
+  const newSelectedShapes: Shape[] = [];
+
+  groupsToUngroup.forEach((group) => {
+    // 移除组合
+    newShapes = newShapes.filter((shape) => shape.id !== group.id);
+
+    // 添加子图形，并调整位置
+    const children = (group as GroupShape).children.map((child) => ({
+      ...child,
+      x: child.x + group.x,
+      y: child.y + group.y,
+    }));
+
+    newShapes.push(...children);
+    newSelectedShapes.push(...children);
+  });
+
+  setShapes(newShapes);
+  setSelectedIds([]);
 };

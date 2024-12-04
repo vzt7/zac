@@ -1,8 +1,6 @@
-import { transparentBackground } from '@/assets/transparent';
 import Konva from 'konva';
 import type { Layer as LayerType } from 'konva/lib/Layer';
-import type { KonvaEventObject } from 'konva/lib/Node';
-import { ShapeConfig } from 'konva/lib/Shape';
+import { KonvaEventObject } from 'konva/lib/Node';
 import type { Stage as StageType } from 'konva/lib/Stage';
 import { debounce } from 'lodash-es';
 import {
@@ -12,49 +10,34 @@ import {
   useMemo,
   useRef,
 } from 'react';
-import {
-  Group,
-  Circle as KonvaCircle,
-  KonvaNodeComponent,
-  Layer,
-  Line,
-  Rect,
-  Stage,
-  Transformer,
-} from 'react-konva';
+import { Group, Rect as KonvaRect, Layer, Stage } from 'react-konva';
 
 import { ContextMenu } from './EditorComponents/ContextMenu';
 import { ControlPanel4Scale } from './EditorComponents/ControlPanel4Scale';
 import { CustomTransformer } from './EditorComponents/CustomTransformer';
 import {
-  EDITOR_LIBRARY_WIDTH,
-  EditorLibrary,
+  ELEMENT_EDITOR_WIDTH,
+  ElementEditor,
 } from './EditorComponents/ElementEditor';
-import { ImageElement } from './EditorComponents/ElementImage';
-import { TextElement } from './EditorComponents/ElementText';
-import { LayersPanel } from './EditorComponents/LayerPanel';
-import { Toolbar } from './EditorComponents/Toolbar';
+import { SourcePanel } from './EditorComponents/ElementEditorSourcePanel';
+import { renderShape } from './EditorComponents/Elements';
 import { HEADER_HEIGHT } from './Header';
 import { SIDEBAR_WIDTH } from './Sidebar';
 import {
-  getSelectedIdsByClickEvent,
   handleBackgroundClip,
   handleClick,
   handleDragEnd,
-  handleDrop,
-  handleSelect,
+  handleImageDrop,
   handleStageDragMove,
-  handleStageWheel,
   handleTransformEnd,
 } from './editor.handler';
 import {
   useContextMenu,
   useEditorHotkeys,
-  useExport,
   useSelection,
   useStageDrag,
 } from './editor.hook';
-import { Shape, getEditorCenter, useEditorStore } from './editor.store';
+import { useEditorStore } from './editor.store';
 import { useHeaderSettings } from './header.store';
 
 export const Editor = () => {
@@ -100,7 +83,7 @@ export const Editor = () => {
     }
 
     const containerWidth =
-      window.innerWidth - SIDEBAR_WIDTH - EDITOR_LIBRARY_WIDTH;
+      window.innerWidth - SIDEBAR_WIDTH - ELEMENT_EDITOR_WIDTH;
     const containerHeight = window.innerHeight - HEADER_HEIGHT;
 
     const { safeArea, shapes } = useEditorStore.getState();
@@ -124,8 +107,8 @@ export const Editor = () => {
     // 更新所有 shapes 的位置
     const newShapes = shapes.map((shape) => ({
       ...shape,
-      x: shape.x + deltaX,
-      y: shape.y + deltaY,
+      x: shape.x ?? 0 + deltaX,
+      y: shape.y ?? 0 + deltaY,
     }));
 
     console.log(
@@ -154,9 +137,7 @@ export const Editor = () => {
     });
 
     // 强制重绘
-    requestAnimationFrame(() => {
-      backgroundRef.current?.draw();
-    });
+    backgroundRef.current?.draw();
   }, []);
   useEffect(() => {
     const unsubscribe = useEditorStore.subscribe(
@@ -167,6 +148,25 @@ export const Editor = () => {
     );
     return () => unsubscribe();
   }, [fitToScreen]);
+
+  const handleStageWheel = (e: KonvaEventObject<WheelEvent>) => {
+    e.evt.preventDefault();
+    if (isDragMode) return;
+
+    const scaleBy = 1.1;
+    const stage = e.target as StageType;
+    if (!stage) return;
+
+    const oldScale = stage.scaleX();
+    // 根据滚轮方向确定新的缩放值
+    const newScale = e.evt.deltaY > 0 ? oldScale / scaleBy : oldScale * scaleBy;
+    // 限制最小和最大缩放
+    const MIN_SCALE = 0.5;
+    const MAX_SCALE = 1.5;
+    const boundedScale = Math.min(Math.max(newScale, MIN_SCALE), MAX_SCALE);
+
+    fitToScreen(boundedScale);
+  };
 
   const layerRef = useRef<LayerType>(null);
   useLayoutEffect(() => {
@@ -186,124 +186,29 @@ export const Editor = () => {
     <div
       className={`relative w-full h-full overflow-hidden transparent-bg-img`}
       onDragOver={(e) => e.preventDefault()}
-      onDrop={handleDrop}
+      onDrop={(e) => {
+        handleImageDrop(e);
+      }}
     >
-      <LayersPanel />
-
       <Stage
         {...editorProps}
         ref={stageRef}
-        className={`${isDragMode ? 'cursor-grab' : ''}`}
-        onClick={handleClick}
+        className={`${isDragMode ? '!cursor-grab' : ''}`}
         onContextMenu={handleContextMenu}
         onMouseDown={handleStageMouseDown}
-        draggable={isDragMode}
         onDragMove={handleStageDragMove}
         onWheel={handleStageWheel}
+        onClick={handleClick}
+        draggable={isDragMode}
       >
         <Layer ref={layerRef} listening={!isDragMode}>
           {/* safeArea 边框 */}
-          <Rect {...safeArea} fill="#FFF" strokeWidth={1} listening={false} />
-
-          {/* 形状渲染 */}
-          {shapes.map((shape) => {
-            if (shape.visible === false) {
-              return null;
-            }
-            const shapeProps: ShapeConfig = {
-              ...shape,
-              id: shape.id,
-              x: shape.x,
-              y: shape.y,
-              rotation: shape.rotation,
-              scaleX: shape.scaleX,
-              scaleY: shape.scaleY,
-              fill: shape.fill,
-              stroke: shape.stroke,
-              strokeWidth: shape.strokeWidth,
-              shadowBlur: shape.shadowBlur,
-              shadowColor: shape.shadowColor,
-              shadowOffsetX: shape.shadowOffsetX,
-              shadowOffsetY: shape.shadowOffsetY,
-              opacity: shape.opacity,
-              draggable: !shape.isLocked,
-              onClick: (e: any) => !shape.isLocked && handleClick(e),
-              onTransformEnd: handleTransformEnd,
-              // onDragStart: handleDragStart,
-              onDragEnd: handleDragEnd,
-            };
-
-            switch (shape.type) {
-              case 'rect':
-                return (
-                  <Rect
-                    key={shapeProps.id}
-                    {...shapeProps}
-                    width={shape.width}
-                    height={shape.height}
-                  />
-                );
-              case 'circle':
-                return (
-                  <KonvaCircle
-                    key={shapeProps.id}
-                    {...shapeProps}
-                    radius={shape.radius}
-                  />
-                );
-              case 'triangle':
-              case 'star':
-                return (
-                  <Line
-                    key={shapeProps.id}
-                    {...shapeProps}
-                    points={shape.points}
-                    closed
-                  />
-                );
-              case 'polygon': {
-                const points = [];
-                const sides = shape.sides || 6;
-                const radius = shape.radius || 50;
-                for (let i = 0; i < sides; i++) {
-                  const angle = (i * 2 * Math.PI) / sides;
-                  points.push(
-                    radius * Math.cos(angle),
-                    radius * Math.sin(angle),
-                  );
-                }
-                return (
-                  <Line
-                    key={shapeProps.id}
-                    {...shapeProps}
-                    points={points}
-                    closed
-                  />
-                );
-              }
-              case 'text':
-                return (
-                  <TextElement
-                    key={shapeProps.id}
-                    {...shapeProps}
-                    onClick={() => !shape.isLocked && handleSelect([shape.id])}
-                    onTransformEnd={handleTransformEnd}
-                  />
-                );
-              case 'image':
-                if (!shape.src) return null;
-                return (
-                  <ImageElement
-                    key={shape.id}
-                    {...shapeProps}
-                    src={shape.src}
-                    onTransformEnd={handleTransformEnd}
-                  />
-                );
-              default:
-                return null;
-            }
-          })}
+          <KonvaRect
+            {...safeArea}
+            fill="#FFFFFF"
+            strokeWidth={1}
+            listening={false}
+          />
 
           {/* 绘制半透明背景 */}
           <Group
@@ -312,11 +217,30 @@ export const Editor = () => {
             clipFunc={handleBackgroundClip}
           ></Group>
 
-          <CustomTransformer selectedNodes={selectedNodes} />
+          {shapes.map((shape) => {
+            return renderShape({
+              ...shape,
+              draggable: !shape.isLocked,
+              onTransformEnd: handleTransformEnd,
+              onClick: handleClick,
+              onDragEnd: handleDragEnd,
+              onMouseEnter: (e: any) => {
+                // style stage container:
+                const container = e.target.getStage().container();
+                container.style.cursor = 'move';
+              },
+              onMouseLeave: (e: any) => {
+                const container = e.target.getStage().container();
+                container.style.cursor = 'default';
+              },
+            });
+          })}
+
+          {!isDragMode && <CustomTransformer selectedNodes={selectedNodes} />}
 
           {/* 渲染选区 */}
           {selectionBox && (
-            <Rect
+            <KonvaRect
               x={selectionBox.startX}
               y={selectionBox.startY}
               width={selectionBox.width}
@@ -330,11 +254,6 @@ export const Editor = () => {
         </Layer>
       </Stage>
 
-      <ControlPanel4Scale
-        scale={editorProps.scaleX}
-        onFitScreen={() => fitToScreen()}
-      />
-
       {contextMenu && (
         <ContextMenu
           x={contextMenu.x}
@@ -343,18 +262,26 @@ export const Editor = () => {
         />
       )}
 
-      <EditorLibrary />
+      {/* toolbar */}
+      <SourcePanel />
+
+      <ControlPanel4Scale
+        scale={editorProps.scaleX}
+        onFitScreen={fitToScreen}
+      />
+
+      <ElementEditor />
 
       {import.meta.env.DEV && (
-        <div className="absolute right-0 bottom-0 bg-warning text-warning-content px-2 py-1">
-          <div>
-            <span>Selected: {selectedIds.join(',') || 'null'}</span>
-            <span> / </span>
+        <div className="absolute top-0 left-0 bg-warning text-warning-content px-2 py-1">
+          <div className="flex flex-col">
             <span>
-              Mouse: ({mousePosition.x}, {mousePosition.y})
+              画布: {editorProps.width}x{editorProps.height}
             </span>
-            <span> / </span>
-            <span>EditorProps: {JSON.stringify(editorProps)}</span>
+            <span>已选择: {selectedIds.join(',') || 'null'}</span>
+            <span>
+              位置: ({mousePosition.x}, {mousePosition.y})
+            </span>
           </div>
         </div>
       )}

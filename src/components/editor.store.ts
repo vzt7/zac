@@ -1,3 +1,4 @@
+import { debug } from '@/utils/debug';
 import { ShapeConfig } from 'konva/lib/Shape';
 import type { Stage as StageType } from 'konva/lib/Stage';
 import { ComponentProps, MutableRefObject } from 'react';
@@ -6,38 +7,26 @@ import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 
 // 导出 Shape 接口
-export interface Shape {
+export interface Shape extends ShapeConfig {
   id: string;
   type: string;
   x: number;
   y: number;
-  width?: number;
-  height?: number;
   radius?: number;
-  rotation: number;
-  scaleX: number;
-  scaleY: number;
   zIndex: number;
-  fill: string;
   text?: string;
   fontSize?: number;
   fontFamily?: string;
   isSelected?: boolean;
   groupId?: string;
   src?: string;
-  shadowBlur?: number;
-  shadowColor?: string;
-  shadowOffsetX?: number;
-  shadowOffsetY?: number;
   opacity?: number;
   blur?: number;
   isLocked?: boolean;
-  points?: number[];
   sides?: number;
   dash?: number[];
-  strokeWidth?: number;
-  stroke?: string;
   visible?: boolean;
+  children?: Shape[];
 }
 
 export interface EditorStore {
@@ -51,6 +40,7 @@ export interface EditorStore {
 
   selectedIds: string[];
   setSelectedIds: (ids: string[]) => void;
+  selectedShapes: Shape[];
 
   isSelecting: boolean;
   setIsSelecting: (val: boolean) => void;
@@ -119,6 +109,7 @@ export const useEditorStore = create<EditorStore>()(
 
     selectedIds: [],
     setSelectedIds: (ids) => set({ selectedIds: ids }),
+    selectedShapes: [],
 
     isSelecting: false,
     setIsSelecting: (val) => set({ isSelecting: val }),
@@ -162,19 +153,24 @@ export const getEditorCenter = (
   };
 };
 
-export const useSelectedShapes = () => {
-  const selectedIds = useEditorStore((state) => state.selectedIds);
-  const shapes = useEditorStore((state) => state.shapes);
-  const selectedShapes = shapes.filter((shape) =>
-    selectedIds?.includes(shape.id),
-  );
-  return selectedShapes;
-};
-
 useEditorStore.subscribe(
   (state) => state.safeArea,
   (safeArea) => {
     console.log(`[safeArea]`, safeArea);
+  },
+);
+
+useEditorStore.subscribe(
+  (state) => state.selectedIds,
+  (selectedIds) => {
+    const shapes = useEditorStore.getState().shapes;
+    const selectedShapes = shapes.filter((shape) =>
+      selectedIds?.includes(shape.id),
+    );
+    useEditorStore.setState({
+      selectedShapes,
+    });
+    debug(`[selectedShapes]`, selectedShapes);
   },
 );
 

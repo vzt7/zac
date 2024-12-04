@@ -6,6 +6,7 @@ import { useHotkeys } from 'react-hotkeys-hook';
 
 import {
   getSelectedIdsByClickEvent,
+  handleClick,
   handleDelete,
   handleRedo,
   handleSelect,
@@ -102,37 +103,6 @@ export const useAlignment = (
   };
 
   return { alignShapes };
-};
-
-// 添加组合功能
-export const useGrouping = () => {
-  const { shapes, setShapes } = useEditorStore.getState();
-  const groupSelected = () => {
-    const selectedShapes = shapes.filter((shape) => shape.isSelected);
-    if (selectedShapes.length < 2) return;
-
-    const groupId = `group-${Date.now()}`;
-    const newShapes = shapes.map((shape) => {
-      if (shape.isSelected) {
-        return { ...shape, groupId };
-      }
-      return shape;
-    });
-    setShapes(newShapes);
-  };
-
-  const ungroup = (groupId: string) => {
-    const newShapes = shapes.map((shape) => {
-      if (shape.groupId === groupId) {
-        const { groupId: _, ...rest } = shape;
-        return rest;
-      }
-      return shape;
-    });
-    setShapes(newShapes);
-  };
-
-  return { groupSelected, ungroup };
 };
 
 // 添加导出功能
@@ -419,24 +389,20 @@ export const useContextMenu = (mousePosition: { x: number; y: number }) => {
 
   const handleContextMenu = useCallback((e: KonvaEventObject<MouseEvent>) => {
     e.evt.preventDefault();
-    const stage = e.target.getStage();
-    if (!stage) return;
 
-    const _selectedIds = getSelectedIdsByClickEvent(e);
-    if (_selectedIds.length <= 0) {
+    const selectedIds = useEditorStore.getState().selectedIds;
+    // 获取选中的元素 IDs
+    // const _selectedIds = getSelectedIdsByClickEvent(e);
+
+    // 如果没有选中任何元素，直接返回
+    if (selectedIds.length <= 0) {
       return;
     }
 
-    handleSelect(_selectedIds);
+    const stage = e.target.getStage();
+    if (!stage) return;
 
     const stageBox = stage.container().getBoundingClientRect();
-    // const scale = {
-    //   x: stage.scaleX(),
-    //   y: stage.scaleY(),
-    // };
-    // const stagePos = stage.position();
-
-    // 考虑缩放比例计算菜单位置
     const menuX = e.evt.clientX - stageBox.left;
     const menuY = e.evt.clientY - stageBox.top;
 

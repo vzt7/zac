@@ -1,35 +1,29 @@
-import { KonvaEventObject } from 'konva/lib/Node';
 import {
   ArrowDown,
   ArrowUp,
   Copy,
+  Group,
   Lock,
   LockOpen,
   MoveDown,
   MoveUp,
   Trash,
+  Ungroup,
 } from 'lucide-react';
-import {
-  ComponentProps,
-  PropsWithChildren,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { ComponentProps, PropsWithChildren, useEffect, useRef } from 'react';
 
 import {
-  getSelectedIdsByClickEvent,
   handleDelete,
   handleDuplicate,
+  handleGroup,
   handleLockToggle,
   handleMoveDown,
   handleMoveToBottom,
   handleMoveToTop,
   handleMoveUp,
-  handleSelect,
+  handleUngroup,
 } from '../editor.handler';
-import { useEditorStore, useSelectedShapes } from '../editor.store';
+import { useEditorStore } from '../editor.store';
 
 interface ContextMenuProps {
   x: number;
@@ -39,7 +33,7 @@ interface ContextMenuProps {
 
 export const ContextMenu = ({ x, y, onClose }: ContextMenuProps) => {
   const menuRef = useRef<HTMLDivElement>(null);
-  const selectedShapes = useSelectedShapes();
+  const selectedShapes = useEditorStore((state) => state.selectedShapes);
   const isLocked = selectedShapes?.some((shape) => shape.isLocked);
 
   useEffect(() => {
@@ -130,6 +124,28 @@ export const ContextMenu = ({ x, y, onClose }: ContextMenuProps) => {
       >
         <Trash size={16} />
         <span>删除</span>
+      </ContextMenuItemButton>
+
+      <ContextMenuItemButton
+        onClick={() => {
+          handleGroup(selectedShapes);
+          onClose();
+        }}
+        disabled={selectedShapes.length <= 1}
+      >
+        <Group size={16} />
+        <span>组合</span>
+      </ContextMenuItemButton>
+
+      <ContextMenuItemButton
+        onClick={() => {
+          handleUngroup(selectedShapes);
+          onClose();
+        }}
+        disabled={!selectedShapes.some((shape) => shape.type === 'group')}
+      >
+        <Ungroup size={16} />
+        <span>取消组合</span>
       </ContextMenuItemButton>
     </div>
   );

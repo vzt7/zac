@@ -1,30 +1,24 @@
-import { useEditorStore } from '../editor.store';
+import { Redo, Undo } from 'lucide-react';
+
+import { handleRedo, handleUndo } from '../editor.handler';
 
 interface ControlPanelRightBottomProps {
   scale: number;
-  onFitScreen: () => void;
+  onFitScreen: (scale?: number) => void;
 }
 
 export const ControlPanel4Scale = ({
   scale,
   onFitScreen,
 }: ControlPanelRightBottomProps) => {
-  const updateScale = (newScale: number) => {
-    useEditorStore.setState((state) => ({
-      editorProps: {
-        ...state.editorProps,
-        scaleX: newScale,
-        scaleY: newScale,
-      },
-    }));
-  };
-
   const handleZoomIn = () => {
-    updateScale(scale * 1.2);
+    console.log('handleZoomIn', scale, Math.min(scale * 1.2, 1.5));
+    onFitScreen(Math.min(scale * 1.2, 1.5));
   };
 
   const handleZoomOut = () => {
-    updateScale(scale * 0.8);
+    console.log('handleZoomOut', scale, Math.max(scale * 0.8, 0.5));
+    onFitScreen(Math.max(scale * 0.8, 0.5));
   };
 
   return (
@@ -39,8 +33,17 @@ export const ControlPanel4Scale = ({
         +
       </button>
 
-      <button className="btn btn-sm" onClick={onFitScreen}>
+      <button className="btn btn-sm" onClick={() => onFitScreen()}>
         适应屏幕
+      </button>
+
+      <div className="divider divider-horizontal m-0 py-2"></div>
+
+      <button onClick={handleUndo} className="btn btn-sm">
+        <Undo size={14} />
+      </button>
+      <button onClick={handleRedo} className="btn btn-sm">
+        <Redo size={14} />
       </button>
     </div>
   );

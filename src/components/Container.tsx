@@ -1,21 +1,10 @@
-import type { Stage as StageType } from 'konva/lib/Stage';
-import { debounce } from 'lodash-es';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { Editor } from './Editor';
-import {
-  EDITOR_LIBRARY_WIDTH,
-  EditorLibrary,
-} from './EditorComponents/ElementEditor';
+import { ELEMENT_EDITOR_WIDTH } from './EditorComponents/ElementEditor';
 import { HEADER_HEIGHT } from './Header';
 import { SIDEBAR_WIDTH } from './Sidebar';
-import { useExport } from './editor.hook';
-import { EditorStore, getEditorCenter, useEditorStore } from './editor.store';
-
-interface Scale {
-  x: number;
-  y: number;
-}
+import { EditorStore, useEditorStore } from './editor.store';
 
 export const Container = ({
   specificSafeArea,
@@ -32,7 +21,7 @@ export const Container = ({
     }
 
     const CONTAINER_WIDTH =
-      window.innerWidth - SIDEBAR_WIDTH - EDITOR_LIBRARY_WIDTH;
+      window.innerWidth - SIDEBAR_WIDTH - ELEMENT_EDITOR_WIDTH;
     const CONTAINER_HEIGHT = window.innerHeight - HEADER_HEIGHT;
 
     console.log(CONTAINER_WIDTH, CONTAINER_HEIGHT);
