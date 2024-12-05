@@ -21,6 +21,7 @@ import {
 } from './EditorComponents/ElementEditor';
 import { SourcePanel } from './EditorComponents/ElementEditorSourcePanel';
 import { renderShape } from './EditorComponents/Elements';
+import { LayersPanel } from './EditorComponents/LayerPanel';
 import { HEADER_HEIGHT } from './Header';
 import { SIDEBAR_WIDTH } from './Sidebar';
 import {
@@ -263,14 +264,20 @@ export const Editor = () => {
       )}
 
       {/* toolbar */}
-      <SourcePanel />
+      <div
+        className={`absolute top-4 left-[50%] -translate-x-[50%] z-10 flex flex-col gap-2 bg-base-100 p-2 shadow-md shadow-gray-400 rounded-lg`}
+      >
+        <SourcePanel />
+      </div>
+
+      <div className={`absolute top-4 right-4 max-w-[400px]`}>
+        <LayersPanel />
+      </div>
 
       <ControlPanel4Scale
         scale={editorProps.scaleX}
         onFitScreen={fitToScreen}
       />
-
-      <ElementEditor />
 
       {import.meta.env.DEV && (
         <div className="absolute top-0 left-0 bg-warning text-warning-content px-2 py-1">

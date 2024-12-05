@@ -742,4 +742,5 @@ export const handleUngroup = (selectedShapes: Shape[]) => {
 
   setShapes(newShapes);
   setSelectedIds([]);
+  addToHistory(newShapes);
 };

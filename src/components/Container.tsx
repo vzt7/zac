@@ -1,7 +1,10 @@
 import { useEffect, useRef } from 'react';
 
 import { Editor } from './Editor';
-import { ELEMENT_EDITOR_WIDTH } from './EditorComponents/ElementEditor';
+import {
+  ELEMENT_EDITOR_WIDTH,
+  ElementEditor,
+} from './EditorComponents/ElementEditor';
 import { HEADER_HEIGHT } from './Header';
 import { SIDEBAR_WIDTH } from './Sidebar';
 import { EditorStore, useEditorStore } from './editor.store';
@@ -45,10 +48,14 @@ export const Container = ({
 
   return (
     <div
-      className={`relative w-full h-[calc(100vh-${HEADER_HEIGHT}px)] bg-transparent overflow-hidden`}
+      className={`relative flex flex-row w-full h-full bg-transparent overflow-hidden`}
       ref={wrapperRef}
     >
-      {safeArea.isInitialed && <Editor />}
+      <div className="flex-grow">{safeArea.isInitialed && <Editor />}</div>
+
+      <div className={`flex-shrink-0 w-[${ELEMENT_EDITOR_WIDTH}px]`}>
+        <ElementEditor />
+      </div>
     </div>
   );
 };

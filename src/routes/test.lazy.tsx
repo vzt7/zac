@@ -4,7 +4,7 @@ import { createLazyFileRoute } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
 
 import { Container } from '../components/Container';
-import { Header } from '../components/Header';
+import { HEADER_HEIGHT, Header } from '../components/Header';
 import { Sidebar } from '../components/Sidebar';
 
 export const Route = createLazyFileRoute('/test')({
@@ -32,11 +32,15 @@ function RouteComponent() {
   return (
     <div className="flex flex-col h-full bg-base-100">
       <Header />
-      <div className="flex flex-row flex-grow bg-transparent min-h-[500px] min-w-[500px]">
+      <div
+        className={`flex flex-row flex-grow bg-transparent min-h-[500px] min-w-[500px]`}
+      >
         <Sidebar />
-        {(currentSafeArea && (
+        {currentSafeArea ? (
           <Container specificSafeArea={currentSafeArea} />
-        )) || <ContainerTemplate onSelect={setCurrentSafeArea} />}
+        ) : (
+          <ContainerTemplate onSelect={setCurrentSafeArea} />
+        )}
       </div>
     </div>
   );
