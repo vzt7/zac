@@ -2,11 +2,10 @@ import { transparentBackground } from '@/assets/transparent';
 import { debug } from '@/utils/debug';
 import { SceneContext } from 'konva/lib/Context';
 import { KonvaEventObject } from 'konva/lib/Node';
-import { Stage } from 'konva/lib/Stage';
 import { debounce } from 'lodash-es';
 import { v4 as uuidv4 } from 'uuid';
 
-import { Shape, getEditorCenter } from './editor.store';
+import { Shape } from './editor.store';
 import { useEditorStore } from './editor.store';
 
 // 创建一个防抖的添加历史记录函数
@@ -72,16 +71,17 @@ export const handleRedo = () => {
   }
 };
 
-export const handleAddShape = (
-  type: string,
-  position?: { x: number; y: number },
-) => {
+export const createShape = (type: string, shape?: Partial<Shape>) => {
   const { shapes, setShapes, safeArea, editorProps } =
     useEditorStore.getState();
-  const editorCenter = position || getEditorCenter(safeArea, editorProps);
+  const editorCenter = {
+    x: shape?.x ?? safeArea.x + safeArea.width / 2,
+    y: shape?.y ?? safeArea.y + safeArea.height / 2,
+  };
 
   const baseShape: Partial<Shape> = {
-    id: `shape-${Date.now()}`,
+    ...shape,
+    id: `${type}-${Date.now()}`,
     x: editorCenter.x,
     y: editorCenter.y,
     rotation: 0,
@@ -103,48 +103,94 @@ export const handleAddShape = (
   switch (type) {
     case 'rect':
       newShape = {
-        ...baseShape,
         type,
         width: 100,
         height: 100,
+        ...baseShape,
       } as Shape;
       break;
     case 'circle':
       newShape = {
-        ...baseShape,
         type,
         radius: 50,
+        ...baseShape,
       } as Shape;
       break;
     case 'triangle':
       newShape = {
-        ...baseShape,
         type,
         points: [0, -50, 50, 50, -50, 50],
+        ...baseShape,
       } as Shape;
       break;
     case 'polygon':
       newShape = {
-        ...baseShape,
         type,
         sides: 6,
         radius: 50,
+        ...baseShape,
       } as Shape;
       break;
     case 'star':
       newShape = {
-        ...baseShape,
         type,
         points: [
           0, -50, 10, -20, 40, -20, 20, 0, 30, 30, 0, 20, -30, 30, -20, 0, -40,
           -20, -10, -20,
         ],
+        ...baseShape,
+      } as Shape;
+      break;
+    case 'freedraw':
+      newShape = {
+        type,
+        stroke: '#000000',
+        strokeWidth: 5,
+        tension: 0.5,
+        lineCap: 'round',
+        lineJoin: 'round',
+        globalCompositeOperation: 'source-over',
+        ...baseShape,
+      } as any;
+      break;
+    case 'line':
+      newShape = {
+        type,
+        points: [0, 0, 100, 0], // 默认水平线，长度100
+        lineCap: 'round',
+        lineJoin: 'round',
+        strokeWidth: 2,
+        fill: '', // 线条不需要填充
+        ...baseShape,
+      } as Shape;
+      break;
+    case 'arrow':
+      newShape = {
+        type,
+        points: [0, 0, 100, 0], // 默认水平箭头，长度100
+        pointerLength: 10, // 箭头长度
+        pointerWidth: 10, // 箭头宽度
+        lineCap: 'round',
+        lineJoin: 'round',
+        strokeWidth: 2,
+        fill: '', // 箭头线条不需要填充
+        ...baseShape,
       } as Shape;
       break;
     default:
       return;
   }
 
+  return newShape;
+};
+
+export const handleAddShape = (
+  type: string,
+  position?: { x: number; y: number },
+) => {
+  const { shapes, setShapes } = useEditorStore.getState();
+  const newShape = createShape(type, { ...position });
+  if (!newShape) return;
   const newShapes = [...shapes, newShape];
   setShapes(newShapes);
   addToHistory(newShapes);
@@ -181,8 +227,7 @@ export const handleTransformEnd = (e: any) => {
 
 // 添加对齐辅助线处理
 export const handleStageDragMove = (e: any) => {
-  const { shapes, setGuides, safeArea, editorProps, isDragMode } =
-    useEditorStore.getState();
+  const { safeArea, editorProps, isDragMode } = useEditorStore.getState();
   const shape = e.target;
 
   if (isDragMode) {
@@ -210,24 +255,6 @@ export const handleStageDragMove = (e: any) => {
     });
     return;
   }
-
-  // 普通元素的对齐辅助线逻辑
-  const threshold = 5;
-  const newGuides: { x: number; y: number }[] = [];
-
-  shapes.forEach((otherShape) => {
-    if (otherShape.id === shape.id()) return;
-
-    if (Math.abs(shape.x() - otherShape.x) < threshold) {
-      newGuides.push({ x: otherShape.x, y: 0 });
-    }
-
-    if (Math.abs(shape.y() - otherShape.y) < threshold) {
-      newGuides.push({ x: 0, y: otherShape.y });
-    }
-  });
-
-  setGuides(newGuides);
 };
 
 // 添加位置变化监听
@@ -251,19 +278,21 @@ export const handleDragEnd = (e: any) => {
   debouncedAddToHistory(newShapes);
 };
 
-export const handleSave = () => {
+export const handleSave = (key = 'editor-shapes') => {
   const { shapes } = useEditorStore.getState();
-  const data = JSON.stringify(shapes);
-  localStorage.setItem('editor-shapes', data);
+  const safeArea = useEditorStore.getState().safeArea;
+  const data = JSON.stringify({ shapes, safeArea });
+  localStorage.setItem(key, data);
 };
 
-export const handleLoad = () => {
+export const handleLoad = (key = 'editor-shapes') => {
   const { setShapes } = useEditorStore.getState();
-  const data = localStorage.getItem('editor-shapes');
+  const data = localStorage.getItem(key);
   if (data) {
-    const loadedShapes = JSON.parse(data);
-    setShapes(loadedShapes);
-    addToHistory(loadedShapes);
+    const { shapes, safeArea } = JSON.parse(data);
+    setShapes(shapes);
+    useEditorStore.setState({ safeArea });
+    addToHistory(shapes);
   }
 };
 
@@ -271,18 +300,21 @@ export const handleLoad = () => {
 export const handleAddText = () => {
   const { shapes, setShapes, safeArea, editorProps } =
     useEditorStore.getState();
-  const editorCenter = getEditorCenter(safeArea, editorProps);
+  const editorCenter = {
+    x: safeArea.x + safeArea.width / 2,
+    y: safeArea.y + safeArea.height / 2,
+  };
   const newShape: Shape = {
     id: `text-${Date.now()}`,
     type: 'text',
     x: editorCenter.x + Math.random() * 50,
     y: editorCenter.y + Math.random() * 50,
     text: '双击编辑文本',
-    fontSize: 20,
+    fontSize: 32 / Math.min(editorProps.scaleX, editorProps.scaleY),
     fontFamily: 'Arial',
     rotation: 0,
-    scaleX: 1,
-    scaleY: 1,
+    scaleX: editorProps.scaleX,
+    scaleY: editorProps.scaleY,
     zIndex: shapes.length,
     fill: '#000000',
   };
@@ -361,13 +393,25 @@ const createImageShape = (
   };
 };
 
+// 修改文件类型检查函数
+const isImageFile = (type: string) => {
+  return type.startsWith('image/') || type === 'image/svg+xml';
+};
+
+// 修改URL检查正则
+const isImageUrl = (url: string) => {
+  return /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(url);
+};
+
 // 处理文件上传
 export const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
   const file = e.target.files?.[0];
-  if (file) {
-    const { safeArea, editorProps, shapes, setShapes } =
-      useEditorStore.getState();
-    const editorCenter = getEditorCenter(safeArea, editorProps);
+  if (file && isImageFile(file.type)) {
+    const { safeArea, shapes, setShapes } = useEditorStore.getState();
+    const editorCenter = {
+      x: safeArea.x + safeArea.width / 2,
+      y: safeArea.y + safeArea.height / 2,
+    };
 
     const reader = new FileReader();
     reader.onload = () => {
@@ -390,7 +434,7 @@ export const handleImageDrop = (e: React.DragEvent<HTMLDivElement>) => {
   e.preventDefault();
   const { shapes, setShapes, stageRef } = useEditorStore.getState();
 
-  // 获取舞台的位置和缩放信息
+  // 获取舞的位置和缩放信息
   const stage = stageRef?.current;
   if (!stage) return;
 
@@ -407,7 +451,7 @@ export const handleImageDrop = (e: React.DragEvent<HTMLDivElement>) => {
   // 处理拖拽文件
   if (e.dataTransfer.files?.length) {
     const file = e.dataTransfer.files[0];
-    if (file.type.startsWith('image/')) {
+    if (isImageFile(file.type)) {
       const reader = new FileReader();
       reader.onload = () => {
         createImageShape(reader.result as string, dropPosition, (newShape) => {
@@ -420,9 +464,7 @@ export const handleImageDrop = (e: React.DragEvent<HTMLDivElement>) => {
     }
   }
   // 处理拖拽图片URL
-  else if (
-    e.dataTransfer.getData('text').match(/\.(jpg|jpeg|png|gif|webp)$/i)
-  ) {
+  else if (isImageUrl(e.dataTransfer.getData('text'))) {
     const imageUrl = e.dataTransfer.getData('text');
     createImageShape(imageUrl, dropPosition, (newShape) => {
       const newShapes = [...shapes, newShape];
@@ -471,6 +513,7 @@ export const handleMoveUp = (id: string) => {
       newShapes[currentIndex + 1],
       newShapes[currentIndex],
     ];
+    handleSelect([]);
     setShapes(newShapes);
     addToHistory(newShapes);
   }
@@ -485,6 +528,7 @@ export const handleMoveDown = (id: string) => {
       newShapes[currentIndex - 1],
       newShapes[currentIndex],
     ];
+    handleSelect([]);
     setShapes(newShapes);
     addToHistory(newShapes);
   }
@@ -545,7 +589,13 @@ export const handleUpdate = (item: Partial<Shape> & { id: Shape['id'] }) => {
 export const handleBackgroundClip = (ctx: SceneContext) => {
   const { safeArea, editorProps } = useEditorStore.getState();
 
-  // 绘制遮罩区域，扩大绘制范围
+  // 1. 保存当前上下文状态
+  ctx.save();
+
+  // 2. 设置全局合成操作为 "source-over"
+  ctx.globalCompositeOperation = 'source-over';
+
+  // 3. 绘制遮罩背景
   ctx.beginPath();
   ctx.rect(
     -editorProps.width,
@@ -554,21 +604,26 @@ export const handleBackgroundClip = (ctx: SceneContext) => {
     editorProps.height * 4,
   );
 
-  const img = new Image();
-  img.src = transparentBackground;
-  const pattern = ctx.createPattern(img, 'repeat');
-
-  // 直接使用 safeArea 的位置
+  // 4. 在遮罩中挖出安全区域
   ctx.moveTo(safeArea.x, safeArea.y);
   ctx.lineTo(safeArea.x, safeArea.y + safeArea.height);
   ctx.lineTo(safeArea.x + safeArea.width, safeArea.y + safeArea.height);
   ctx.lineTo(safeArea.x + safeArea.width, safeArea.y);
   ctx.closePath();
 
-  ctx.globalAlpha = 0.7;
+  // 5. 设置遮罩样式和透明度
+  const img = new Image();
+  img.src = transparentBackground;
+  const pattern = ctx.createPattern(img, 'repeat');
   // ctx.fillStyle = pattern!;
-  ctx.fillStyle = 'rgba(0,0,0,0.7)';
+  ctx.globalAlpha = 0.4;
+
+  // 6. 使用 destination-over 确保遮罩在元素下方
+  ctx.globalCompositeOperation = 'destination-over';
   ctx.fill('evenodd');
+
+  // 7. 恢复上下文状态
+  ctx.restore();
   ctx.globalAlpha = 1;
 };
 
@@ -590,10 +645,10 @@ export const handleClick = (e: KonvaEventObject<MouseEvent>) => {
   // 判断是否点击的是组内元素
   const isGroupElement = clickedGroup?.nodeType === 'Group';
 
-  // 如果点击的是组内元素，使用组ID，否则使用元素自身ID
+  // 如果点击的是组内元素，使用��ID，否则使用元素自身ID
   const targetId = isGroupElement ? clickedGroup.attrs.id : undefined;
 
-  // 获取需要选中的元素ID列表
+  // 获取需要选中的素ID列表
   const newSelectedIds = getSelectedIdsByClickEvent(e, targetId);
 
   handleSelect(newSelectedIds);
@@ -613,7 +668,7 @@ export const getSelectedIdsByClickEvent = (
   const keepShiftKey = e.evt.shiftKey;
   const isRightClick = e.evt.button === 2;
 
-  // 检查是否为不可选择的元素
+  // 检查否为不可选择的元素
   const targetId = forceTargetId ?? e.target.attrs.id;
   const notAllowedSelection =
     e.target === e.target.getStage() || targetId === safeArea.id;
@@ -700,17 +755,19 @@ export const handleGroup = (selectedShapes: Shape[]) => {
     fill: 'transparent',
   };
 
-  // 从画布中移除原始图形
-  const newShapes = shapes.filter(
-    (shape) => !selectedShapes.find((s) => s.id === shape.id),
-  );
+  requestAnimationFrame(() => {
+    // 从画布中移除原始图形
+    const newShapes = shapes.filter(
+      (shape) => !selectedShapes.find((s) => s.id === shape.id),
+    );
 
-  // 添加组合
-  newShapes.push(group);
+    // 添加组合
+    newShapes.push(group);
 
-  setShapes(newShapes);
-  setSelectedIds([groupId]);
-  addToHistory(newShapes);
+    setShapes(newShapes);
+    setSelectedIds([groupId]);
+    addToHistory(newShapes);
+  });
 };
 
 export const handleUngroup = (selectedShapes: Shape[]) => {
@@ -722,25 +779,27 @@ export const handleUngroup = (selectedShapes: Shape[]) => {
   );
   if (groupsToUngroup.length === 0) return;
 
-  let newShapes = [...shapes];
-  const newSelectedShapes: Shape[] = [];
+  requestAnimationFrame(() => {
+    let newShapes = [...shapes];
+    const newSelectedShapes: Shape[] = [];
 
-  groupsToUngroup.forEach((group) => {
-    // 移除组合
-    newShapes = newShapes.filter((shape) => shape.id !== group.id);
+    groupsToUngroup.forEach((group) => {
+      // 移除组合
+      newShapes = newShapes.filter((shape) => shape.id !== group.id);
 
-    // 添加子图形，并调整位置
-    const children = (group as GroupShape).children.map((child) => ({
-      ...child,
-      x: child.x + group.x,
-      y: child.y + group.y,
-    }));
+      // 添加子图形，并调整位置
+      const children = (group as GroupShape).children.map((child) => ({
+        ...child,
+        x: child.x + group.x,
+        y: child.y + group.y,
+      }));
 
-    newShapes.push(...children);
-    newSelectedShapes.push(...children);
+      newShapes.push(...children);
+      newSelectedShapes.push(...children);
+    });
+
+    setShapes(newShapes);
+    setSelectedIds([]);
+    addToHistory(newShapes);
   });
-
-  setShapes(newShapes);
-  setSelectedIds([]);
-  addToHistory(newShapes);
 };

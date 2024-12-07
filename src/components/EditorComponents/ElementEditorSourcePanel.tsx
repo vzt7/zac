@@ -1,7 +1,10 @@
 import {
+  ArrowRight,
   Circle,
   Hexagon,
   Image,
+  MinusIcon,
+  Pencil,
   Square,
   Star,
   Triangle,
@@ -18,36 +21,102 @@ import { useEditorStore } from '../editor.store';
 
 // 扩展工具栏
 export const SourcePanel = () => {
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isDrawMode = useEditorStore((state) => state.isDrawMode);
 
-  const height = useEditorStore((state) => state.editorProps?.height);
+  const handleShapeClick = (shape: string) => {
+    handleAddShape(shape);
+    // 点击后关闭下拉菜单
+    if (dropdownRef.current) {
+      const ul = dropdownRef.current.querySelector('ul');
+      if (ul) ul.blur();
+    }
+  };
 
   return (
     <div className="">
-      <button onClick={() => handleAddShape('rect')} className="btn btn-ghost">
-        <Square size={24} />
-      </button>
+      <div ref={dropdownRef} className="dropdown dropdown-hover dropdown-end">
+        <button tabIndex={0} className="btn btn-ghost">
+          <Square size={24} />
+        </button>
+        <ul
+          tabIndex={0}
+          className="dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-box w-52"
+        >
+          <li>
+            <button
+              onClick={() => handleShapeClick('rect')}
+              className="flex items-center gap-2"
+            >
+              <Square size={20} />
+              矩形
+            </button>
+          </li>
+          <li>
+            <button
+              onClick={() => handleShapeClick('circle')}
+              className="flex items-center gap-2"
+            >
+              <Circle size={20} />
+              圆形
+            </button>
+          </li>
+          <li>
+            <button
+              onClick={() => handleShapeClick('triangle')}
+              className="flex items-center gap-2"
+            >
+              <Triangle size={20} />
+              三角形
+            </button>
+          </li>
+          <li>
+            <button
+              onClick={() => handleShapeClick('polygon')}
+              className="flex items-center gap-2"
+            >
+              <Hexagon size={20} />
+              多边形
+            </button>
+          </li>
+          <li>
+            <button
+              onClick={() => handleShapeClick('star')}
+              className="flex items-center gap-2"
+            >
+              <Star size={20} />
+              星形
+            </button>
+          </li>
+          <li>
+            <button
+              onClick={() => handleShapeClick('line')}
+              className="flex items-center gap-2"
+            >
+              <MinusIcon size={20} />
+              直线
+            </button>
+          </li>
+          <li>
+            <button
+              onClick={() => handleShapeClick('arrow')}
+              className="flex items-center gap-2"
+            >
+              <ArrowRight size={20} />
+              箭头
+            </button>
+          </li>
+        </ul>
+      </div>
+
       <button
-        onClick={() => handleAddShape('circle')}
-        className="btn btn-ghost"
+        onClick={() => useEditorStore.setState({ isDrawMode: !isDrawMode })}
+        className={`btn btn-ghost ${isDrawMode ? 'btn-active' : ''}`}
       >
-        <Circle size={24} />
+        <Pencil size={24} />
       </button>
-      <button
-        onClick={() => handleAddShape('triangle')}
-        className="btn btn-ghost"
-      >
-        <Triangle size={24} />
-      </button>
-      <button
-        onClick={() => handleAddShape('polygon')}
-        className="btn btn-ghost"
-      >
-        <Hexagon size={24} />
-      </button>
-      <button onClick={() => handleAddShape('star')} className="btn btn-ghost">
-        <Star size={24} />
-      </button>
+
       <button onClick={handleAddText} className="btn btn-ghost">
         <Type size={24} />
       </button>

@@ -96,6 +96,28 @@ export const ContextMenu = ({ x, y, onClose }: ContextMenuProps) => {
 
       <ContextMenuItemButton
         onClick={() => {
+          handleGroup(selectedShapes);
+          onClose();
+        }}
+        disabled={selectedShapes.length <= 1}
+      >
+        <Group size={16} />
+        <span>组合</span>
+      </ContextMenuItemButton>
+
+      <ContextMenuItemButton
+        onClick={() => {
+          handleUngroup(selectedShapes);
+          onClose();
+        }}
+        disabled={!selectedShapes.some((shape) => shape.type === 'group')}
+      >
+        <Ungroup size={16} />
+        <span>取消组合</span>
+      </ContextMenuItemButton>
+
+      <ContextMenuItemButton
+        onClick={() => {
           handleLockToggle(selectedShapes.map((shape) => shape.id));
           onClose();
         }}
@@ -104,6 +126,7 @@ export const ContextMenu = ({ x, y, onClose }: ContextMenuProps) => {
         {isLocked ? <Lock size={16} /> : <LockOpen size={16} />}
         <span>{isLocked ? '解锁' : '锁定'}</span>
       </ContextMenuItemButton>
+
       <ContextMenuItemButton
         onClick={() => {
           handleDuplicate(selectedShapes.map((shape) => shape.id));
@@ -124,28 +147,6 @@ export const ContextMenu = ({ x, y, onClose }: ContextMenuProps) => {
       >
         <Trash size={16} />
         <span>删除</span>
-      </ContextMenuItemButton>
-
-      <ContextMenuItemButton
-        onClick={() => {
-          handleGroup(selectedShapes);
-          onClose();
-        }}
-        disabled={selectedShapes.length <= 1}
-      >
-        <Group size={16} />
-        <span>组合</span>
-      </ContextMenuItemButton>
-
-      <ContextMenuItemButton
-        onClick={() => {
-          handleUngroup(selectedShapes);
-          onClose();
-        }}
-        disabled={!selectedShapes.some((shape) => shape.type === 'group')}
-      >
-        <Ungroup size={16} />
-        <span>取消组合</span>
       </ContextMenuItemButton>
     </div>
   );

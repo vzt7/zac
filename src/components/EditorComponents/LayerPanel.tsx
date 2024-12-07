@@ -212,7 +212,7 @@ const SortableItem = ({
 
         <div className="flex flex-row items-center gap-2 py-2 pr-2 flex-shrink-0">
           <button
-            className={`btn btn-ghost btn-sm rounded-md p-1 ${shape.isLocked ? 'btn-active' : ''}`}
+            className={`btn btn-ghost btn-sm rounded-md p-1`}
             onClick={() => {
               if (isEditMode) {
                 handleSubmit();

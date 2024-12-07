@@ -27,7 +27,6 @@ export const Container = ({
       window.innerWidth - SIDEBAR_WIDTH - ELEMENT_EDITOR_WIDTH;
     const CONTAINER_HEIGHT = window.innerHeight - HEADER_HEIGHT;
 
-    console.log(CONTAINER_WIDTH, CONTAINER_HEIGHT);
     useEditorStore.setState({
       editorProps: {
         width: CONTAINER_WIDTH,
@@ -51,7 +50,7 @@ export const Container = ({
       className={`relative flex flex-row w-full h-full bg-transparent overflow-hidden`}
       ref={wrapperRef}
     >
-      <div className="flex-grow">{safeArea.isInitialed && <Editor />}</div>
+      <div className="">{safeArea.isInitialed && <Editor />}</div>
 
       <div className={`flex-shrink-0 w-[${ELEMENT_EDITOR_WIDTH}px]`}>
         <ElementEditor />

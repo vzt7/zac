@@ -17,16 +17,18 @@ export const CustomTransformer = ({
   const keepShiftKey = useEditorStore((state) => state.keepShiftKey);
 
   const selectedShapes = useEditorStore((state) => state.selectedShapes);
-  const isText = selectedShapes.some((shape) => shape.type === 'text');
+  const isElementEditing = useEditorStore((state) => state.isElementEditing);
 
   const colors = {
     light: {
-      primary: '#570DF8',
-      border: '#C6C6C6',
+      primary: '#6419E6',
+      border: '#D1D5DB',
+      anchor: '#FFFFFF',
     },
     dark: {
-      primary: '#661AE6',
-      border: '#374151',
+      primary: '#8B5CF6',
+      border: '#4B5563',
+      anchor: '#FFFFFF',
     },
   };
 
@@ -39,10 +41,14 @@ export const CustomTransformer = ({
     }
   }, [selectedNodes]);
 
+  if (isElementEditing) {
+    return null;
+  }
+
   return (
     <Transformer
       ref={transformerRef}
-      shouldOverdrawWholeArea={!isText}
+      // shouldOverdrawWholeArea={false}
       enabledAnchors={[
         'top-left',
         'top-center',
@@ -55,41 +61,31 @@ export const CustomTransformer = ({
       ]}
       rotateAnchorOffset={40}
       rotateAnchorCursor={'grab'}
-      anchorCornerRadius={12}
-      anchorStroke={currentTheme.primary}
-      anchorFill={currentTheme.primary}
-      anchorSize={10}
-      anchorStrokeWidth={0}
-      borderStroke={currentTheme.border}
+      // anchorCornerRadius={12}
+      anchorSize={12}
+      anchorFill={currentTheme.anchor}
+      anchorStroke={currentTheme.border}
+      anchorStrokeWidth={2}
+      borderStroke={currentTheme.primary}
       borderStrokeWidth={2}
       // borderDash={[4, 4]}
-      padding={8}
+      padding={0}
       keepRatio={!keepShiftKey}
-      centeredScaling={false}
+      centeredScaling={true}
       anchorStyleFunc={(anchor: Rect) => {
-        const name = anchor.name();
-        if (name?.indexOf('middle') !== -1) {
-          return {
-            width: 2,
-            height: 20,
-            offsetX: 1,
-            offsetY: 10,
-          };
+        anchor.cornerRadius(10);
+        if (anchor.hasName('top-center') || anchor.hasName('bottom-center')) {
+          anchor.height(6);
+          anchor.offsetY(3);
+          anchor.width(30);
+          anchor.offsetX(15);
         }
-        if (name?.indexOf('center') !== -1) {
-          return {
-            width: 20,
-            height: 2,
-            offsetX: 10,
-            offsetY: 1,
-          };
+        if (anchor.hasName('middle-left') || anchor.hasName('middle-right')) {
+          anchor.height(30);
+          anchor.offsetY(15);
+          anchor.width(6);
+          anchor.offsetX(3);
         }
-        return {
-          width: 7,
-          height: 7,
-          offsetX: 3.5,
-          offsetY: 3.5,
-        };
       }}
       boundBoxFunc={(oldBox, newBox) => {
         if (newBox.width < 5 || newBox.height < 5) {

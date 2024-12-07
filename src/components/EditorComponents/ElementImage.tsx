@@ -8,5 +8,14 @@ export const ImageElement = ({
 }: Omit<ComponentProps<typeof KonvaImage>, 'image'> & { src: string }) => {
   const [image] = useImage(src);
 
-  return <KonvaImage {...restProps} image={image} />;
+  return (
+    <KonvaImage
+      {...restProps}
+      image={image}
+      ref={(ref) => {
+        ref?.cache();
+        ref?.drawHitFromCache();
+      }}
+    />
+  );
 };

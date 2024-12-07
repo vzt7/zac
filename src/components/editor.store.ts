@@ -1,4 +1,5 @@
 import { debug } from '@/utils/debug';
+import { Node as KonvaNode, NodeConfig } from 'konva/lib/Node';
 import { ShapeConfig } from 'konva/lib/Shape';
 import type { Stage as StageType } from 'konva/lib/Stage';
 import { ComponentProps, MutableRefObject } from 'react';
@@ -27,13 +28,18 @@ export interface Shape extends ShapeConfig {
   dash?: number[];
   visible?: boolean;
   children?: Shape[];
+  fontStyle?: string;
+  fontWeight?: string;
+  textDecoration?: string;
+  align?: string;
 }
 
 export interface EditorStore {
   stageRef: MutableRefObject<StageType | null>;
   isDragMode: boolean;
+  isDrawMode: boolean;
+  isElementEditing: boolean;
   keepShiftKey: boolean;
-  scale: number;
 
   shapes: Shape[];
   setShapes: (shapes: Shape[]) => void;
@@ -41,6 +47,7 @@ export interface EditorStore {
   selectedIds: string[];
   setSelectedIds: (ids: string[]) => void;
   selectedShapes: Shape[];
+  selectedNodes: KonvaNode<NodeConfig>[];
 
   isSelecting: boolean;
   setIsSelecting: (val: boolean) => void;
@@ -64,9 +71,6 @@ export interface EditorStore {
   historyIndex: number;
   setHistoryIndex: (index: number) => void;
 
-  guides: { x: number; y: number }[];
-  setGuides: (guides: { x: number; y: number }[]) => void;
-
   editorProps: ComponentProps<typeof Stage> & {
     width: number;
     height: number;
@@ -87,22 +91,15 @@ export interface EditorStore {
     width: number;
     height: number;
   };
-  setSafeArea: (
-    safeArea: ShapeConfig & {
-      x: number;
-      y: number;
-      width: number;
-      height: number;
-    },
-  ) => void;
 }
 
 export const useEditorStore = create<EditorStore>()(
   subscribeWithSelector((set, get) => ({
     stageRef: { current: null },
     isDragMode: false,
+    isDrawMode: false,
+    isElementEditing: false,
     keepShiftKey: false,
-    scale: 1,
 
     shapes: [],
     setShapes: (shapes) => set({ shapes }),
@@ -110,6 +107,7 @@ export const useEditorStore = create<EditorStore>()(
     selectedIds: [],
     setSelectedIds: (ids) => set({ selectedIds: ids }),
     selectedShapes: [],
+    selectedNodes: [],
 
     isSelecting: false,
     setIsSelecting: (val) => set({ isSelecting: val }),
@@ -120,9 +118,6 @@ export const useEditorStore = create<EditorStore>()(
     setHistory: (history) => set({ history }),
     historyIndex: 0,
     setHistoryIndex: (index) => set({ historyIndex: index }),
-
-    guides: [],
-    setGuides: (guides) => set({ guides }),
 
     editorProps: {
       width: 0,
@@ -139,36 +134,41 @@ export const useEditorStore = create<EditorStore>()(
       width: 0,
       height: 0,
     },
-    setSafeArea: (safeArea) => set({ safeArea }),
   })),
 );
 
-export const getEditorCenter = (
-  safeArea: EditorStore['safeArea'],
-  editorProps: EditorStore['editorProps'],
-) => {
-  return {
-    x: safeArea.x + editorProps.width / 2 - safeArea.width / 2,
-    y: safeArea.y + editorProps.height / 2 - safeArea.height / 2,
-  };
-};
-
-useEditorStore.subscribe(
-  (state) => state.safeArea,
-  (safeArea) => {
-    console.log(`[safeArea]`, safeArea);
-  },
-);
+if (import.meta.env.DEV) {
+  useEditorStore.subscribe(
+    (state) => state.safeArea,
+    (safeArea) => {
+      console.log(`[safeArea]`, safeArea);
+    },
+  );
+  useEditorStore.subscribe(
+    (state) => state.shapes,
+    (shapes) => {
+      console.log(`[shapes]`, shapes);
+    },
+  );
+}
 
 useEditorStore.subscribe(
   (state) => state.selectedIds,
   (selectedIds) => {
-    const shapes = useEditorStore.getState().shapes;
+    const { shapes, stageRef } = useEditorStore.getState();
+
     const selectedShapes = shapes.filter((shape) =>
       selectedIds?.includes(shape.id),
     );
+
+    // 监听 selectedIds 的变化，更新 transformer 的节点
+    const selectedNodes = selectedIds
+      .map((_id) => stageRef.current?.findOne(`#${_id}`))
+      .filter((item): item is NonNullable<typeof item> => Boolean(item));
+
     useEditorStore.setState({
       selectedShapes,
+      selectedNodes,
     });
     debug(`[selectedShapes]`, selectedShapes);
   },
