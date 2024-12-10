@@ -34,12 +34,39 @@ export interface Shape extends ShapeConfig {
   align?: string;
 }
 
+export interface SafeArea extends ShapeConfig {
+  isInitialed?: boolean;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+interface HistoryState {
+  shapes: Shape[];
+  stage: {
+    x: number;
+    y: number;
+    scaleX: number;
+    scaleY: number;
+  };
+  safeArea: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+}
+
 export interface EditorStore {
   stageRef: MutableRefObject<StageType | null>;
   isDragMode: boolean;
   isDrawMode: boolean;
+  drawingType: 'free' | null;
+  isSelectMode: boolean;
   isElementEditing: boolean;
   keepShiftKey: boolean;
+  projectId: string;
 
   shapes: Shape[];
   setShapes: (shapes: Shape[]) => void;
@@ -49,8 +76,6 @@ export interface EditorStore {
   selectedShapes: Shape[];
   selectedNodes: KonvaNode<NodeConfig>[];
 
-  isSelecting: boolean;
-  setIsSelecting: (val: boolean) => void;
   selectionBox: {
     startX: number;
     startY: number;
@@ -66,8 +91,8 @@ export interface EditorStore {
     } | null,
   ) => void;
 
-  history: Shape[][];
-  setHistory: (history: Shape[][]) => void;
+  history: HistoryState[];
+  setHistory: (history: HistoryState[]) => void;
   historyIndex: number;
   setHistoryIndex: (index: number) => void;
 
@@ -78,19 +103,16 @@ export interface EditorStore {
     scaleY: number;
   };
   setEditorProps: (editorProps: {
+    x: number;
+    y: number;
     width: number;
     height: number;
     scaleX: number;
     scaleY: number;
   }) => void;
 
-  safeArea: ShapeConfig & {
-    isInitialed?: boolean;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  };
+  safeArea: SafeArea;
+  setSafeArea: (safeArea: SafeArea) => void;
 }
 
 export const useEditorStore = create<EditorStore>()(
@@ -98,8 +120,11 @@ export const useEditorStore = create<EditorStore>()(
     stageRef: { current: null },
     isDragMode: false,
     isDrawMode: false,
+    drawingType: null,
+    isSelectMode: false,
     isElementEditing: false,
     keepShiftKey: false,
+    projectId: '',
 
     shapes: [],
     setShapes: (shapes) => set({ shapes }),
@@ -109,17 +134,33 @@ export const useEditorStore = create<EditorStore>()(
     selectedShapes: [],
     selectedNodes: [],
 
-    isSelecting: false,
-    setIsSelecting: (val) => set({ isSelecting: val }),
     selectionBox: null,
     setSelectionBox: (box) => set({ selectionBox: box }),
 
-    history: [[]],
+    history: [
+      {
+        shapes: [],
+        stage: {
+          x: 0,
+          y: 0,
+          scaleX: 1,
+          scaleY: 1,
+        },
+        safeArea: {
+          x: 0,
+          y: 0,
+          width: 1280,
+          height: 720,
+        },
+      },
+    ],
     setHistory: (history) => set({ history }),
     historyIndex: 0,
     setHistoryIndex: (index) => set({ historyIndex: index }),
 
     editorProps: {
+      x: 0,
+      y: 0,
       width: 0,
       height: 0,
       scaleX: 1,
@@ -134,6 +175,7 @@ export const useEditorStore = create<EditorStore>()(
       width: 0,
       height: 0,
     },
+    setSafeArea: (safeArea) => set({ safeArea }),
   })),
 );
 

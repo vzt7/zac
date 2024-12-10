@@ -18,8 +18,12 @@ import { ELEMENT_EDITOR_WIDTH } from './EditorComponents/ElementEditor';
 import { HEADER_HEIGHT } from './Header';
 import { SIDEBAR_WIDTH } from './Sidebar';
 import {
+  addToHistory,
   createShape,
+  handleCopy,
+  handleCut,
   handleDelete,
+  handlePaste,
   handleRedo,
   handleSelect,
   handleUndo,
@@ -43,6 +47,10 @@ export const useEditorHotkeys = () => {
   useHotkeys(`${modKey}+z`, handleUndo, [handleUndo]);
   useHotkeys(`${modKey}+shift+z`, handleRedo, [handleRedo]);
   useHotkeys('delete', _handleDelete, [_handleDelete]);
+  useHotkeys('backspace', _handleDelete, [_handleDelete]);
+  useHotkeys(`${modKey}+c`, handleCopy, [handleCopy]);
+  useHotkeys(`${modKey}+v`, handlePaste, [handlePaste]);
+  useHotkeys(`${modKey}+x`, handleCut, [handleCut]);
 };
 
 // 添加导出功能
@@ -106,35 +114,54 @@ export const useExport = () => {
   return { exportToPNG };
 };
 
+const getScaledPosition = (
+  stage: StageType,
+  { x, y }: { x: number; y: number },
+) => {
+  const stageBox = stage.container().getBoundingClientRect();
+  const stagePos = stage.position();
+  const scale = {
+    x: stage.scaleX(),
+    y: stage.scaleY(),
+  };
+
+  // 计算位置时考虑缩放
+  const position = {
+    x: (x - stageBox.left - stagePos.x) / scale.x,
+    y: (y - stageBox.top - stagePos.y) / scale.y,
+  };
+
+  return position;
+};
+
 export const useSelection = (stageRef: React.RefObject<StageType>) => {
   const [_, startTransition] = useTransition();
 
   // 添加鼠标位置状态
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
+  const isDrawMode = useEditorStore((state) => state.isDrawMode);
+  const isDragMode = useEditorStore((state) => state.isDragMode);
+  const isSelectMode = useEditorStore((state) => state.isSelectMode);
+
+  const selectionBox = useEditorStore((state) => state.selectionBox);
+  const shapes = useEditorStore((state) => state.shapes);
+
   const handleSelectionMouseDown = useCallback(
     (e: KonvaEventObject<MouseEvent>) => {
       if (e.evt.button !== 0) return;
 
-      const isDragMode = useEditorStore.getState().isDragMode;
-      if (isDragMode) return;
+      if (isDragMode || isDrawMode) return;
 
       if (e.target === e.target.getStage()) {
         const stage = e.target.getStage();
         if (!stage) return;
 
-        const stageBox = stage.container().getBoundingClientRect();
-        const stagePos = stage.position();
-        const scale = {
-          x: stage.scaleX(),
-          y: stage.scaleY(),
-        };
-
         // 计算位置时考虑缩放
-        const position = {
-          x: (e.evt.clientX - stageBox.left - stagePos.x) / scale.x,
-          y: (e.evt.clientY - stageBox.top - stagePos.y) / scale.y,
-        };
+        const position = getScaledPosition(stage, {
+          x: e.evt.clientX,
+          y: e.evt.clientY,
+        });
 
         useEditorStore.setState({
           selectionBox: {
@@ -143,58 +170,55 @@ export const useSelection = (stageRef: React.RefObject<StageType>) => {
             width: 0,
             height: 0,
           },
-          isSelecting: true,
+          isSelectMode: true,
         });
       }
     },
-    [],
+    [isDragMode, isDrawMode],
   );
 
-  const handleSelectionMouseMove = useCallback((e: MouseEvent) => {
-    const stage = stageRef.current;
-    if (!stage) return;
+  const handleSelectionMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (isDragMode || isDrawMode) return;
 
-    const stageBox = stage.container().getBoundingClientRect();
-    const stagePos = stage.position();
-    const scale = {
-      x: stage.scaleX(),
-      y: stage.scaleY(),
-    };
+      const stage = stageRef.current;
+      if (!stage) return;
 
-    // 计算相对于舞台的实际位置，考虑缩放
-    const position = {
-      x: (e.clientX - stageBox.left - stagePos.x) / scale.x,
-      y: (e.clientY - stageBox.top - stagePos.y) / scale.y,
-    };
-
-    startTransition(() => {
-      setMousePosition({
-        x: Math.round(position.x),
-        y: Math.round(position.y),
+      const position = getScaledPosition(stage, {
+        x: e.clientX,
+        y: e.clientY,
       });
-    });
 
-    const { isSelecting, selectionBox } = useEditorStore.getState();
-    if (!isSelecting || !selectionBox) return;
-
-    // 计算选区的宽度度时也需要考虑缩放
-    const width = position.x - selectionBox.startX;
-    const height = position.y - selectionBox.startY;
-
-    startTransition(() => {
-      useEditorStore.setState({
-        selectionBox: {
-          ...selectionBox,
-          width,
-          height,
-        },
+      startTransition(() => {
+        setMousePosition({
+          x: Math.round(position.x),
+          y: Math.round(position.y),
+        });
       });
-    });
-  }, []);
+
+      if (!isSelectMode || !selectionBox) return;
+
+      // 计算选区的宽度度时也需要考虑缩放
+      const width = position.x - selectionBox.startX;
+      const height = position.y - selectionBox.startY;
+
+      startTransition(() => {
+        useEditorStore.setState({
+          selectionBox: {
+            ...selectionBox,
+            width,
+            height,
+          },
+        });
+      });
+    },
+    [isDragMode, isDrawMode, isSelectMode, selectionBox, stageRef],
+  );
 
   const handleSelectionMouseUp = useCallback(() => {
-    const { isSelecting, selectionBox, shapes } = useEditorStore.getState();
-    if (!isSelecting || !selectionBox) return;
+    if (isDragMode || isDrawMode) return;
+
+    if (!isSelectMode || !selectionBox) return;
 
     // 计算选区范围内的元素，这里不需要修改因为selectionBox已经是基于缩放后的坐标
     const selected = shapes.filter((shape) => {
@@ -234,9 +258,9 @@ export const useSelection = (stageRef: React.RefObject<StageType>) => {
 
     useEditorStore.setState({
       selectionBox: null,
-      isSelecting: false,
+      isSelectMode: false,
     });
-  }, []);
+  }, [isDragMode, isDrawMode, isSelectMode, selectionBox, shapes]);
 
   useEffect(() => {
     window.addEventListener('mousemove', handleSelectionMouseMove);
@@ -271,29 +295,12 @@ export const useStageDrag = () => {
       }
     };
 
-    // const handleMouseDown = (e: MouseEvent) => {
-    //   if (e.button === 1) {
-    //     // 中键
-    //     useEditorStore.setState({ isDragMode: true });
-    //   }
-    // };
-
-    // const handleMouseUp = (e: MouseEvent) => {
-    //   if (e.button === 1) {
-    //     useEditorStore.setState({ isDragMode: false });
-    //   }
-    // };
-
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
-    // window.addEventListener('mousedown', handleMouseDown);
-    // window.addEventListener('mouseup', handleMouseUp);
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
-      // window.removeEventListener('mousedown', handleMouseDown);
-      // window.removeEventListener('mouseup', handleMouseUp);
     };
   }, []);
 
@@ -348,11 +355,9 @@ export const useContextMenu = (mousePosition: { x: number; y: number }) => {
 export const useResize = ({
   stageRef,
   layerRef,
-  backgroundRef,
 }: {
   stageRef: React.RefObject<StageType>;
   layerRef: React.RefObject<LayerType>;
-  backgroundRef: React.RefObject<RectType>;
 }) => {
   const fitToScreen = useCallback((scale?: number) => {
     if (!stageRef.current || !layerRef.current) {
@@ -404,7 +409,8 @@ export const useResize = ({
       shapes: newShapes,
     });
 
-    backgroundRef.current?.draw();
+    // debouncedAddToHistory(newShapes);
+    // backgroundRef.current?.draw();
   }, []);
 
   const handleStageWheel = useCallback(
@@ -452,7 +458,7 @@ export const useResize = ({
   };
 };
 
-interface SnapLine {
+interface SnapLine extends Shape {
   points: number[];
   orientation: 'V' | 'H';
 }
@@ -547,7 +553,7 @@ export const useSnap = ({
         }
       });
 
-      // 检查��其他元素的吸附
+      // 检查其他元素的吸附
       shapes.forEach((shape) => {
         if (shape === draggedNode) return;
 
@@ -658,31 +664,35 @@ export const useSnap = ({
 
         draggedNode.position(newPosition);
 
-        // 更新吸附线
+        // 更���吸附线
         const newSnapLines: SnapLine[] = [];
 
         if (minVertical) {
-          newSnapLines.push({
-            points: [
-              minVertical.guide,
-              Math.min(safeArea.y, nodeY), // 限制吸附线范围在 safeArea 附近
-              minVertical.guide,
-              Math.max(safeAreaBottom, nodeBottom),
-            ],
-            orientation: 'V',
-          });
+          newSnapLines.push(
+            createShape('line', {
+              points: [
+                minVertical.guide,
+                Math.min(safeArea.y, nodeY), // 限制吸附线范围在 safeArea 附近
+                minVertical.guide,
+                Math.max(safeAreaBottom, nodeBottom),
+              ],
+              orientation: 'V',
+            }) as SnapLine,
+          );
         }
 
         if (minHorizontal) {
-          newSnapLines.push({
-            points: [
-              Math.min(safeArea.x, nodeX), // 限制吸附线范围在 safeArea 附近
-              minHorizontal.guide,
-              Math.max(safeAreaRight, nodeRight),
-              minHorizontal.guide,
-            ],
-            orientation: 'H',
-          });
+          newSnapLines.push(
+            createShape('line', {
+              points: [
+                Math.min(safeArea.x, nodeX), // 限制吸附线范围在 safeArea 附近
+                minHorizontal.guide,
+                Math.max(safeAreaRight, nodeRight),
+                minHorizontal.guide,
+              ],
+              orientation: 'H',
+            }) as SnapLine,
+          );
         }
 
         setSnapLines(newSnapLines);
@@ -704,67 +714,119 @@ export const useSnap = ({
   };
 };
 
-export const useFreeDraw = () => {
-  const [lines, setLines] = useState<{ tool: string; points: number[] }[]>([]);
-  const isDrawing = useRef(false);
-  const { shapes } = useEditorStore.getState();
+// export const useFreeDraw = () => {
+//   const [lines, setLines] = useState<
+//     NonNullable<ReturnType<typeof createShape>>[]
+//   >([]);
+//   const shapes = useEditorStore((state) => state.shapes);
+//   const drawingType = useEditorStore((state) => state.drawingType);
+//   const isFreeDrawing = drawingType === 'free';
 
-  const handleFreeDrawMouseDown = (e: KonvaEventObject<MouseEvent>) => {
-    isDrawing.current = true;
-    const pos = e.target.getStage()?.getRelativePointerPosition();
-    if (!pos) return;
-    setLines([...lines, { tool: 'freedraw', points: [pos.x, pos.y] }]);
-  };
+//   const handleFreeDrawMouseDown = (e: KonvaEventObject<MouseEvent>) => {
+//     if (!isFreeDrawing) return;
 
-  const handleFreeDrawMouseMove = (e: KonvaEventObject<MouseEvent>) => {
-    if (!isDrawing.current) return;
+//     const stage = e.target.getStage();
+//     if (!stage) return;
 
-    const stage = e.target.getStage();
-    const point = stage?.getRelativePointerPosition();
-    if (!point) return;
+//     const position = stage.getRelativePointerPosition();
+//     if (!position) return;
 
-    const lastLine = lines[lines.length - 1];
-    const newPoints = [...lastLine.points, point.x, point.y];
+//     setLines([
+//       ...lines,
+//       createShape('freedraw', {
+//         id: `freedraw-${Date.now()}`,
+//         type: 'freedraw',
+//         isLocked: false,
+//         x: position.x,
+//         y: position.y,
+//         // scaleX: stage.scaleX(),
+//         // scaleY: stage.scaleY(),
+//         points: [0, 0, 0, 0],
+//         draggable: true,
+//       })!,
+//     ]);
+//   };
 
-    setLines(
-      lines.map((line, i) =>
-        i === lines.length - 1 ? { ...line, points: newPoints } : line,
-      ),
-    );
-  };
+//   const handleFreeDrawMouseMove = (e: KonvaEventObject<MouseEvent>) => {
+//     if (!isFreeDrawing) return;
 
-  const handleFreeDrawMouseUp = () => {
-    if (!isDrawing.current) return;
-    isDrawing.current = false;
+//     const stage = e.target.getStage();
+//     if (!stage) return;
 
-    // 创建新的绘画组
-    const newShapes = lines
-      .map(
-        (line) =>
-          createShape('freedraw', {
-            id: `freedraw-${Date.now()}`,
-            type: 'freedraw',
-            // x: 0,
-            // y: 0,
-            isLocked: false,
-            points: line.points,
-          })!,
-      )
-      .filter(Boolean);
+//     // 计算相对于舞台的实际位置，考虑缩放
+//     // const position = getScaledPosition(stage, {
+//     //   x: e.evt.clientX,
+//     //   y: e.evt.clientY,
+//     // });
+//     const position = stage.getRelativePointerPosition();
+//     if (!position) return;
 
-    // 更新 store 并添加历史记录
-    useEditorStore.setState({
-      shapes: [...shapes, ...newShapes],
-    });
+//     const lastLine = lines[lines.length - 1];
+//     if (!lastLine) return;
 
-    // 清空当前线条
-    setLines([]);
-  };
+//     setLines(
+//       lines.map((line, i) =>
+//         i === lines.length - 1
+//           ? {
+//               ...line,
+//               points: [
+//                 ...line.points,
+//                 (position.x - line.x) / stage.scaleX(),
+//                 (position.y - line.y) / stage.scaleY(),
+//               ],
+//             }
+//           : line,
+//       ) as Shape[],
+//     );
+//   };
 
-  return {
-    lines,
-    handleFreeDrawMouseDown,
-    handleFreeDrawMouseMove,
-    handleFreeDrawMouseUp,
-  };
-};
+//   const handleFreeDrawMouseUp = (e: KonvaEventObject<MouseEvent>) => {
+//     if (!isFreeDrawing) return;
+
+//     // 计算绘制内容的边界框
+//     const points = lines[0]?.points || [];
+//     if (points.length < 4) return;
+
+//     const stage = e.target.getStage();
+//     if (!stage) return;
+
+//     let minX = Infinity;
+//     let minY = Infinity;
+//     let maxX = -Infinity;
+//     let maxY = -Infinity;
+
+//     // 计算边界框
+//     for (let i = 0; i < points.length; i += 2) {
+//       const x = points[i];
+//       const y = points[i + 1];
+//       minX = Math.min(minX, x);
+//       minY = Math.min(minY, y);
+//       maxX = Math.max(maxX, x);
+//       maxY = Math.max(maxY, y);
+//     }
+
+//     const width = maxX - minX;
+//     const height = maxY - minY;
+
+//     const newShapes = lines.filter(Boolean).map((line) => ({
+//       ...line,
+//       width: width * stage.scaleX(),
+//       height: height * stage.scaleY(),
+//     }));
+
+//     useEditorStore.setState({
+//       shapes: [...shapes, ...newShapes],
+//     });
+//     addToHistory([...shapes, ...newShapes]);
+//     setLines([]);
+//   };
+
+//   return {
+//     lines,
+//     isFreeDrawing,
+//     drawingType,
+//     handleFreeDrawMouseDown,
+//     handleFreeDrawMouseMove,
+//     handleFreeDrawMouseUp,
+//   };
+// };

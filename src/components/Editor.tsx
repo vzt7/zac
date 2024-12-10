@@ -29,7 +29,6 @@ import {
 import {
   useContextMenu,
   useEditorHotkeys,
-  useFreeDraw,
   useResize,
   useSelection,
   useStageDrag,
@@ -72,7 +71,6 @@ export const Editor = () => {
   const { fitToScreen, handleStageWheel } = useResize({
     stageRef,
     layerRef,
-    backgroundRef,
   });
   // 画布拖拽
   const { isDragMode } = useStageDrag();
@@ -90,12 +88,14 @@ export const Editor = () => {
     scale: editorProps.scaleX,
   });
   // 绘画
-  const {
-    lines,
-    handleFreeDrawMouseDown,
-    handleFreeDrawMouseMove,
-    handleFreeDrawMouseUp,
-  } = useFreeDraw();
+  // const {
+  //   lines,
+  //   isFreeDrawing,
+  //   drawingType,
+  //   handleFreeDrawMouseDown,
+  //   handleFreeDrawMouseMove,
+  //   handleFreeDrawMouseUp,
+  // } = useFreeDraw();
 
   return (
     <div
@@ -111,33 +111,31 @@ export const Editor = () => {
         className={`${isDragMode ? '!cursor-grab' : ''}`}
         onContextMenu={handleContextMenu}
         onMouseDown={(e) => {
-          if (isDrawMode) {
-            handleFreeDrawMouseDown(e);
-            return;
-          }
+          // handleFreeDrawMouseDown(e);
+
           handleSelectionMouseDown(e);
         }}
         onMouseMove={(e) => {
-          if (isDrawMode) {
-            handleFreeDrawMouseMove(e);
-          }
+          // handleFreeDrawMouseMove(e);
         }}
         onMouseUp={(e) => {
-          if (isDrawMode) {
-            handleFreeDrawMouseUp();
-          }
+          // handleFreeDrawMouseUp(e);
         }}
         onMouseLeave={(e) => {
-          if (isDrawMode) {
-            handleFreeDrawMouseUp();
-          }
+          // handleFreeDrawMouseUp(e);
         }}
         onDragMove={handleStageDragMove}
         onWheel={handleStageWheel}
-        onClick={handleClick}
+        onClick={(e) => {
+          if (isDragMode || isDrawMode) {
+            return;
+          }
+
+          handleClick(e);
+        }}
         draggable={isDragMode}
       >
-        <Layer ref={layerRef} listening={!isDragMode}>
+        <Layer ref={layerRef} listening={!isDragMode && !isDrawMode}>
           {/* safeArea 边框 */}
           <KonvaRect
             {...safeArea}
@@ -191,7 +189,9 @@ export const Editor = () => {
             />
           ))}
 
-          {!isDragMode && <CustomTransformer selectedNodes={selectedNodes} />}
+          {!isDragMode && !isDrawMode && (
+            <CustomTransformer selectedNodes={selectedNodes} />
+          )}
 
           {/* 渲染选区 */}
           {selectionBox && (
@@ -208,23 +208,11 @@ export const Editor = () => {
           )}
         </Layer>
 
-        <Layer>
+        {/* <Layer>
           {lines.map((line, i) => (
-            <Line
-              key={i}
-              {...line}
-              points={line.points}
-              stroke="#000"
-              strokeWidth={5}
-              tension={0.5}
-              lineCap="round"
-              lineJoin="round"
-              // globalCompositeOperation={
-              //   line.tool === 'eraser' ? 'destination-out' : 'source-over'
-              // }
-            />
+            <Line key={line.id} {...line} />
           ))}
-        </Layer>
+        </Layer> */}
 
         <Layer>
           {/* 绘制半透明背景 */}

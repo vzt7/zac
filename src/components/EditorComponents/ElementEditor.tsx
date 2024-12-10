@@ -22,25 +22,19 @@ export const ElementEditor = () => {
             <ImageDown size={20} />
             <span>Export</span>
           </button>
-          <button
-            onClick={() => handleSave('editor-shapes')}
-            className="btn btn-ghost"
-          >
+          <button onClick={() => handleSave()} className="btn btn-ghost">
             <Save size={24} />
             <span>Save</span>
           </button>
-          <button
-            onClick={() => handleLoad('editor-shapes')}
-            className="btn btn-ghost"
-          >
+          <button onClick={() => handleLoad()} className="btn btn-ghost">
             <RefreshCw size={24} />
             <span>Load</span>
           </button>
         </div>
-        <div className="flex flex-row gap-3"></div>
+        {/* <div className="flex flex-row gap-3"></div> */}
       </div>
 
-      <div className="divider"></div>
+      <div className="divider mt-0"></div>
 
       <PropertiesPanel />
     </div>

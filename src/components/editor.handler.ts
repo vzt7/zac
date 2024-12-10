@@ -1,7 +1,7 @@
 import { transparentBackground } from '@/assets/transparent';
 import { debug } from '@/utils/debug';
 import { SceneContext } from 'konva/lib/Context';
-import { KonvaEventObject } from 'konva/lib/Node';
+import { KonvaEventObject, Node } from 'konva/lib/Node';
 import { debounce } from 'lodash-es';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -14,10 +14,31 @@ const debouncedAddToHistory = debounce((shapes: Shape[]) => {
 }, 100); // 100ms 内的多次调用会被合并
 
 export const addToHistory = (newShapes: Shape[]) => {
-  const { history, historyIndex, setHistory, setHistoryIndex } =
-    useEditorStore.getState();
+  const {
+    history,
+    historyIndex,
+    setHistory,
+    setHistoryIndex,
+    stageRef,
+    safeArea,
+  } = useEditorStore.getState();
+
+  const stage = stageRef.current;
+  if (!stage) return;
+
+  const newHistoryState: (typeof history)[number] = {
+    shapes: newShapes,
+    stage: {
+      x: stage.x(),
+      y: stage.y(),
+      scaleX: stage.scaleX(),
+      scaleY: stage.scaleY(),
+    },
+    safeArea: { ...safeArea },
+  };
+
   const newHistory = history.slice(0, historyIndex + 1);
-  newHistory.push(newShapes);
+  newHistory.push(newHistoryState);
   setHistory(newHistory);
   setHistoryIndex(newHistory.length - 1);
 };
@@ -52,22 +73,86 @@ export const handleLockToggle = (id: string | string[]) => {
 };
 
 export const handleUndo = () => {
-  const { history, historyIndex, setHistoryIndex, setShapes } =
-    useEditorStore.getState();
-  if (historyIndex > 0) {
+  const {
+    history,
+    historyIndex,
+    setHistoryIndex,
+    setShapes,
+    stageRef,
+    setSafeArea,
+    editorProps,
+    setEditorProps,
+  } = useEditorStore.getState();
+  if (historyIndex > 1) {
     handleSelect([]);
     setHistoryIndex(historyIndex - 1);
-    setShapes(history[historyIndex - 1]);
+
+    const prevState = history[historyIndex - 1];
+    setShapes(prevState.shapes);
+    setSafeArea(prevState.safeArea);
+    setEditorProps({
+      x: prevState.stage.x,
+      y: prevState.stage.y,
+      width: editorProps.width,
+      height: editorProps.height,
+      scaleX: prevState.stage.scaleX,
+      scaleY: prevState.stage.scaleY,
+    });
+
+    // 恢复 stage 状态
+    const stage = stageRef.current;
+    if (stage) {
+      stage.position({
+        x: prevState.stage.x,
+        y: prevState.stage.y,
+      });
+      stage.scale({
+        x: prevState.stage.scaleX,
+        y: prevState.stage.scaleY,
+      });
+    }
   }
 };
 
 export const handleRedo = () => {
-  const { history, historyIndex, setHistoryIndex, setShapes } =
-    useEditorStore.getState();
+  const {
+    history,
+    historyIndex,
+    setHistoryIndex,
+    setShapes,
+    stageRef,
+    setSafeArea,
+    editorProps,
+    setEditorProps,
+  } = useEditorStore.getState();
   if (historyIndex < history.length - 1) {
     handleSelect([]);
     setHistoryIndex(historyIndex + 1);
-    setShapes(history[historyIndex + 1]);
+
+    const nextState = history[historyIndex + 1];
+    setShapes(nextState.shapes);
+    setSafeArea(nextState.safeArea);
+    setEditorProps({
+      x: nextState.stage.x,
+      y: nextState.stage.y,
+      width: editorProps.width,
+      height: editorProps.height,
+      scaleX: nextState.stage.scaleX,
+      scaleY: nextState.stage.scaleY,
+    });
+
+    // 恢复 stage 状态
+    const stage = stageRef.current;
+    if (stage) {
+      stage.position({
+        x: nextState.stage.x,
+        y: nextState.stage.y,
+      });
+      stage.scale({
+        x: nextState.stage.scaleX,
+        y: nextState.stage.scaleY,
+      });
+    }
   }
 };
 
@@ -80,13 +165,12 @@ export const createShape = (type: string, shape?: Partial<Shape>) => {
   };
 
   const baseShape: Partial<Shape> = {
-    ...shape,
     id: `${type}-${Date.now()}`,
     x: editorCenter.x,
     y: editorCenter.y,
     rotation: 0,
-    scaleX: 1,
-    scaleY: 1,
+    // scaleX: editorProps.scaleX,
+    // scaleY: editorProps.scaleY,
     zIndex: shapes.length,
     fill: '#000000',
     shadowBlur: 0,
@@ -96,6 +180,7 @@ export const createShape = (type: string, shape?: Partial<Shape>) => {
     opacity: 1,
     strokeWidth: 2,
     stroke: '#000000',
+    ...shape,
   };
 
   let newShape: Shape;
@@ -145,11 +230,12 @@ export const createShape = (type: string, shape?: Partial<Shape>) => {
       newShape = {
         type,
         stroke: '#000000',
-        strokeWidth: 5,
+        strokeWidth: 5 / Math.min(editorProps.scaleX, editorProps.scaleY),
         tension: 0.5,
         lineCap: 'round',
         lineJoin: 'round',
         globalCompositeOperation: 'source-over',
+        draggable: true,
         ...baseShape,
       } as any;
       break;
@@ -172,8 +258,8 @@ export const createShape = (type: string, shape?: Partial<Shape>) => {
         pointerWidth: 10, // 箭头宽度
         lineCap: 'round',
         lineJoin: 'round',
-        strokeWidth: 2,
         fill: '', // 箭头线条不需要填充
+        strokeWidth: 2,
         ...baseShape,
       } as Shape;
       break;
@@ -197,8 +283,8 @@ export const handleAddShape = (
 };
 
 export const handleTransformEnd = (e: any) => {
-  const { shapes, setShapes } = useEditorStore.getState();
-  const node = e.target;
+  const { shapes, setShapes, editorProps } = useEditorStore.getState();
+  const node = e.target as Node;
 
   // 获取所有变换属性
   const scaleX = node.scaleX();
@@ -214,6 +300,8 @@ export const handleTransformEnd = (e: any) => {
         rotation,
         scaleX,
         scaleY,
+        width: node.width(),
+        height: node.height(),
         x, // 添加位置信息
         y, // 添加位置信息
       };
@@ -225,7 +313,7 @@ export const handleTransformEnd = (e: any) => {
   addToHistory(newShapes);
 };
 
-// 添加对齐辅助线处理
+// 添加对齐辅助处理
 export const handleStageDragMove = (e: any) => {
   const { safeArea, editorProps, isDragMode } = useEditorStore.getState();
   const shape = e.target;
@@ -234,7 +322,7 @@ export const handleStageDragMove = (e: any) => {
     const stage = shape;
     const pos = stage.position();
 
-    // 计算新位置，需要考虑缩放因素
+    // 计算新位置，需要考���缩放因素
     const newX = pos.x;
     const newY = pos.y;
 
@@ -278,16 +366,16 @@ export const handleDragEnd = (e: any) => {
   debouncedAddToHistory(newShapes);
 };
 
-export const handleSave = (key = 'editor-shapes') => {
-  const { shapes } = useEditorStore.getState();
+export const handleSave = () => {
+  const { projectId, shapes } = useEditorStore.getState();
   const safeArea = useEditorStore.getState().safeArea;
   const data = JSON.stringify({ shapes, safeArea });
-  localStorage.setItem(key, data);
+  localStorage.setItem(projectId, data);
 };
 
-export const handleLoad = (key = 'editor-shapes') => {
-  const { setShapes } = useEditorStore.getState();
-  const data = localStorage.getItem(key);
+export const handleLoad = () => {
+  const { projectId, setShapes } = useEditorStore.getState();
+  const data = localStorage.getItem(projectId);
   if (data) {
     const { shapes, safeArea } = JSON.parse(data);
     setShapes(shapes);
@@ -309,7 +397,7 @@ export const handleAddText = () => {
     type: 'text',
     x: editorCenter.x + Math.random() * 50,
     y: editorCenter.y + Math.random() * 50,
-    text: '双击编辑文本',
+    text: '默认文本',
     fontSize: 32 / Math.min(editorProps.scaleX, editorProps.scaleY),
     fontFamily: 'Arial',
     rotation: 0,
@@ -478,10 +566,12 @@ export const handleDelete = (id: string | string[]) => {
   const { shapes, setShapes } = useEditorStore.getState();
   const ids = ([] as string[]).concat(id);
 
-  const newShapes = shapes.filter((shape) => !ids.includes(shape.id));
   handleSelect([]);
-  setShapes(newShapes);
-  addToHistory(newShapes);
+  setTimeout(() => {
+    const newShapes = shapes.filter((shape) => !ids.includes(shape.id));
+    setShapes(newShapes);
+    addToHistory(newShapes);
+  }, 0);
 };
 
 export const handleDuplicate = (id: string | string[]) => {
@@ -611,7 +701,7 @@ export const handleBackgroundClip = (ctx: SceneContext) => {
   ctx.lineTo(safeArea.x + safeArea.width, safeArea.y);
   ctx.closePath();
 
-  // 5. 设置遮罩样式和透明度
+  // 5. 设置遮罩样式和透度
   const img = new Image();
   img.src = transparentBackground;
   const pattern = ctx.createPattern(img, 'repeat');
@@ -645,7 +735,7 @@ export const handleClick = (e: KonvaEventObject<MouseEvent>) => {
   // 判断是否点击的是组内元素
   const isGroupElement = clickedGroup?.nodeType === 'Group';
 
-  // 如果点击的是组内元素，使用��ID，否则使用元素自身ID
+  // 如果点击的是组内元素，使用ID，否则使用元素自身ID
   const targetId = isGroupElement ? clickedGroup.attrs.id : undefined;
 
   // 获取需要选中的素ID列表
@@ -673,7 +763,7 @@ export const getSelectedIdsByClickEvent = (
   const notAllowedSelection =
     e.target === e.target.getStage() || targetId === safeArea.id;
 
-  // 如果是右键点击且已有选中元素，保持当前选中状态
+  // 如果是右键点击且已有选中元素，���持当前选中状态
   if (isRightClick && selectedIds.length > 0) {
     return selectedIds;
   }
@@ -699,7 +789,6 @@ export const handleEyeToggle = (id: string | string[]) => {
     }
     return shape;
   });
-  setSelectedIds(ids);
   setShapes(newShapes);
   addToHistory(newShapes);
 };
@@ -773,7 +862,7 @@ export const handleGroup = (selectedShapes: Shape[]) => {
 export const handleUngroup = (selectedShapes: Shape[]) => {
   const { shapes, setShapes, setSelectedIds } = useEditorStore.getState();
 
-  // 找出所有需要解组的组合
+  // 找出所有需要���组的组合
   const groupsToUngroup = selectedShapes.filter(
     (shape) => shape.type === 'group',
   );
@@ -802,4 +891,61 @@ export const handleUngroup = (selectedShapes: Shape[]) => {
     setSelectedIds([]);
     addToHistory(newShapes);
   });
+};
+
+export const handleCopy = () => {
+  const { selectedIds, shapes } = useEditorStore.getState();
+  if (selectedIds.length === 0) return;
+
+  const selectedShapes = shapes.filter((shape) =>
+    selectedIds.includes(shape.id),
+  );
+  localStorage.setItem('clipboard', JSON.stringify(selectedShapes));
+};
+
+export const handlePaste = () => {
+  const clipboardData = localStorage.getItem('clipboard');
+  if (!clipboardData) return;
+
+  try {
+    const copiedShapes = JSON.parse(clipboardData);
+    const newShapes = copiedShapes.map((shape: Shape) => ({
+      ...shape,
+      id: `${shape.type}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      x: shape.x + 20, // 偏移一点距离以区分
+      y: shape.y + 20,
+    }));
+
+    const { shapes } = useEditorStore.getState();
+    const updatedShapes = [...shapes, ...newShapes];
+
+    useEditorStore.setState({ shapes: updatedShapes });
+    addToHistory(updatedShapes);
+
+    // 选中新粘贴的图形
+    handleSelect(newShapes.map((shape: Shape) => shape.id));
+  } catch (error) {
+    console.error('Failed to paste shapes:', error);
+  }
+};
+
+export const handleCut = () => {
+  const { selectedIds, shapes } = useEditorStore.getState();
+  if (selectedIds.length === 0) return;
+
+  // 先复制选中的图形
+  const selectedShapes = shapes.filter((shape) =>
+    selectedIds.includes(shape.id),
+  );
+  localStorage.setItem('clipboard', JSON.stringify(selectedShapes));
+
+  // 然后删除选中的图形
+  const remainingShapes = shapes.filter(
+    (shape) => !selectedIds.includes(shape.id),
+  );
+  useEditorStore.setState({
+    shapes: remainingShapes,
+    selectedIds: [], // 清空选中状态
+  });
+  addToHistory(remainingShapes);
 };

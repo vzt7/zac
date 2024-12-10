@@ -25,13 +25,15 @@ import {
   Square,
   Trash2,
 } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   handleDelete,
   handleEyeToggle,
   handleLockToggle,
   handleSelect,
+  handleUnselect,
+  handleUpdate,
 } from '../editor.handler';
 import { Shape, useEditorStore } from '../editor.store';
 
@@ -47,30 +49,25 @@ export const LayersPanel = () => {
   );
   const shapes = useEditorStore((state) => state.shapes);
   const selectedIds = useEditorStore((state) => state.selectedIds);
-
-  const safeArea = useEditorStore((state) => state.safeArea);
+  const keepShiftKey = useEditorStore((state) => state.keepShiftKey);
 
   const [filterValue, setFilterValue] = useState('');
-  const filteredShapes = shapes.reduce(
-    (acc, shape) => {
-      if (
-        filterValue &&
-        (shape.name?.includes(filterValue) || shape.id.includes(filterValue))
-      ) {
-        acc.unshift({ ...shape, isFiltered: true });
-      } else {
-        acc.push({ ...shape, isFiltered: false });
-      }
-      return acc;
-    },
-    [] as (Shape & { isFiltered: boolean })[],
-  );
-
-  const handleUpdateShapeName = (id: string, newName: string) => {
-    useEditorStore.setState({
-      shapes: shapes.map((s) => (s.id === id ? { ...s, name: newName } : s)),
-    });
-  };
+  const filteredShapes = useMemo(() => {
+    return shapes.reduce(
+      (acc, shape) => {
+        if (
+          filterValue &&
+          (shape.name?.includes(filterValue) || shape.id.includes(filterValue))
+        ) {
+          acc.unshift({ ...shape, isFiltered: true });
+        } else {
+          acc.push({ ...shape, isFiltered: false });
+        }
+        return acc;
+      },
+      [] as (Shape & { isFiltered: boolean })[],
+    );
+  }, [shapes, filterValue]);
 
   const layerPanelRef = useRef<HTMLDivElement>(null);
   const [handleScrollToTop] = useState(() => {
@@ -81,7 +78,7 @@ export const LayersPanel = () => {
 
   return (
     <div
-      className={`bg-base-100 rounded-lg overflow-hidden p-2 shadow-md z-10`}
+      className={`bg-base-100 rounded-lg overflow-hidden p-2 shadow-md z-10 select-none`}
     >
       <div className="flex justify-center items-center gap-2 py-3">
         <Layers size={16} />
@@ -111,6 +108,8 @@ export const LayersPanel = () => {
               const { active, over } = event;
 
               if (active.id !== over?.id) {
+                handleSelect([]);
+
                 const oldIndex = shapes.findIndex((s) => s.id === active.id);
                 const newIndex = shapes.findIndex((s) => s.id === over?.id);
 
@@ -122,17 +121,14 @@ export const LayersPanel = () => {
             <SortableContext
               items={shapes}
               strategy={verticalListSortingStrategy}
+              disabled={keepShiftKey}
             >
               {filteredShapes.map((item) => (
                 <SortableItem
                   key={item.id}
                   id={item.id}
                   shape={item}
-                  selected={selectedIds.includes(item.id)}
                   isFiltered={item.isFiltered}
-                  onUpdateName={(newName) => {
-                    handleUpdateShapeName(item.id, newName);
-                  }}
                 />
               ))}
             </SortableContext>
@@ -146,29 +142,33 @@ export const LayersPanel = () => {
 const SortableItem = ({
   id,
   shape,
-  selected,
   isFiltered,
-  onUpdateName,
 }: {
   id: string;
   shape: Shape;
-  selected: boolean;
   isFiltered?: boolean;
-  onUpdateName: (newName: string) => void;
 }) => {
+  const keepShiftKey = useEditorStore((state) => state.keepShiftKey);
+  const selectedIds = useEditorStore((state) => state.selectedIds);
+
+  const selected = selectedIds.includes(shape.id);
+
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [newName, setNewName] = useState(shape.name || shape.id);
+  useEffect(() => {
+    setNewName(shape.name || shape.id);
+  }, [shape]);
+  const handleSubmit = () => {
+    handleUpdate({ id, name: newName });
+    setIsEditMode(false);
+  };
+
   const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({ id });
+    useSortable({ id, disabled: isEditMode });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-  };
-
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [newName, setNewName] = useState(shape.name || shape.id);
-  const handleSubmit = () => {
-    onUpdateName(newName);
-    setIsEditMode(false);
   };
 
   return (
@@ -178,7 +178,15 @@ const SortableItem = ({
       {...attributes}
       {...listeners}
       onClick={() => {
-        handleSelect([shape.id]);
+        if (selected) {
+          handleUnselect(shape.id);
+        } else {
+          if (keepShiftKey) {
+            handleSelect([...selectedIds, shape.id]);
+          } else {
+            handleSelect([shape.id]);
+          }
+        }
       }}
       className="mt-1 rounded-lg overflow-hidden"
     >
@@ -213,7 +221,8 @@ const SortableItem = ({
         <div className="flex flex-row items-center gap-2 py-2 pr-2 flex-shrink-0">
           <button
             className={`btn btn-ghost btn-sm rounded-md p-1`}
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               if (isEditMode) {
                 handleSubmit();
               }
@@ -224,7 +233,8 @@ const SortableItem = ({
           </button>
           <button
             className={`btn btn-ghost btn-sm rounded-md p-1 ${shape.isLocked ? 'btn-active' : ''}`}
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               handleLockToggle(shape.id);
             }}
           >
@@ -232,7 +242,8 @@ const SortableItem = ({
           </button>
           <button
             className="btn btn-ghost btn-sm rounded-md p-1"
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               handleEyeToggle(shape.id);
             }}
           >
@@ -240,7 +251,8 @@ const SortableItem = ({
           </button>
           <button
             className="btn btn-ghost btn-sm btn-error text-error rounded-md p-1"
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               handleDelete(shape.id);
             }}
           >

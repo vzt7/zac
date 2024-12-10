@@ -1,16 +1,18 @@
 import {
   ArrowRight,
   Circle,
+  Hand,
   Hexagon,
   Image,
   MinusIcon,
+  MousePointer2,
   Pencil,
   Square,
   Star,
   Triangle,
   Type,
 } from 'lucide-react';
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import {
   handleAddShape,
@@ -23,7 +25,13 @@ import { useEditorStore } from '../editor.store';
 export const SourcePanel = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const isDrawMode = useEditorStore((state) => state.isDrawMode);
+  const [drawingType, setDrawingType] = useState<'free' | null>(null);
+  useEffect(() => {
+    useEditorStore.setState({
+      isDrawMode: Boolean(drawingType),
+      drawingType,
+    });
+  }, [drawingType]);
 
   const handleShapeClick = (shape: string) => {
     handleAddShape(shape);
@@ -34,15 +42,28 @@ export const SourcePanel = () => {
     }
   };
 
+  const isDragMode = useEditorStore((state) => state.isDragMode);
+
   return (
     <div className="">
+      <button
+        className={`btn btn-ghost ${isDragMode ? 'btn-active' : ''}`}
+        onClick={() => {
+          useEditorStore.setState({
+            isDragMode: !isDragMode,
+          });
+        }}
+      >
+        <Hand size={24} />
+      </button>
+
       <div ref={dropdownRef} className="dropdown dropdown-hover dropdown-end">
         <button tabIndex={0} className="btn btn-ghost">
-          <Square size={24} />
+          <Star size={24} />
         </button>
         <ul
           tabIndex={0}
-          className="dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-box w-52"
+          className="dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-box w-52 border-2 border-base-300"
         >
           <li>
             <button
@@ -89,33 +110,15 @@ export const SourcePanel = () => {
               星形
             </button>
           </li>
-          <li>
-            <button
-              onClick={() => handleShapeClick('line')}
-              className="flex items-center gap-2"
-            >
-              <MinusIcon size={20} />
-              直线
-            </button>
-          </li>
-          <li>
-            <button
-              onClick={() => handleShapeClick('arrow')}
-              className="flex items-center gap-2"
-            >
-              <ArrowRight size={20} />
-              箭头
-            </button>
-          </li>
         </ul>
       </div>
 
-      <button
-        onClick={() => useEditorStore.setState({ isDrawMode: !isDrawMode })}
-        className={`btn btn-ghost ${isDrawMode ? 'btn-active' : ''}`}
+      {/* <button
+        onClick={() => setDrawingType(drawingType === 'free' ? null : 'free')}
+        className={`btn btn-ghost ${drawingType === 'free' ? 'btn-active' : ''}`}
       >
         <Pencil size={24} />
-      </button>
+      </button> */}
 
       <button onClick={handleAddText} className="btn btn-ghost">
         <Type size={24} />

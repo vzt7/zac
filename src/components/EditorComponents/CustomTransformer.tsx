@@ -48,7 +48,8 @@ export const CustomTransformer = ({
   return (
     <Transformer
       ref={transformerRef}
-      // shouldOverdrawWholeArea={false}
+      // Should we fill whole transformer area with fake transparent shape to enable dragging from empty spaces?
+      // shouldOverdrawWholeArea={true}
       enabledAnchors={[
         'top-left',
         'top-center',
@@ -71,7 +72,7 @@ export const CustomTransformer = ({
       // borderDash={[4, 4]}
       padding={0}
       keepRatio={!keepShiftKey}
-      centeredScaling={true}
+      centeredScaling={keepShiftKey}
       anchorStyleFunc={(anchor: Rect) => {
         anchor.cornerRadius(10);
         if (anchor.hasName('top-center') || anchor.hasName('bottom-center')) {
@@ -96,7 +97,7 @@ export const CustomTransformer = ({
       anchorDragBoundFunc={(oldPos, newPos, evt) => {
         return newPos;
       }}
-      onMouseEnter={(e) => {
+      onMouseOver={(e) => {
         const stage = e.target.getStage();
         if (stage) {
           const name = e.target.name();

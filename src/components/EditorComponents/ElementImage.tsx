@@ -1,15 +1,15 @@
-import { ComponentProps } from 'react';
-import { Image as KonvaImage } from 'react-konva';
+import { ComponentProps, useEffect, useRef } from 'react';
+import { Image } from 'react-konva';
 import useImage from 'use-image';
 
 export const ImageElement = ({
   src,
   ...restProps
-}: Omit<ComponentProps<typeof KonvaImage>, 'image'> & { src: string }) => {
+}: Omit<ComponentProps<typeof Image>, 'image'> & { src: string }) => {
   const [image] = useImage(src);
 
   return (
-    <KonvaImage
+    <Image
       {...restProps}
       image={image}
       ref={(ref) => {
