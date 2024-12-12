@@ -2,7 +2,7 @@ import { Download } from 'lucide-react';
 import { PropsWithChildren, forwardRef, useEffect, useState } from 'react';
 
 import { transparentBackground } from '../assets/transparent';
-import { useHeaderSettings } from './header.store';
+import { useHeaderStore } from './header.store';
 
 export const ModalExport = forwardRef<
   HTMLDialogElement,
@@ -12,7 +12,7 @@ export const ModalExport = forwardRef<
     image: string;
   }>
 >(({ onClose, onExport, image, children }, ref) => {
-  const lang = useHeaderSettings((state) => state.lang);
+  const lang = useHeaderStore((state) => state.lang);
   const [ratio, setRatio] = useState(1);
 
   return (

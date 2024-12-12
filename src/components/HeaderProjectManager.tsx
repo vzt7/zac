@@ -1,13 +1,14 @@
+import { useNavigate } from '@tanstack/react-router';
 import dayjs from 'dayjs';
 import { Box, Check, Edit2, Plus, Trash2 } from 'lucide-react';
 import React, { useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
-import { Project, useHeaderSettings } from './header.store';
+import { Project, useHeaderStore } from './header.store';
 
 export const HeaderProjectManager = () => {
-  const currentProject = useHeaderSettings((state) => state.currentProject);
-  const projects = useHeaderSettings((state) => state.projects);
+  const currentProject = useHeaderStore((state) => state.currentProject);
+  const projects = useHeaderStore((state) => state.projects);
   const [editingId, setEditingId] = React.useState<string | null>(null);
   const [editName, setEditName] = React.useState('');
 
@@ -17,7 +18,7 @@ export const HeaderProjectManager = () => {
   };
 
   const handleCreateProject = () => {
-    const { createProject } = useHeaderSettings.getState();
+    const { createProject } = useHeaderStore.getState();
     const newProject: Project = {
       id: uuidv4(),
       name: 'New Project',
@@ -34,7 +35,7 @@ export const HeaderProjectManager = () => {
 
   const handleSaveEdit = (project: Project) => {
     if (editName.trim()) {
-      const { changeProject } = useHeaderSettings.getState();
+      const { changeProject } = useHeaderStore.getState();
       changeProject({
         ...project,
         name: editName,
@@ -46,18 +47,24 @@ export const HeaderProjectManager = () => {
   const handleDelete = (project: Project) => {
     if (confirm('Permanently delete this project?')) {
       const newProjects = projects.filter((p) => p.id !== project.id);
-      useHeaderSettings.setState({ projects: newProjects });
-      localStorage.setItem('projects', JSON.stringify(newProjects));
+      useHeaderStore.setState({ projects: newProjects });
 
       if (currentProject?.id === project.id) {
-        useHeaderSettings.getState().changeCurrentProject(null);
+        useHeaderStore.getState().selectProject(null);
       }
     }
   };
 
+  const navigate = useNavigate();
   const handleSelectProject = (project: Project) => {
-    useHeaderSettings.getState().changeCurrentProject(project);
+    useHeaderStore.getState().selectProject(project);
     modalRef.current?.close();
+    navigate({
+      to: '/$projectId',
+      params: {
+        projectId: project.id,
+      },
+    });
   };
 
   return (
@@ -85,7 +92,7 @@ export const HeaderProjectManager = () => {
             {projects.map((project) => (
               <div
                 key={project.id}
-                className={`flex flex-row items-center justify-between p-3 mb-2 rounded-lg border-2 hover:border-primary/20 cursor-pointer transition-all ${currentProject?.id === project.id ? 'bg-base-200 border-primary/30' : ''}`}
+                className={`flex flex-row items-center justify-between p-3 mb-2 rounded-lg border-2 border-base-300 hover:border-primary/80 cursor-pointer transition-all ${currentProject?.id === project.id ? 'bg-base-200 border-primary/60' : ''}`}
                 onClick={() => handleSelectProject(project)}
               >
                 <div className="flex flex-col">

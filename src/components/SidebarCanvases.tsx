@@ -1,13 +1,9 @@
 import { useEffect, useState } from 'react';
 
-import { canvases } from './SidebarCanvasesData';
-import { useHeaderSettings } from './header.store';
+import { ProjectCanvas, canvases } from './SidebarCanvasesData';
+import { useHeaderStore } from './header.store';
 
-export const SidebarCanvases = ({
-  onSelect,
-}: {
-  onSelect: (safeArea: (typeof canvases)[number]) => void;
-}) => {
+export const SidebarCanvases = () => {
   const [selected, setSelected] = useState<(typeof canvases)[number] | null>(
     null,
   );
@@ -15,8 +11,19 @@ export const SidebarCanvases = ({
     setCustomConfig(undefined);
   }, [selected]);
 
+  const handleSelectCanvas = (canvas: ProjectCanvas) => {
+    const { currentProject, selectProject } = useHeaderStore.getState();
+    if (!currentProject) {
+      return;
+    }
+    selectProject({
+      ...currentProject,
+      canvas,
+    });
+  };
+
   const [customConfig, setCustomConfig] =
-    useState<Partial<Parameters<typeof onSelect>['0']>>();
+    useState<Partial<Parameters<typeof handleSelectCanvas>['0']>>();
   const isValidCustomConfig = Boolean(
     customConfig?.safeArea?.width &&
       customConfig?.safeArea?.height &&
@@ -24,7 +31,7 @@ export const SidebarCanvases = ({
       customConfig.safeArea.height > 0,
   );
 
-  const currentProject = useHeaderSettings((state) => state.currentProject);
+  const currentProject = useHeaderStore((state) => state.currentProject);
   useEffect(() => {
     if (currentProject) {
       const selectedCanvas = canvases.find(
@@ -59,7 +66,7 @@ export const SidebarCanvases = ({
               <button
                 key={item.name}
                 onClick={() => setSelected(item)}
-                className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 w-32 transition-all ${
+                className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 w-32 transition-all hover:bg-base-300 ${
                   selected?.id === item.id
                     ? 'border-primary bg-primary/10'
                     : `border-base/5 ${isCanvasSelected ? '' : 'hover:border-primary/50'}`
@@ -120,20 +127,20 @@ export const SidebarCanvases = ({
       <div className="col-span-3 flex justify-center mt-4">
         {selected && selected.id === 'custom' && (
           <button
-            onClick={() => onSelect(customConfig as any)}
+            onClick={() => handleSelectCanvas(customConfig as any)}
             className="btn btn-primary w-full"
             disabled={isCanvasSelected || !isValidCustomConfig}
           >
-            {`确认选择${isValidCustomConfig ? ` 自定义${customConfig!.safeArea!.width}x${customConfig!.safeArea!.height}` : ''}`}
+            {`Confirm ${isValidCustomConfig ? ` Custom ${customConfig!.safeArea!.width}x${customConfig!.safeArea!.height}` : ''}`}
           </button>
         )}
         {selected && selected.id !== 'custom' && (
           <button
-            onClick={() => onSelect(selected)}
+            onClick={() => handleSelectCanvas(selected)}
             className="btn btn-primary w-full"
             disabled={isCanvasSelected || !selected}
           >
-            {`确认选择 ${selected.name}`}
+            {`Confirm ${selected.name}`}
           </button>
         )}
       </div>

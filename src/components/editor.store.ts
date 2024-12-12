@@ -14,7 +14,7 @@ export interface Shape extends ShapeConfig {
   x: number;
   y: number;
   radius?: number;
-  zIndex: number;
+  zIndex?: number;
   text?: string;
   fontSize?: number;
   fontFamily?: string;

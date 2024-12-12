@@ -3,6 +3,7 @@ import {
   ArrowUp,
   Copy,
   Group,
+  Layers2,
   Lock,
   LockOpen,
   MoveDown,
@@ -22,6 +23,7 @@ import {
   handleMoveToTop,
   handleMoveUp,
   handleUngroup,
+  handleUpdate,
 } from '../editor.handler';
 import { useEditorStore } from '../editor.store';
 
@@ -90,6 +92,45 @@ export const ContextMenu = ({ x, y, onClose }: ContextMenuProps) => {
       >
         <ArrowDown size={16} />
         <span>下移一层</span>
+      </ContextMenuItemButton>
+      <ContextMenuItemButton
+        onClick={() => {
+          const safeArea = useEditorStore.getState().safeArea;
+          handleUpdate(
+            {
+              id: selectedShapes[0].id,
+              width: safeArea.width,
+              height: safeArea.height,
+              x: safeArea.x,
+              y: safeArea.y,
+              scaleX: 1,
+              scaleY: 1,
+              isLocked: true,
+            },
+            (newShapes) => {
+              const { head, bail } = newShapes.reduce(
+                (res, shape) => {
+                  if (shape.id === selectedShapes[0].id) {
+                    res.head.push(shape);
+                  } else {
+                    res.bail.push(shape);
+                  }
+                  return res;
+                },
+                { head: [], bail: [] } as {
+                  head: typeof newShapes;
+                  bail: typeof newShapes;
+                },
+              );
+              return [...head, ...bail];
+            },
+          );
+          onClose();
+        }}
+        disabled={selectedShapes.length > 1}
+      >
+        <Layers2 size={16} />
+        <span>设为背景</span>
       </ContextMenuItemButton>
 
       <div className="divider m-0"></div>

@@ -31,7 +31,9 @@ const STEP_CONFIG = {
 export const PropertiesPanel = () => {
   const selectedIds = useEditorStore((state) => state.selectedIds);
   const shapes = useEditorStore((state) => state.shapes);
-  const selectedShape = shapes.find((s) => selectedIds.includes(s.id)) || null;
+  const selectedShape =
+    (selectedIds.length === 1 && shapes.find((s) => selectedIds[0] === s.id)) ||
+    null;
 
   const handleNumberInput = (
     e: ChangeEvent<HTMLInputElement>,

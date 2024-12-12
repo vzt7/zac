@@ -21,7 +21,7 @@ export const Container = ({
   const safeArea = useEditorStore((state) => state.safeArea);
 
   useEffect(() => {
-    const safeArea = useEditorStore.getState().safeArea;
+    const { projectId, safeArea } = useEditorStore.getState();
     // if (safeArea.isInitialed) {
     //   return;
     // }
@@ -47,7 +47,7 @@ export const Container = ({
         y: (CONTAINER_HEIGHT - specificSafeArea.height) / 2,
       },
     });
-    handleLoad(); // 加载历史记录
+    handleLoad(projectId); // 加载历史记录
   }, [specificSafeArea, projectId]);
 
   return (

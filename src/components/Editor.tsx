@@ -12,6 +12,7 @@ import {
   Stage,
 } from 'react-konva';
 
+import { Debugger } from './Debugger';
 import { ContextMenu } from './EditorComponents/ContextMenu';
 import { ControlPanel4Scale } from './EditorComponents/ControlPanel4Scale';
 import { CustomTransformer } from './EditorComponents/CustomTransformer';
@@ -35,7 +36,7 @@ import {
 } from './editor.hook';
 import { useSnap } from './editor.hook';
 import { useEditorStore } from './editor.store';
-import { useHeaderSettings } from './header.store';
+import { useHeaderStore } from './header.store';
 
 export const Editor = () => {
   // 添加快捷键支持
@@ -48,8 +49,8 @@ export const Editor = () => {
   const layerRef = useRef<LayerType>(null);
   const backgroundRef = useRef<RectType>(null);
 
-  const theme = useHeaderSettings((state) => state.theme);
-  const lang = useHeaderSettings((state) => state.lang);
+  const theme = useHeaderStore((state) => state.theme);
+  const lang = useHeaderStore((state) => state.lang);
 
   // 画布
   const editorProps = useEditorStore((state) => state.editorProps);
@@ -61,12 +62,9 @@ export const Editor = () => {
   // 绘制模式
   const isDrawMode = useEditorStore((state) => state.isDrawMode);
   // 选择
-  const { mousePosition, handleSelectionMouseDown } = useSelection(stageRef);
+  const { selectionBox, handleSelectionMouseDown } = useSelection(stageRef);
   // 上下文菜单
-  const { contextMenu, handleContextMenu, closeContextMenu } =
-    useContextMenu(mousePosition);
-  // 选区
-  const selectionBox = useEditorStore((state) => state.selectionBox);
+  const { contextMenu, handleContextMenu, closeContextMenu } = useContextMenu();
   // 缩放
   const { fitToScreen, handleStageWheel } = useResize({
     stageRef,
@@ -151,7 +149,8 @@ export const Editor = () => {
           {shapes.map((shape) => {
             return renderShape({
               ...shape,
-              draggable: !shape.isLocked,
+              listening: shape.isLocked ? false : shape.listening,
+              draggable: true,
               onTransformEnd: handleTransformEnd,
               onClick: handleClick,
               onDragEnd: (e: any) => {
@@ -162,12 +161,10 @@ export const Editor = () => {
                 handleSnapDrag(e);
               },
               onMouseEnter: (e: any) => {
-                if (shape.isLocked) return;
                 const container = e.target.getStage().container();
                 container.style.cursor = 'move';
               },
               onMouseLeave: (e: any) => {
-                if (shape.isLocked) return;
                 const container = e.target.getStage().container();
                 container.style.cursor = 'default';
               },
@@ -248,19 +245,7 @@ export const Editor = () => {
         onFitScreen={fitToScreen}
       />
 
-      {import.meta.env.DEV && (
-        <div className="absolute top-0 left-0 bg-warning text-warning-content px-2 py-1">
-          <div className="flex flex-col">
-            <span>
-              画布: {editorProps.width}x{editorProps.height}
-            </span>
-            <span>已选择: {selectedIds.join(',') || 'null'}</span>
-            <span>
-              位置: ({mousePosition.x}, {mousePosition.y})
-            </span>
-          </div>
-        </div>
-      )}
+      <Debugger />
     </div>
   );
 };

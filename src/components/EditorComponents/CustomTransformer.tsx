@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Transformer } from 'react-konva';
 
 import { useEditorStore } from '../editor.store';
-import { useHeaderSettings } from '../header.store';
+import { useHeaderStore } from '../header.store';
 
 interface CustomTransformerProps {
   selectedNodes: any[];
@@ -13,7 +13,7 @@ export const CustomTransformer = ({
   selectedNodes,
 }: CustomTransformerProps) => {
   const transformerRef = useRef<any>(null);
-  const theme = useHeaderSettings((state) => state.theme);
+  const theme = useHeaderStore((state) => state.theme);
   const keepShiftKey = useEditorStore((state) => state.keepShiftKey);
 
   const selectedShapes = useEditorStore((state) => state.selectedShapes);
@@ -49,7 +49,7 @@ export const CustomTransformer = ({
     <Transformer
       ref={transformerRef}
       // Should we fill whole transformer area with fake transparent shape to enable dragging from empty spaces?
-      // shouldOverdrawWholeArea={true}
+      shouldOverdrawWholeArea={true}
       enabledAnchors={[
         'top-left',
         'top-center',
@@ -71,7 +71,6 @@ export const CustomTransformer = ({
       borderStrokeWidth={2}
       // borderDash={[4, 4]}
       padding={0}
-      keepRatio={!keepShiftKey}
       centeredScaling={keepShiftKey}
       anchorStyleFunc={(anchor: Rect) => {
         anchor.cornerRadius(10);

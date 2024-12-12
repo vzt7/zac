@@ -2,7 +2,7 @@ import i18n from 'i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import { initReactI18next } from 'react-i18next';
 
-import { useHeaderSettings } from './components/header.store';
+import { useHeaderStore } from './components/header.store';
 import { defaultNS, resources } from './locales';
 
 declare module 'i18next' {
@@ -20,7 +20,7 @@ i18n
     detection: {
       convertDetectedLanguage: (lng) => {
         const lang = lng.replace(/-.+/, '');
-        useHeaderSettings.setState(() => ({ lang: lang as 'zh' | 'en' }));
+        useHeaderStore.setState(() => ({ lang: lang as 'zh' | 'en' }));
         return lang;
       },
     },

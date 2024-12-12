@@ -15,6 +15,8 @@ import { CSS } from '@dnd-kit/utilities';
 import { debounce } from 'lodash-es';
 import {
   Check,
+  ChevronsDownUp,
+  ChevronsUpDown,
   Circle,
   Edit,
   Eye,
@@ -76,15 +78,28 @@ export const LayersPanel = () => {
     }, 100);
   });
 
+  const [isExpanded, setIsExpanded] = useState(true);
+
   return (
     <div
       className={`bg-base-100 rounded-lg overflow-hidden p-2 shadow-md z-10 select-none`}
     >
-      <div className="flex justify-center items-center gap-2 py-3">
-        <Layers size={16} />
+      <div className="relative flex justify-center items-center gap-3 py-3">
+        <Layers size={20} />
         <span className="font-bold">图层</span>
+        <button
+          className="absolute right-4 top-[50%] !translate-y-[-50%] btn btn-ghost btn-sm btn-circle opacity-80"
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
+          {isExpanded ? (
+            <ChevronsDownUp size={20} />
+          ) : (
+            <ChevronsUpDown size={20} />
+          )}
+        </button>
       </div>
-      <div className="overflow-hidden">
+
+      <div className={`overflow-hidden ${isExpanded ? '' : 'h-[0px]'}`}>
         <div className="mt-1 rounded-lg overflow-hidden px-3 py-1">
           <input
             type="text"

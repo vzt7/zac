@@ -14,7 +14,7 @@ export interface Project {
   updatedAt: string;
 }
 
-const _useHeaderSettings = create<{
+const _useHeaderStore = create<{
   theme: 'light' | 'dark';
   lang: 'zh' | 'en';
   changeTheme: (val: 'light' | 'dark') => void;
@@ -25,15 +25,15 @@ const _useHeaderSettings = create<{
   projects: Project[];
   changeProject: (val: Project) => void;
   createProject: (val: Project) => void;
+  selectProject: (val: Project | null) => void;
   currentProject: Project | null;
-  changeCurrentProject: (val: Project | null) => void;
 }>();
 
-export const useHeaderSettings = _useHeaderSettings(
+export const useHeaderStore = _useHeaderStore(
   subscribeWithSelector(
     persist(
       (set, get) => ({
-        theme: 'light',
+        theme: 'dark',
         lang: 'zh',
         changeTheme: (theme) => set({ theme }),
         changeLang: (lang) => set({ lang }),
@@ -51,56 +51,34 @@ export const useHeaderSettings = _useHeaderSettings(
               item.id === project.id ? project : item,
             ),
           }),
+        selectProject: (project: Project | null) =>
+          set({
+            currentProject: project,
+            projects: get().projects.map((item) =>
+              item.id === project?.id ? project : item,
+            ),
+          }),
         createProject: (project: Project) => {
-          const { projects } = useHeaderSettings.getState();
-          const newProjects = [project, ...projects];
-          useHeaderSettings.setState({ projects: newProjects });
-          localStorage.setItem('projects', JSON.stringify(newProjects));
+          const newProjects = [project, ...get().projects];
+          set({ projects: newProjects });
         },
         currentProject: null,
-        changeCurrentProject: (project: Project | null) =>
-          set({ currentProject: project }),
       }),
       {
-        name: '_header_projects',
+        name: '_pm_global_cache',
       },
     ),
   ),
 );
 
-useHeaderSettings.subscribe(
-  (state) => state.theme,
-  (theme) => {
-    document.body.setAttribute('data-theme', theme);
-  },
-);
-
-useHeaderSettings.subscribe(
-  (state) => state.lang,
-  (lang) => {
-    changeLanguage(lang);
-  },
-);
-
 // 更新 currentProject 后同步更新 projects
-useHeaderSettings.subscribe(
-  (state) => state.currentProject,
-  (currentProject) => {
-    if (currentProject) {
-      useHeaderSettings.setState({
-        projects: useHeaderSettings
-          .getState()
-          .projects.map((item) =>
-            item.id === currentProject.id ? currentProject : item,
-          ),
-      });
-    }
+useHeaderStore.subscribe(
+  (state) => state.projects,
+  (projects) => {
+    const { currentProject } = useHeaderStore.getState();
+    useHeaderStore.setState({
+      currentProject:
+        projects.find((item) => item.id === currentProject?.id) || null,
+    });
   },
 );
-
-window.addEventListener('DOMContentLoaded', () => {
-  const projects = localStorage.getItem('projects');
-  if (projects) {
-    useHeaderSettings.setState({ projects: JSON.parse(projects) });
-  }
-});

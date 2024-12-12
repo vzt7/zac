@@ -67,7 +67,7 @@ export const handleLockToggle = (id: string | string[]) => {
     return shape;
   });
 
-  // setSelectedIds(ids);
+  setSelectedIds([]);
   setShapes(newShapes);
   addToHistory(newShapes);
 };
@@ -171,7 +171,6 @@ export const createShape = (type: string, shape?: Partial<Shape>) => {
     rotation: 0,
     // scaleX: editorProps.scaleX,
     // scaleY: editorProps.scaleY,
-    zIndex: shapes.length,
     fill: '#000000',
     shadowBlur: 0,
     shadowColor: 'rgba(0,0,0,0.5)',
@@ -366,15 +365,18 @@ export const handleDragEnd = (e: any) => {
   debouncedAddToHistory(newShapes);
 };
 
-export const handleSave = () => {
-  const { projectId, shapes } = useEditorStore.getState();
+export const handleSave = (projectId: string) => {
+  const { shapes } = useEditorStore.getState();
   const safeArea = useEditorStore.getState().safeArea;
   const data = JSON.stringify({ shapes, safeArea });
+
+  // TODO: 保存到服务器
   localStorage.setItem(projectId, data);
 };
 
-export const handleLoad = () => {
-  const { projectId, setShapes } = useEditorStore.getState();
+export const handleLoad = (projectId: string) => {
+  const { setShapes } = useEditorStore.getState();
+  // TODO: 从服务器加载
   const data = localStorage.getItem(projectId);
   if (data) {
     const { shapes, safeArea } = JSON.parse(data);
@@ -385,7 +387,7 @@ export const handleLoad = () => {
 };
 
 // 添加文本
-export const handleAddText = () => {
+export const handleAddText = (textShape?: Partial<Shape>) => {
   const { shapes, setShapes, safeArea, editorProps } =
     useEditorStore.getState();
   const editorCenter = {
@@ -403,8 +405,8 @@ export const handleAddText = () => {
     rotation: 0,
     scaleX: editorProps.scaleX,
     scaleY: editorProps.scaleY,
-    zIndex: shapes.length,
     fill: '#000000',
+    ...textShape,
   };
 
   const newShapes = [...shapes, newShape];
@@ -472,7 +474,6 @@ const createImageShape = (
       rotation: 0,
       scaleX: 1,
       scaleY: 1,
-      zIndex: shapes.length,
       src: imageUrl,
       fill: 'transparent',
     };
@@ -489,6 +490,28 @@ const isImageFile = (type: string) => {
 // 修改URL检查正则
 const isImageUrl = (url: string) => {
   return /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(url);
+};
+
+export const handleAddImage = (imageShapeOrUrl: Shape | string) => {
+  const { shapes, setShapes, safeArea } = useEditorStore.getState();
+  if (typeof imageShapeOrUrl === 'string') {
+    createImageShape(
+      imageShapeOrUrl,
+      {
+        x: safeArea.x + safeArea.width / 2,
+        y: safeArea.y + safeArea.height / 2,
+      },
+      (newShape) => {
+        const newShapes = [...shapes, newShape];
+        setShapes(newShapes);
+        addToHistory(newShapes);
+      },
+    );
+  } else {
+    const newShapes = [...shapes, imageShapeOrUrl];
+    setShapes(newShapes);
+    addToHistory(newShapes);
+  }
 };
 
 // 处理文件上传
@@ -664,14 +687,18 @@ export const handleMoveToBottom = (id: string | string[]) => {
   }
 };
 
-export const handleUpdate = (item: Partial<Shape> & { id: Shape['id'] }) => {
+export const handleUpdate = (
+  item: Partial<Shape> & { id: Shape['id'] },
+  interceptor?: (nextShapes: Shape[]) => Shape[],
+) => {
   const { selectedIds, shapes } = useEditorStore.getState();
-  const newShapes = shapes.map((shape) => {
+  const _newShapes = shapes.map((shape) => {
     if (selectedIds.includes(shape.id)) {
       return { ...shape, ...item };
     }
     return shape;
   });
+  const newShapes = interceptor ? interceptor(_newShapes) : _newShapes;
   useEditorStore.setState({ shapes: newShapes });
   addToHistory(newShapes);
 };

@@ -1,16 +1,10 @@
+import dayjs from 'dayjs';
 import type { Layer as LayerType } from 'konva/lib/Layer';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import { Node as KonvaNode } from 'konva/lib/Node';
 import type { Stage as StageType } from 'konva/lib/Stage';
-import type { Rect as RectType } from 'konva/lib/shapes/Rect';
 import { debounce } from 'lodash-es';
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useTransition,
-} from 'react';
+import { useCallback, useEffect, useLayoutEffect, useTransition } from 'react';
 import { useState } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
 
@@ -18,7 +12,6 @@ import { ELEMENT_EDITOR_WIDTH } from './EditorComponents/ElementEditor';
 import { HEADER_HEIGHT } from './Header';
 import { SIDEBAR_WIDTH } from './Sidebar';
 import {
-  addToHistory,
   createShape,
   handleCopy,
   handleCut,
@@ -44,13 +37,74 @@ export const useEditorHotkeys = () => {
     const { selectedIds } = useEditorStore.getState();
     handleDelete(selectedIds);
   }, []);
-  useHotkeys(`${modKey}+z`, handleUndo, [handleUndo]);
-  useHotkeys(`${modKey}+shift+z`, handleRedo, [handleRedo]);
-  useHotkeys('delete', _handleDelete, [_handleDelete]);
-  useHotkeys('backspace', _handleDelete, [_handleDelete]);
-  useHotkeys(`${modKey}+c`, handleCopy, [handleCopy]);
-  useHotkeys(`${modKey}+v`, handlePaste, [handlePaste]);
-  useHotkeys(`${modKey}+x`, handleCut, [handleCut]);
+  const _handleSelectAll = useCallback(() => {
+    const { shapes } = useEditorStore.getState();
+    handleSelect(shapes.map((shape) => shape.id));
+  }, []);
+  useHotkeys(
+    `${modKey}+z`,
+    handleUndo,
+    {
+      preventDefault: true,
+    },
+    [handleUndo],
+  );
+  useHotkeys(
+    `${modKey}+shift+z`,
+    handleRedo,
+    {
+      preventDefault: true,
+    },
+    [handleRedo],
+  );
+  useHotkeys(
+    'delete',
+    _handleDelete,
+    {
+      preventDefault: true,
+    },
+    [_handleDelete],
+  );
+  useHotkeys(
+    'backspace',
+    _handleDelete,
+    {
+      preventDefault: true,
+    },
+    [_handleDelete],
+  );
+  useHotkeys(
+    `${modKey}+c`,
+    handleCopy,
+    {
+      preventDefault: true,
+    },
+    [handleCopy],
+  );
+  useHotkeys(
+    `${modKey}+v`,
+    handlePaste,
+    {
+      preventDefault: true,
+    },
+    [handlePaste],
+  );
+  useHotkeys(
+    `${modKey}+x`,
+    handleCut,
+    {
+      preventDefault: true,
+    },
+    [handleCut],
+  );
+  useHotkeys(
+    `${modKey}+a`,
+    _handleSelectAll,
+    {
+      preventDefault: true,
+    },
+    [_handleSelectAll],
+  );
 };
 
 // 添加导出功能
@@ -58,14 +112,17 @@ export const useExport = () => {
   const stageRef = useEditorStore((state) => state.stageRef);
   const { safeArea, editorProps } = useEditorStore.getState();
 
-  const exportToPNG = () => {
-    if (!stageRef.current) return;
-
+  const exportToPNG = (
+    name: string,
+    { pixelRatio = 2 }: { pixelRatio?: number } = {},
+  ) => {
     const stage = stageRef.current;
-    const scale = {
-      x: stage.scaleX(),
-      y: stage.scaleY(),
-    };
+    if (!stage) return;
+
+    // const scale = {
+    //   x: stage.scaleX(),
+    //   y: stage.scaleY(),
+    // };
 
     // 创建临时画布
     const tempStage = stage.clone();
@@ -82,8 +139,7 @@ export const useExport = () => {
     };
 
     // 设置裁剪区域
-    // @ts-ignore
-    tempStage.findOne('Layer')?.clip({
+    tempStage.getLayers()[0].clip({
       x: adjustedSafeArea.x,
       y: adjustedSafeArea.y,
       width: adjustedSafeArea.width,
@@ -96,7 +152,7 @@ export const useExport = () => {
       y: adjustedSafeArea.y,
       width: adjustedSafeArea.width,
       height: adjustedSafeArea.height,
-      pixelRatio: 2,
+      pixelRatio,
     });
 
     // 清理临时画布
@@ -104,7 +160,7 @@ export const useExport = () => {
 
     // 下载图片
     const link = document.createElement('a');
-    link.download = 'stage.png';
+    link.download = `${name?.replace?.(/\.*png/g, '') || dayjs().format('YYYY-MM-DD')}.png`;
     link.href = uri;
     document.body.appendChild(link);
     link.click();
@@ -138,13 +194,19 @@ export const useSelection = (stageRef: React.RefObject<StageType>) => {
   const [_, startTransition] = useTransition();
 
   // 添加鼠标位置状态
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [selectionBox, setSelectionBox] = useState<{
+    x: number;
+    y: number;
+    startX: number;
+    startY: number;
+    width: number;
+    height: number;
+  } | null>(null);
 
   const isDrawMode = useEditorStore((state) => state.isDrawMode);
   const isDragMode = useEditorStore((state) => state.isDragMode);
   const isSelectMode = useEditorStore((state) => state.isSelectMode);
 
-  const selectionBox = useEditorStore((state) => state.selectionBox);
   const shapes = useEditorStore((state) => state.shapes);
 
   const handleSelectionMouseDown = useCallback(
@@ -153,26 +215,30 @@ export const useSelection = (stageRef: React.RefObject<StageType>) => {
 
       if (isDragMode || isDrawMode) return;
 
-      if (e.target === e.target.getStage()) {
-        const stage = e.target.getStage();
-        if (!stage) return;
-
-        // 计算位置时考虑缩放
-        const position = getScaledPosition(stage, {
-          x: e.evt.clientX,
-          y: e.evt.clientY,
-        });
-
-        useEditorStore.setState({
-          selectionBox: {
-            startX: position.x,
-            startY: position.y,
-            width: 0,
-            height: 0,
-          },
-          isSelectMode: true,
-        });
+      if (e.target !== e.target.getStage()) {
+        return;
       }
+
+      const stage = e.target.getStage();
+      if (!stage) return;
+
+      // 计算位置时考虑缩放
+      const position = getScaledPosition(stage, {
+        x: e.evt.clientX,
+        y: e.evt.clientY,
+      });
+
+      useEditorStore.setState({
+        isSelectMode: true,
+      });
+      setSelectionBox({
+        startX: position.x,
+        startY: position.y,
+        x: Math.round(position.x),
+        y: Math.round(position.y),
+        width: 0,
+        height: 0,
+      });
     },
     [isDragMode, isDrawMode],
   );
@@ -189,27 +255,18 @@ export const useSelection = (stageRef: React.RefObject<StageType>) => {
         y: e.clientY,
       });
 
-      startTransition(() => {
-        setMousePosition({
-          x: Math.round(position.x),
-          y: Math.round(position.y),
-        });
-      });
-
       if (!isSelectMode || !selectionBox) return;
 
       // 计算选区的宽度度时也需要考虑缩放
       const width = position.x - selectionBox.startX;
       const height = position.y - selectionBox.startY;
 
-      startTransition(() => {
-        useEditorStore.setState({
-          selectionBox: {
-            ...selectionBox,
-            width,
-            height,
-          },
-        });
+      setSelectionBox({
+        ...selectionBox,
+        x: Math.round(position.x),
+        y: Math.round(position.y),
+        width,
+        height,
       });
     },
     [isDragMode, isDrawMode, isSelectMode, selectionBox, stageRef],
@@ -257,9 +314,9 @@ export const useSelection = (stageRef: React.RefObject<StageType>) => {
     }
 
     useEditorStore.setState({
-      selectionBox: null,
       isSelectMode: false,
     });
+    setSelectionBox(null);
   }, [isDragMode, isDrawMode, isSelectMode, selectionBox, shapes]);
 
   useEffect(() => {
@@ -272,7 +329,7 @@ export const useSelection = (stageRef: React.RefObject<StageType>) => {
   }, [handleSelectionMouseMove, handleSelectionMouseUp]);
 
   return {
-    mousePosition,
+    selectionBox,
     handleSelectionMouseDown,
     handleSelectionMouseUp,
     handleSelectionMouseMove,
@@ -309,7 +366,7 @@ export const useStageDrag = () => {
   };
 };
 
-export const useContextMenu = (mousePosition: { x: number; y: number }) => {
+export const useContextMenu = () => {
   const [contextMenu, setContextMenu] = useState<{
     x: number;
     y: number;
