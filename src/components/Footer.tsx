@@ -1,8 +1,8 @@
 import { HeaderLogo } from './Header';
 
-export const Footer = () => {
+export const Footer = ({ className }: { className?: string }) => {
   return (
-    <footer className="bg-[#181c21]">
+    <footer className={`bg-[#181c21] ${className}`}>
       <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="flex justify-center text-teal-600">
           <HeaderLogo />
