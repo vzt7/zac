@@ -1,0 +1,49 @@
+[
+  {
+    "name": "Kalam",
+    "preview": "/fonts/kalam/kalam-latin-400-normal.woff2",
+    "dir": "kalam",
+    "files": [
+      "kalam-latin-300-normal.woff2",
+      "kalam-latin-400-normal.woff2",
+      "kalam-latin-700-normal.woff2"
+    ],
+    "urls": [
+      "/fonts/kalam/kalam-latin-300-normal.woff2",
+      "/fonts/kalam/kalam-latin-400-normal.woff2",
+      "/fonts/kalam/kalam-latin-700-normal.woff2"
+    ]
+  },
+  {
+    "name": "Luckiest Guy",
+    "preview": "/fonts/luckiest-guy/luckiest-guy-latin-400-normal.woff2",
+    "dir": "luckiest-guy",
+    "files": [
+      "luckiest-guy-latin-400-normal.woff2"
+    ],
+    "urls": [
+      "/fonts/luckiest-guy/luckiest-guy-latin-400-normal.woff2"
+    ]
+  },
+  {
+    "name": "Roboto",
+    "preview": "/fonts/roboto/roboto-latin-400-normal.woff2",
+    "dir": "roboto",
+    "files": [
+      "roboto-latin-100-normal.woff2",
+      "roboto-latin-300-normal.woff2",
+      "roboto-latin-400-normal.woff2",
+      "roboto-latin-500-normal.woff2",
+      "roboto-latin-700-normal.woff2",
+      "roboto-latin-900-normal.woff2"
+    ],
+    "urls": [
+      "/fonts/roboto/roboto-latin-100-normal.woff2",
+      "/fonts/roboto/roboto-latin-300-normal.woff2",
+      "/fonts/roboto/roboto-latin-400-normal.woff2",
+      "/fonts/roboto/roboto-latin-500-normal.woff2",
+      "/fonts/roboto/roboto-latin-700-normal.woff2",
+      "/fonts/roboto/roboto-latin-900-normal.woff2"
+    ]
+  }
+]

@@ -1,14 +1,8 @@
 import logoUrl from '@/assets/logo.png';
 import { useAuth } from '@/hooks/useAuth';
-import {
-  Link,
-  useMatch,
-  useRouter,
-  useRouterState,
-} from '@tanstack/react-router';
-import { changeLanguage } from 'i18next';
+import { Link, useMatch, useRouterState } from '@tanstack/react-router';
 import i18n from 'i18next';
-import { Languages, Moon, Plus, Projector, Sun } from 'lucide-react';
+import { Languages, Moon, Sun } from 'lucide-react';
 import { forwardRef, useEffect, useState } from 'react';
 
 import { HeaderProjectManager } from './HeaderProjectManager';
@@ -140,7 +134,7 @@ export const Header = forwardRef<
                 <div className="w-10 rounded-full">
                   <img
                     alt="Tailwind CSS Navbar component"
-                    src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp"
+                    src="/logo.png"
                   />
                 </div>
               </div>
@@ -166,14 +160,14 @@ export const Header = forwardRef<
             <div className="flex items-center gap-4">
               <div className="flex flex-row items-center gap-4">
                 <button
-                  className="btn btn-primary btn-sm h-10 px-6 font-medium shadow"
+                  className="btn btn-primary btn-sm h-10 px-6 font-medium shadow animate-none"
                   onClick={() => {}}
                 >
                   Login
                 </button>
 
                 <button
-                  className="btn btn-outline btn-sm h-10 px-5 font-medium text-primary"
+                  className="btn btn-outline btn-sm h-10 px-5 font-medium text-primary animate-none"
                   onClick={() => {}}
                 >
                   Register
@@ -199,7 +193,7 @@ const HeaderNav = () => {
         <ul className="flex items-center gap-12 text-lg -mr-36">
           <li>
             <Link
-              className={`link link-primary transition-all no-underline outline-none ${
+              className={`link link-primary transition no-underline outline-none ${
                 isHome ? 'font-bold' : ''
               }`}
               href="/home"
@@ -210,7 +204,7 @@ const HeaderNav = () => {
           </li>
           <li>
             <Link
-              className={`link link-primary transition-all no-underline outline-none ${
+              className={`link link-primary transition no-underline outline-none ${
                 isPricing ? 'font-bold' : ''
               }`}
               href="/pricing"
@@ -221,7 +215,7 @@ const HeaderNav = () => {
           </li>
           <li>
             <Link
-              className={`link link-primary transition-all no-underline outline-none ${
+              className={`link link-primary transition no-underline outline-none ${
                 isAbout ? 'font-bold' : ''
               }`}
               href="/about"

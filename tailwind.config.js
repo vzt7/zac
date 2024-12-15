@@ -7,7 +7,17 @@ export default {
     'node_modules/@excalidraw/excalidraw',
   ],
   theme: {
-    extend: {},
+    extend: {
+      animation: {
+        gradientBorder: 'gradientBorder ease infinite',
+      },
+      keyframes: {
+        gradientBorder: {
+          '0%, 100%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' },
+        },
+      },
+    },
   },
   plugins: [require('daisyui')],
   daisyui: {

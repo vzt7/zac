@@ -21,9 +21,10 @@ import { renderShape } from './EditorComponents/Elements';
 import { LayersPanel } from './EditorComponents/LayerPanel';
 import {
   handleBackgroundClip,
-  handleClick,
   handleDragEnd,
   handleImageDrop,
+  handleShapeClick,
+  handleStageClick,
   handleStageDragMove,
   handleTransformEnd,
 } from './editor.handler';
@@ -129,7 +130,7 @@ export const Editor = () => {
             return;
           }
 
-          handleClick(e);
+          handleStageClick(e);
         }}
         draggable={isDragMode}
       >
@@ -152,13 +153,16 @@ export const Editor = () => {
               listening: shape.isLocked ? false : shape.listening,
               draggable: true,
               onTransformEnd: handleTransformEnd,
-              onClick: handleClick,
+              onClick: handleShapeClick,
               onDragEnd: (e: any) => {
                 handleDragEnd(e);
                 handleSnapDragEnd();
               },
               onDragMove: (e: KonvaEventObject<DragEvent>) => {
-                handleSnapDrag(e);
+                if (selectedIds.length <= 5) {
+                  // 5个元素以上节省性能，不处理吸附
+                  handleSnapDrag(e);
+                }
               },
               onMouseEnter: (e: any) => {
                 const container = e.target.getStage().container();

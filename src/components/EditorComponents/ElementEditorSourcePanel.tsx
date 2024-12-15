@@ -1,12 +1,8 @@
 import {
-  ArrowRight,
   Circle,
   Hand,
   Hexagon,
   Image,
-  MinusIcon,
-  MousePointer2,
-  Pencil,
   Square,
   Star,
   Triangle,
@@ -120,7 +116,7 @@ export const SourcePanel = () => {
         <Pencil size={24} />
       </button> */}
 
-      <button onClick={handleAddText} className="btn btn-ghost">
+      <button onClick={() => handleAddText()} className="btn btn-ghost">
         <Type size={24} />
       </button>
       <button

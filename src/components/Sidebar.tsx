@@ -3,18 +3,28 @@ import {
   Component,
   Puzzle,
   SquareMousePointer,
+  Star,
   TypeOutline,
 } from 'lucide-react';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 
 import { SidebarCanvases } from './SidebarCanvases';
 import { SidebarFonts } from './SidebarFonts';
 import { SidebarFunctions } from './SidebarFunctions';
+import { SidebarIcons } from './SidebarIcons';
 import { SidebarMaterials } from './SidebarMaterials';
 import { SidebarTemplates } from './SidebarTemplates';
-import { TABS } from './sidebar.store';
 
 export const SIDEBAR_WIDTH = 421;
+
+enum TABS {
+  CANVAS = 'canvas',
+  TEMPLATE = 'template',
+  MATERIAL = 'material',
+  ICON = 'icon',
+  FONT = 'font',
+  COMPONENT = 'component',
+}
 
 export const Sidebar = () => {
   const [currentTab, setCurrentTab] = useState<TABS>(TABS.CANVAS);
@@ -56,6 +66,15 @@ export const Sidebar = () => {
         </button>
         <button
           className={`btn btn-ghost btn-md text-sm rounded-none flex-col h-20 ${
+            currentTab === TABS.ICON ? 'btn-active' : ''
+          }`}
+          onClick={() => setCurrentTab(TABS.ICON)}
+        >
+          <Star size={24} />
+          <span>Icon</span>
+        </button>
+        <button
+          className={`btn btn-ghost btn-md text-sm rounded-none flex-col h-20 ${
             currentTab === TABS.FONT ? 'btn-active' : ''
           }`}
           onClick={() => setCurrentTab(TABS.FONT)}
@@ -80,6 +99,7 @@ export const Sidebar = () => {
         {currentTab === TABS.CANVAS && <SidebarCanvases />}
         {currentTab === TABS.TEMPLATE && <SidebarTemplates />}
         {currentTab === TABS.MATERIAL && <SidebarMaterials />}
+        {currentTab === TABS.ICON && <SidebarIcons />}
         {currentTab === TABS.FONT && <SidebarFonts />}
         {currentTab === TABS.COMPONENT && <SidebarFunctions />}
       </div>

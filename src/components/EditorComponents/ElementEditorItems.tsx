@@ -3,7 +3,8 @@ import { ChangeEvent, useEffect, useRef } from 'react';
 
 import { handleUpdate } from '../editor.handler';
 import { Shape, useEditorStore } from '../editor.store';
-import { ElementRichTextEditor } from './ElementRichTextEditor';
+import { ElementEditorItem4ImageCrop } from './ElementEditorItem4ImageCrop';
+import { ElementEditorItem4RichText } from './ElementEditorItem4RichText';
 
 const PRESET_COLORS = [
   '#2563EB', // 蓝色
@@ -12,9 +13,18 @@ const PRESET_COLORS = [
   '#EC4899', // 粉色
   '#8B5CF6', // 紫色
   '#06B6D4', // 青色
-  '#000000', // 黑色
+  '#C70039', // 深红色
   '#6B7280', // 灰色
   '#ffffff', // 白色
+  '#4A90E2', // 天空蓝
+  '#50E3C2', // 浅青色
+  '#FFC300', // 明黄色
+  '#FF5733', // 亮橙色
+  '#581845', // 深紫色
+  '#900C3F', // 酒红色
+  '#FF6F61', // 珊瑚色
+  '#000000', // 黑色
+  'transparent', // 透明
 ];
 
 // 添加新的常量配置
@@ -28,7 +38,7 @@ const STEP_CONFIG = {
   shadow: 1, // 阴影偏移步进
 };
 
-export const PropertiesPanel = () => {
+export const ElementEditorItems = () => {
   const selectedIds = useEditorStore((state) => state.selectedIds);
   const shapes = useEditorStore((state) => state.shapes);
   const selectedShape =
@@ -87,8 +97,11 @@ export const PropertiesPanel = () => {
       >
         {/* 如果选中的是文本元素，显示文本编辑器 */}
         {selectedShape.type === 'text' && (
-          <ElementRichTextEditor selectedShape={selectedShape} />
+          <ElementEditorItem4RichText selectedShape={selectedShape} />
         )}
+
+        {/* 如果选中的是图片元素，显示图片裁剪器（通过鼠标右键菜单唤起） */}
+        {selectedShape.type === 'image' && <ElementEditorItem4ImageCrop />}
 
         <div className="collapse collapse-arrow bg-base-300">
           <input type="checkbox" defaultChecked />
@@ -209,14 +222,12 @@ export const PropertiesPanel = () => {
                 {PRESET_COLORS.map((color) => (
                   <button
                     key={color}
-                    className="w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform"
+                    className={`w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform ${
+                      color === 'transparent' ? 'transparent-bg-img' : ``
+                    }`}
                     style={{
-                      background: color,
-                      border: '2px solid transparent',
-                      borderColor:
-                        selectedShape.fill === color
-                          ? '#2563EB'
-                          : 'transparent',
+                      backgroundColor: color === 'transparent' ? '' : color,
+                      backgroundSize: '100% 100%',
                     }}
                     onClick={() =>
                       handleUpdate({ fill: color, id: selectedShape!.id })

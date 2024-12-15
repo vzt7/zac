@@ -26,11 +26,14 @@ export const SidebarFunctions = () => {
     const pinnedStates = JSON.parse(
       localStorage.getItem('pinnedFunctions') || '{}',
     );
+    setSortedFunctions(
+      functions.map((func) => ({ ...func, isPinned: pinnedStates[func.id] })),
+    );
   }, []);
 
   // 处理置顶切换
   const handlePinToggle = (id: string) => {
-    const updatedFunctions = functions.map((func) => {
+    const updatedFunctions = sortedFunctions.map((func) => {
       if (func.id === id) {
         return { ...func, isPinned: !func.isPinned };
       }
@@ -48,11 +51,11 @@ export const SidebarFunctions = () => {
     localStorage.setItem('pinnedFunctions', JSON.stringify(pinnedStates));
 
     // 重新排序：置顶项在前
-    const sortedFunctions = [
+    const nextSortedFunctions = [
       ...updatedFunctions.filter((f) => f.isPinned),
       ...updatedFunctions.filter((f) => !f.isPinned),
     ];
-    setSortedFunctions(sortedFunctions);
+    setSortedFunctions(nextSortedFunctions);
   };
 
   return (

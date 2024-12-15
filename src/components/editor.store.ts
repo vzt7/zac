@@ -2,6 +2,7 @@ import { debug } from '@/utils/debug';
 import { Node as KonvaNode, NodeConfig } from 'konva/lib/Node';
 import { ShapeConfig } from 'konva/lib/Shape';
 import type { Stage as StageType } from 'konva/lib/Stage';
+import type { Image as KonvaImageElement } from 'konva/lib/shapes/Image';
 import { ComponentProps, MutableRefObject } from 'react';
 import { Stage } from 'react-konva';
 import { create } from 'zustand';
@@ -20,6 +21,7 @@ export interface Shape extends ShapeConfig {
   fontFamily?: string;
   isSelected?: boolean;
   groupId?: string;
+  initialSrc?: string;
   src?: string;
   opacity?: number;
   blur?: number;
@@ -32,6 +34,7 @@ export interface Shape extends ShapeConfig {
   fontWeight?: string;
   textDecoration?: string;
   align?: string;
+  isSvgGroup?: boolean;
 }
 
 export interface SafeArea extends ShapeConfig {
@@ -60,13 +63,21 @@ interface HistoryState {
 
 export interface EditorStore {
   stageRef: MutableRefObject<StageType | null>;
+  projectId: string;
+
   isDragMode: boolean;
   isDrawMode: boolean;
   drawingType: 'free' | null;
   isSelectMode: boolean;
+  // TODO:
   isElementEditing: boolean;
+  isImageCropping: boolean;
+
+  // 是否按住 shift 键
   keepShiftKey: boolean;
-  projectId: string;
+
+  // 正在使用的字体
+  usingFonts: string[];
 
   shapes: Shape[];
   setShapes: (shapes: Shape[]) => void;
@@ -118,13 +129,17 @@ export interface EditorStore {
 export const useEditorStore = create<EditorStore>()(
   subscribeWithSelector((set, get) => ({
     stageRef: { current: null },
+    projectId: '',
+
     isDragMode: false,
     isDrawMode: false,
     drawingType: null,
     isSelectMode: false,
     isElementEditing: false,
+    isImageCropping: false,
+
     keepShiftKey: false,
-    projectId: '',
+    usingFonts: [],
 
     shapes: [],
     setShapes: (shapes) => set({ shapes }),
@@ -183,13 +198,13 @@ if (import.meta.env.DEV) {
   useEditorStore.subscribe(
     (state) => state.safeArea,
     (safeArea) => {
-      console.log(`[safeArea]`, safeArea);
+      debug(`[safeArea]`, safeArea);
     },
   );
   useEditorStore.subscribe(
     (state) => state.shapes,
     (shapes) => {
-      console.log(`[shapes]`, shapes);
+      debug(`[shapes]`, shapes);
     },
   );
 }
@@ -213,6 +228,16 @@ useEditorStore.subscribe(
       selectedNodes,
     });
     debug(`[selectedShapes]`, selectedShapes);
+  },
+);
+
+useEditorStore.subscribe(
+  (state) => state.shapes,
+  (shapes) => {
+    const usingFonts = shapes
+      .map((shape) => shape?.fontFamily)
+      .filter((item): item is NonNullable<typeof item> => Boolean(item));
+    useEditorStore.setState({ usingFonts });
   },
 );
 

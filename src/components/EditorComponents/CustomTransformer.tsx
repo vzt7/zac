@@ -15,8 +15,6 @@ export const CustomTransformer = ({
   const transformerRef = useRef<any>(null);
   const theme = useHeaderStore((state) => state.theme);
   const keepShiftKey = useEditorStore((state) => state.keepShiftKey);
-
-  const selectedShapes = useEditorStore((state) => state.selectedShapes);
   const isElementEditing = useEditorStore((state) => state.isElementEditing);
 
   const colors = {

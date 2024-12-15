@@ -1,11 +1,11 @@
 export const getAuth = async () => {
   return {
-    isAuthed: false,
+    isAuthed: true,
   };
 };
 
 export const useAuth = () => {
-  const isAuthed = false;
+  const isAuthed = true;
 
   return {
     isAuthed,

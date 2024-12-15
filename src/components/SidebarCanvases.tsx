@@ -70,7 +70,9 @@ export const SidebarCanvases = () => {
                   selected?.id === item.id
                     ? 'border-primary bg-primary/10'
                     : `border-base/5 ${isCanvasSelected ? '' : 'hover:border-primary/50'}`
-                } ${isCanvasSelected ? 'opacity-60 cursor-not-allowed' : ''}`}
+                } ${isCanvasSelected ? 'opacity-60 cursor-not-allowed' : ''} ${
+                  items[0].id === 'custom' ? 'w-full' : ''
+                }`}
                 disabled={isCanvasSelected}
               >
                 <div className="text-inherit text-4xl mb-2">{item.icon}</div>
@@ -78,9 +80,7 @@ export const SidebarCanvases = () => {
                   {item.name}
                 </div>
                 <div className="text-xs text-base-content/60 mt-1">
-                  {item.id === 'custom' ? (
-                    <>? x ?</>
-                  ) : (
+                  {item.id !== 'custom' && (
                     <>
                       {item.safeArea.width} x {item.safeArea.height}
                     </>
@@ -91,34 +91,45 @@ export const SidebarCanvases = () => {
           </div>
 
           {selected?.id === 'custom' && items[0].id === 'custom' && (
-            <div className="flex flex-row flex-nowrap items-center gap-2">
-              <input
-                type="number"
-                placeholder="Width"
-                className="input input-bordered w-full max-w-xs"
-                max={10000}
-                min={1}
-                onChange={(e) =>
-                  setCustomConfig((prev) => ({
-                    ...prev,
-                    width: parseInt(e.target.value, 10),
-                  }))
-                }
-              />
-              <span>x</span>
-              <input
-                type="number"
-                placeholder="Height"
-                className="input input-bordered w-full max-w-xs m-0"
-                max={10000}
-                min={1}
-                onChange={(e) =>
-                  setCustomConfig((prev) => ({
-                    ...prev,
-                    height: parseInt(e.target.value, 10),
-                  }))
-                }
-              />
+            <div className="mb-4">
+              <div className="flex flex-row flex-nowrap items-center gap-2">
+                <input
+                  type="number"
+                  placeholder="Width"
+                  className="input input-bordered w-full max-w-xs input-sm"
+                  max={10000}
+                  min={1}
+                  defaultValue={1980}
+                  onChange={(e) =>
+                    setCustomConfig((prev) => ({
+                      ...prev,
+                      width: parseInt(e.target.value, 10),
+                    }))
+                  }
+                />
+                <span>x</span>
+                <input
+                  type="number"
+                  placeholder="Height"
+                  className="input input-bordered w-full max-w-xs input-sm m-0"
+                  max={10000}
+                  min={1}
+                  defaultValue={1080}
+                  onChange={(e) =>
+                    setCustomConfig((prev) => ({
+                      ...prev,
+                      height: parseInt(e.target.value, 10),
+                    }))
+                  }
+                />
+              </div>
+              <button
+                onClick={() => handleSelectCanvas(selected)}
+                className="btn btn-primary w-full btn-sm h-10 mt-4"
+                disabled={isCanvasSelected || !selected}
+              >
+                {`Confirm ${selected.name}`}
+              </button>
             </div>
           )}
         </div>

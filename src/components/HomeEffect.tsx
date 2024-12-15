@@ -26,7 +26,13 @@ export const HomeEffect = () => {
         <Particles
           id="tsparticles"
           options={particlesJson}
-          className="w-full h-[100vh]"
+          className={`w-full h-full z-20`}
+          particlesLoaded={async (container) => {
+            console.log(container);
+            await container?.addClickHandler((e) => {
+              console.log(e);
+            });
+          }}
         />
       )}
     </div>
@@ -80,7 +86,7 @@ const particlesJson: ComponentProps<typeof Particles>['options'] = {
       },
       onHover: {
         enable: true,
-        mode: 'light',
+        mode: 'repulse',
         parallax: {
           enable: false,
           force: 2,
@@ -88,7 +94,7 @@ const particlesJson: ComponentProps<typeof Particles>['options'] = {
         },
       },
       resize: {
-        delay: 0.5,
+        delay: 0.05,
         enable: true,
       },
     },
@@ -170,17 +176,15 @@ const particlesJson: ComponentProps<typeof Particles>['options'] = {
         stopDelay: 0,
       },
       light: {
-        area: {
-          gradient: {
-            start: {
-              value: '#3b5e98',
-            },
-            stop: {
-              value: '#17163e',
-            },
+        gradient: {
+          start: {
+            value: '#3b5e98',
           },
-          radius: 1000,
+          stop: {
+            value: '#17163e',
+          },
         },
+        radius: 1000,
         shadow: {
           color: {
             value: '#17163e',
@@ -221,7 +225,7 @@ const particlesJson: ComponentProps<typeof Particles>['options'] = {
       },
     },
     color: {
-      value: '#ffff00',
+      value: '#4f0fff',
       animation: {
         h: {
           count: 0,
@@ -306,7 +310,7 @@ const particlesJson: ComponentProps<typeof Particles>['options'] = {
       },
       random: false,
       size: false,
-      speed: 6,
+      speed: 4,
       spin: {
         acceleration: 0,
         enable: false,
@@ -330,7 +334,7 @@ const particlesJson: ComponentProps<typeof Particles>['options'] = {
         mode: 'delete',
         value: 0,
       },
-      value: 30,
+      value: 15,
     },
     opacity: {
       value: 1,
@@ -362,12 +366,12 @@ const particlesJson: ComponentProps<typeof Particles>['options'] = {
       close: true,
       fill: true,
       options: {},
-      type: ['circle', 'square'],
+      type: ['circle', 'edge', 'triangle'],
     },
     size: {
       value: {
-        min: 15,
-        max: 30,
+        min: 25,
+        max: 25,
       },
       animation: {
         count: 0,

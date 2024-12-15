@@ -4,7 +4,7 @@ import { handleLoad, handleSave } from '../editor.handler';
 import { useExport } from '../editor.hook';
 import { useEditorStore } from '../editor.store';
 import { useHeaderStore } from '../header.store';
-import { PropertiesPanel } from './ElementEditorPropertiesPanel';
+import { ElementEditorItems } from './ElementEditorItems';
 
 export const ELEMENT_EDITOR_WIDTH = 460;
 
@@ -49,7 +49,7 @@ export const ElementEditor = () => {
 
       <div className="divider mt-0"></div>
 
-      <PropertiesPanel />
+      <ElementEditorItems />
     </div>
   );
 };

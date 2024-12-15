@@ -1,6 +1,6 @@
-import { Star, StarOff } from 'lucide-react';
 import QRCode from 'qrcode';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import BarCode from 'react-barcode';
 
 import { handleAddImage } from './editor.handler';
 
@@ -21,10 +21,9 @@ const functions: FunctionItem[] = [
     content: <QrCodeFunction />,
   },
   {
-    id: '2',
-    title: '功能2',
-    content: <div>自定义内容区域</div>,
-    modalContent: <div>自定义内容区域</div>,
+    id: 'bar_code',
+    title: 'Bar Code',
+    content: <BarCodeFunction />,
   },
   // ... 更多功能项
 ];
@@ -49,6 +48,7 @@ function QrCodeFunction() {
         type: 'image/png',
         errorCorrectionLevel: level,
         width,
+        margin: 0,
       },
       (err, url) => {
         if (err) {
@@ -106,12 +106,76 @@ function QrCodeFunction() {
       </label>
 
       {url && (
-        <div className={`w-[200px] h-[200px] bg-base-300 mx-auto`}>
+        <div className={`w-[200px] h-[200px] bg-transparent mx-auto p-2`}>
           <img src={url} className="object-contain" />
         </div>
       )}
 
       <button className="btn btn-primary" onClick={handleAdd} disabled={!url}>
+        Add to Canvas
+      </button>
+    </div>
+  );
+}
+
+function BarCodeFunction() {
+  const [text, setText] = useState('');
+
+  const [enableDisplayValue, setEnableDisplayValue] = useState(true);
+
+  const barCodeWrapperRef = useRef<HTMLDivElement>(null);
+  const scale = useRef(1);
+  useEffect(() => {
+    const width = barCodeWrapperRef.current?.children[0]?.clientWidth;
+    if (!width) return;
+    scale.current = Math.min(200 / width, 1);
+  }, [text]);
+
+  const barCodeRef = useRef<any>(null);
+  const handleAdd = () => {
+    if (!barCodeRef.current) return;
+    try {
+      const img = barCodeRef.current.renderElementRef.current.src;
+      handleAddImage(img);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  return (
+    <div className="mt-6 flex flex-col gap-4">
+      <textarea
+        className="textarea textarea-bordered"
+        placeholder="请输入文本或URL"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+      />
+
+      {text && (
+        <div
+          ref={barCodeWrapperRef}
+          className={`w-[200px] bg-transparent mx-auto p-2 *:object-contain *:object-center`}
+        >
+          <BarCode
+            ref={barCodeRef}
+            value={text}
+            displayValue={enableDisplayValue}
+            renderer="img"
+          />
+        </div>
+      )}
+
+      <label className="flex items-center ml-1">
+        <input
+          type="checkbox"
+          className="checkbox mr-2"
+          checked={enableDisplayValue}
+          onChange={(e) => setEnableDisplayValue(e.target.checked)}
+        />
+        <span>Display Text</span>
+      </label>
+
+      <button className="btn btn-primary" onClick={handleAdd} disabled={!text}>
         Add to Canvas
       </button>
     </div>

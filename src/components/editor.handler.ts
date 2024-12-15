@@ -1,9 +1,9 @@
 import { transparentBackground } from '@/assets/transparent';
 import { debug } from '@/utils/debug';
-import { SceneContext } from 'konva/lib/Context';
-import { KonvaEventObject, Node } from 'konva/lib/Node';
+import getRandomId from '@/utils/getRandomId';
+import type { SceneContext } from 'konva/lib/Context';
+import type { KonvaEventObject, Node } from 'konva/lib/Node';
 import { debounce } from 'lodash-es';
-import { v4 as uuidv4 } from 'uuid';
 
 import { Shape } from './editor.store';
 import { useEditorStore } from './editor.store';
@@ -46,6 +46,7 @@ export const addToHistory = (newShapes: Shape[]) => {
 export const handleSelect = (id: string | string[]) => {
   const { setSelectedIds } = useEditorStore.getState();
   const ids = ([] as string[]).concat(id);
+  console.log('[handleSelect]', ids, 'from', id);
   setSelectedIds(ids);
 };
 
@@ -165,20 +166,10 @@ export const createShape = (type: string, shape?: Partial<Shape>) => {
   };
 
   const baseShape: Partial<Shape> = {
-    id: `${type}-${Date.now()}`,
+    id: `${type}-${getRandomId()}`,
     x: editorCenter.x,
     y: editorCenter.y,
-    rotation: 0,
-    // scaleX: editorProps.scaleX,
-    // scaleY: editorProps.scaleY,
     fill: '#000000',
-    shadowBlur: 0,
-    shadowColor: 'rgba(0,0,0,0.5)',
-    shadowOffsetX: 0,
-    shadowOffsetY: 0,
-    opacity: 1,
-    strokeWidth: 2,
-    stroke: '#000000',
     ...shape,
   };
 
@@ -262,6 +253,18 @@ export const createShape = (type: string, shape?: Partial<Shape>) => {
         ...baseShape,
       } as Shape;
       break;
+    case 'path':
+      newShape = {
+        type,
+        ...baseShape,
+      } as Shape;
+      break;
+    case 'group':
+      newShape = {
+        type,
+        ...baseShape,
+      } as Shape;
+      break;
     default:
       return;
   }
@@ -299,8 +302,9 @@ export const handleTransformEnd = (e: any) => {
         rotation,
         scaleX,
         scaleY,
-        width: node.width(),
-        height: node.height(),
+        // TODO: 确定是否需要更新宽高
+        // width: node.width(),
+        // height: node.height(),
         x, // 添加位置信息
         y, // 添加位置信息
       };
@@ -395,13 +399,12 @@ export const handleAddText = (textShape?: Partial<Shape>) => {
     y: safeArea.y + safeArea.height / 2,
   };
   const newShape: Shape = {
-    id: `text-${Date.now()}`,
+    id: `text-${getRandomId()}`,
     type: 'text',
-    x: editorCenter.x + Math.random() * 50,
-    y: editorCenter.y + Math.random() * 50,
+    x: editorCenter.x + Math.random() * 100,
+    y: editorCenter.y + Math.random() * 100,
     text: '默认文本',
-    fontSize: 32 / Math.min(editorProps.scaleX, editorProps.scaleY),
-    fontFamily: 'Arial',
+    fontSize: 48 / Math.min(editorProps.scaleX, editorProps.scaleY),
     rotation: 0,
     scaleX: editorProps.scaleX,
     scaleY: editorProps.scaleY,
@@ -429,57 +432,117 @@ export const handleTextEdit = (id: string, newText: string) => {
 
 // 创建一个统一的图片处理函数
 const createImageShape = (
-  imageUrl: string,
+  imageUrl: string | any,
   position: { x: number; y: number },
   callback: (shape: Shape) => void,
 ) => {
-  const { shapes, safeArea } = useEditorStore.getState();
+  const { safeArea } = useEditorStore.getState();
 
-  const img = new Image();
-  img.src = imageUrl;
+  if (typeof imageUrl === 'string') {
+    const img = new Image();
+    img.src = imageUrl;
 
-  img.onload = () => {
-    const maxWidth = safeArea.width * 0.95;
-    const maxHeight = safeArea.height * 0.95;
-    const minWidth = safeArea.width * 0.2;
-    const minHeight = safeArea.height * 0.2;
+    img.onload = () => {
+      const maxWidth = safeArea.width * 0.95;
+      const maxHeight = safeArea.height * 0.95;
+      const minWidth = safeArea.width * 0.2;
+      const minHeight = safeArea.height * 0.2;
 
-    let finalWidth = img.width;
-    let finalHeight = img.height;
+      let finalWidth = img.width;
+      let finalHeight = img.height;
 
-    if (img.width > maxWidth || img.height > maxHeight) {
-      const ratioWidth = maxWidth / img.width;
-      const ratioHeight = maxHeight / img.height;
-      const scale = Math.min(ratioWidth, ratioHeight);
-      finalWidth = img.width * scale;
-      finalHeight = img.height * scale;
-    }
+      if (img.width > maxWidth || img.height > maxHeight) {
+        const ratioWidth = maxWidth / img.width;
+        const ratioHeight = maxHeight / img.height;
+        const scale = Math.min(ratioWidth, ratioHeight);
+        finalWidth = img.width * scale;
+        finalHeight = img.height * scale;
+      }
 
-    if (img.width < minWidth && img.height < minHeight) {
-      const ratioWidth = minWidth / img.width;
-      const ratioHeight = minHeight / img.height;
-      const scale = Math.min(ratioWidth, ratioHeight);
-      finalWidth = img.width * scale;
-      finalHeight = img.height * scale;
-    }
+      if (img.width < minWidth && img.height < minHeight) {
+        const ratioWidth = minWidth / img.width;
+        const ratioHeight = minHeight / img.height;
+        const scale = Math.min(ratioWidth, ratioHeight);
+        finalWidth = img.width * scale;
+        finalHeight = img.height * scale;
+      }
 
-    // 调整位置，使拖放点位于图片中心
-    const newShape: Shape = {
-      id: `image-${Date.now()}`,
-      type: 'image',
-      x: position.x - finalWidth / 2, // 从拖放位置减去宽度的一半
-      y: position.y - finalHeight / 2, // 从拖放位置减去高度的一半
-      width: finalWidth,
-      height: finalHeight,
-      rotation: 0,
-      scaleX: 1,
-      scaleY: 1,
-      src: imageUrl,
-      fill: 'transparent',
+      // 调整位置，使拖放点位于图片中心
+      const newShape: Shape = {
+        id: `image-${getRandomId()}`,
+        type: 'image',
+        x: position.x - finalWidth / 2, // 从拖放位置减去宽度的一半
+        y: position.y - finalHeight / 2, // 从拖放位置减去高度的一半
+        width: finalWidth,
+        height: finalHeight,
+        rotation: 0,
+        scaleX: 1,
+        scaleY: 1,
+        initialSrc: imageUrl,
+        src: imageUrl,
+        fill: 'transparent',
+      };
+
+      callback(newShape);
     };
-
+  } else {
+    // 处理SVG
+    const imageElement = imageUrl;
+    const newShape: Shape = {
+      id: `svg-${getRandomId()}`,
+      type: 'svg',
+      imageElement,
+      x: position.x - imageElement.width() / 2,
+      y: position.y - imageElement.height() / 2,
+    };
     callback(newShape);
-  };
+  }
+};
+
+export const handleAddSvgByPath = (
+  svgString: string,
+  shape?: Partial<Shape>,
+) => {
+  const { shapes, setShapes, editorProps } = useEditorStore.getState();
+
+  const svg = new DOMParser().parseFromString(
+    `<div>${svgString}</div>`,
+    'image/svg+xml',
+  );
+  const paths = Array.from(svg.querySelectorAll('path')).map((el: Element) => ({
+    data: el.getAttribute('d'),
+    fill: el.getAttribute('fill'),
+    stroke: el.getAttribute('stroke') || undefined,
+    strokeWidth: Number(el.getAttribute('stroke-width')) || 1,
+    lineCap: (el.getAttribute('stroke-linecap') as any) || undefined,
+    lineJoin: (el.getAttribute('stroke-linejoin') as any) || undefined,
+  }));
+  // TODO: 嵌套path或其他情况可能导致svg无法正常显示
+  debug('[handleAddSvgByPath] paths', paths, 'rawSvgString:', svgString);
+
+  const newShape = createShape('group', {
+    isSvgGroup: true,
+    name: shape?.name,
+    children: paths
+      .map(({ data, fill, ...restArgs }) =>
+        createShape('path', {
+          data,
+          fill: fill === 'none' ? undefined : (fill ?? '#000000'),
+          scaleX: 4 * editorProps.scaleX,
+          scaleY: 4 * editorProps.scaleY,
+          ...restArgs,
+          ...shape,
+          name: `path-${getRandomId()}`,
+          x: 0,
+          y: 0,
+        }),
+      )
+      .filter((item): item is NonNullable<typeof item> => Boolean(item)),
+  });
+  if (!newShape) return;
+  const newShapes = [...shapes, newShape];
+  setShapes(newShapes);
+  addToHistory(newShapes);
 };
 
 // 修改文件类型检查函数
@@ -605,7 +668,8 @@ export const handleDuplicate = (id: string | string[]) => {
     const _newShapes = shapesToDuplicate.map((shapeToDuplicate) => {
       return {
         ...shapeToDuplicate,
-        id: `${shapeToDuplicate.type}-${Date.now()}`,
+        id: `${shapeToDuplicate.type}-${getRandomId()}`,
+        name: `${shapeToDuplicate.name || shapeToDuplicate.type}-${getRandomId()}`,
         x: shapeToDuplicate.x + 20,
         y: shapeToDuplicate.y + 20,
       };
@@ -731,7 +795,7 @@ export const handleBackgroundClip = (ctx: SceneContext) => {
   // 5. 设置遮罩样式和透度
   const img = new Image();
   img.src = transparentBackground;
-  const pattern = ctx.createPattern(img, 'repeat');
+  // const pattern = ctx.createPattern(img, 'repeat');
   // ctx.fillStyle = pattern!;
   ctx.globalAlpha = 0.4;
 
@@ -744,16 +808,22 @@ export const handleBackgroundClip = (ctx: SceneContext) => {
   ctx.globalAlpha = 1;
 };
 
-/** Stage/Shape 点击事件 */
-export const handleClick = (e: KonvaEventObject<MouseEvent>) => {
+/** Stage 点击事件 */
+export const handleStageClick = (e: KonvaEventObject<MouseEvent>) => {
   // 阻止事件冒泡，避免触发父级Group的点击事件
   e.cancelBubble = true;
 
   const isRightClick = e.evt.button === 2;
-  // 如果是右键点击
   if (isRightClick) {
     return;
   }
+
+  handleSelect([]);
+  debug('handleStageClick');
+};
+
+export const handleShapeClick = (e: KonvaEventObject<MouseEvent>) => {
+  e.cancelBubble = true;
 
   // 获取实际点击的目标元素和其所属组
   const clickedShape = e.target;
@@ -767,10 +837,9 @@ export const handleClick = (e: KonvaEventObject<MouseEvent>) => {
 
   // 获取需要选中的素ID列表
   const newSelectedIds = getSelectedIdsByClickEvent(e, targetId);
-
   handleSelect(newSelectedIds);
-  debug('handleClick', {
-    isGroupElement,
+
+  debug('handleShapeClick', {
     targetId,
     newSelectedIds,
   });
@@ -784,18 +853,21 @@ export const getSelectedIdsByClickEvent = (
 
   const keepShiftKey = e.evt.shiftKey;
   const isRightClick = e.evt.button === 2;
+  const _selectedIds = keepShiftKey ? selectedIds : [];
 
-  // 检查否为不可选择的元素
-  const targetId = forceTargetId ?? e.target.attrs.id;
-  const notAllowedSelection =
-    e.target === e.target.getStage() || targetId === safeArea.id;
-
-  // 如果是右键点击且已有选中元素，���持当前选中状态
+  // 如果是右键点击且已有选中元素，保持当前选中状态
   if (isRightClick && selectedIds.length > 0) {
     return selectedIds;
   }
 
-  const _selectedIds = keepShiftKey ? selectedIds : [];
+  // 检查否为不可选择的元素
+  const targetId = forceTargetId ?? e.target.attrs.id;
+  if (!targetId) {
+    return _selectedIds;
+  }
+
+  const notAllowedSelection =
+    e.target === e.target.getStage() || targetId === safeArea.id;
 
   if (
     notAllowedSelection ||
@@ -849,7 +921,7 @@ export const handleGroup = (selectedShapes: Shape[]) => {
   );
 
   // 创建新的组合
-  const groupId = `group-${uuidv4()}`;
+  const groupId = `group-${getRandomId()}`;
   const group: GroupShape = {
     id: groupId,
     type: 'group',
@@ -938,7 +1010,7 @@ export const handlePaste = () => {
     const copiedShapes = JSON.parse(clipboardData);
     const newShapes = copiedShapes.map((shape: Shape) => ({
       ...shape,
-      id: `${shape.type}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `${shape.type}-${getRandomId()}`,
       x: shape.x + 20, // 偏移一点距离以区分
       y: shape.y + 20,
     }));
@@ -975,4 +1047,12 @@ export const handleCut = () => {
     selectedIds: [], // 清空选中状态
   });
   addToHistory(remainingShapes);
+};
+
+export const handleImageCrop = () => {
+  const { selectedShapes } = useEditorStore.getState();
+  if (selectedShapes.length !== 1) return;
+  const shape = selectedShapes[0];
+  if (shape.type !== 'image') return;
+  useEditorStore.setState({ isImageCropping: true });
 };

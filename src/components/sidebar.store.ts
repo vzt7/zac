@@ -2,60 +2,82 @@ import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { persist } from 'zustand/middleware';
 
-import { useHeaderStore } from './header.store';
+import { DEFAULT_FONTS, FontItem } from './SidebarFontsData';
+import { useEditorStore } from './editor.store';
 
-export enum TABS {
-  CANVAS = 'canvas',
-  TEMPLATE = 'template',
-  MATERIAL = 'material',
-  FONT = 'font',
-  COMPONENT = 'component',
-}
+// TODO: 同步上次使用的字体
 
 const _useSidebarStore = create<{
-  fontAddingText?: string;
-  changeFontAddingText: (text: string) => void;
+  fonts: FontItem[];
+  upsertFont: (font: FontItem) => void;
+
+  customFonts: FontItem[];
+  upsertCustomFont: (font: FontItem) => void;
+  removeCustomFont: (font: FontItem) => void;
 }>();
 
 export const useSidebarStore = _useSidebarStore(
   subscribeWithSelector(
     persist(
       (set, get) => ({
-        changeFontAddingText: (fontAddingText) => set({ fontAddingText }),
+        fonts: [...DEFAULT_FONTS],
+        upsertFont: (font) => {
+          set({
+            fonts: get().fonts.some((f) => f.value === font.value)
+              ? get().fonts.map((f) =>
+                  f.value === font.value ? { ...f, ...font } : f,
+                )
+              : [...get().fonts, font],
+          });
+        },
+
+        customFonts: [],
+        upsertCustomFont: (font) => {
+          set({
+            customFonts: get().customFonts.some((f) => f.value === font.value)
+              ? get().customFonts.map((f) =>
+                  f.value === font.value ? { ...f, ...font } : f,
+                )
+              : [...get().customFonts, font],
+          });
+        },
+        removeCustomFont: (font) => {
+          set({
+            customFonts: get().customFonts.filter(
+              (f) => f.value !== font.value,
+            ),
+          });
+        },
       }),
       {
-        name: '_pm_sidebar_cache',
+        name: '_pm_sidebar_cache_v0',
       },
     ),
   ),
 );
 
-// useHeaderStore.subscribe(
-//   (state) => state.currentProject,
-//   (currentProject) => {
-//     if (!currentProject?.id) {
-//       return;
-//     }
-//     const { currentTabInfo } = useSidebarStore.getState();
-//     if (!currentTabInfo?.projectId) {
-//       useSidebarStore.setState({
-//         currentTabInfo: {
-//           projectId: currentProject?.id,
-//         },
-//       });
-//       return;
-//     }
-
-//     if (currentTabInfo.projectId !== currentProject.id) {
-//       useSidebarStore.setState({
-//         currentTabInfo: {
-//           ...currentTabInfo,
-//           tab: TABS.CANVAS,
-//         },
-//       });
-//       return;
-//     }
-
-//     // 如果当前选择项目和当前 tab 缓存对应的项目相同，则恢复当前选择项以及缓存数据
-//   },
-// );
+export const resetFontsState = () => {
+  const usingFonts = useEditorStore.getState().usingFonts;
+  const { fonts, customFonts } = useSidebarStore.getState();
+  useSidebarStore.setState({
+    fonts: fonts.map((f) => ({
+      ...f,
+      isLoaded: false,
+      isLoaded4Preview: false,
+      isUsed: usingFonts.includes(f.value),
+    })),
+    customFonts: customFonts.map((f) => ({
+      ...f,
+      isLoaded: false,
+      isLoaded4Preview: false,
+      isUsed: usingFonts.includes(f.value),
+    })),
+  });
+};
+if (document.readyState !== 'loading') {
+  resetFontsState();
+} else {
+  document.addEventListener('DOMContentLoaded', function () {
+    resetFontsState();
+  });
+}

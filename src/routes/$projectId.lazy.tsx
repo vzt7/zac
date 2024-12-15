@@ -1,4 +1,5 @@
 import { useHeaderStore } from '@/components/header.store';
+import { useSidebarStore } from '@/components/sidebar.store';
 import { useAuth } from '@/hooks/useAuth';
 import { createLazyFileRoute, useNavigate } from '@tanstack/react-router';
 import { useEffect } from 'react';
@@ -47,6 +48,13 @@ function RouteComponent() {
   }, []);
 
   const currentProject = useHeaderStore((state) => state.currentProject);
+  const fonts = useSidebarStore((state) => state.fonts);
+  const customFonts = useSidebarStore((state) => state.customFonts);
+  const isFontsReady = [...fonts, ...customFonts].every((font) =>
+    font.isUsed ? font.isLoaded : true,
+  );
+
+  const isProjectReady = currentProject?.id && currentProject?.canvas?.id;
 
   return (
     <div className="flex flex-col h-full bg-base-100">
@@ -58,15 +66,19 @@ function RouteComponent() {
 
         <div className="divider divider-horizontal m-0 w-0"></div>
 
-        {currentProject?.id && currentProject?.canvas?.id ? (
+        {isProjectReady && isFontsReady ? (
           <Container
-            specificSafeArea={currentProject.canvas.safeArea}
+            specificSafeArea={currentProject.canvas!.safeArea}
             projectId={currentProject.id}
           />
         ) : (
           <div className="grid w-full h-full place-content-center px-4 bg-base-300">
             <h1 className="uppercase tracking-widest pointer-events-none">
-              Waiting for initial canvas
+              {!isProjectReady
+                ? 'Waiting for initial canvas'
+                : !isFontsReady
+                  ? 'Waiting for fonts'
+                  : ''}
             </h1>
           </div>
         )}

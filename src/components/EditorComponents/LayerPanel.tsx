@@ -38,6 +38,7 @@ import {
   handleUpdate,
 } from '../editor.handler';
 import { Shape, useEditorStore } from '../editor.store';
+import { renderIconShape } from './Elements';
 
 // 添加图层面板
 export const LayersPanel = () => {
@@ -50,7 +51,6 @@ export const LayersPanel = () => {
     }),
   );
   const shapes = useEditorStore((state) => state.shapes);
-  const selectedIds = useEditorStore((state) => state.selectedIds);
   const keepShiftKey = useEditorStore((state) => state.keepShiftKey);
 
   const [filterValue, setFilterValue] = useState('');
@@ -86,7 +86,7 @@ export const LayersPanel = () => {
     >
       <div className="relative flex justify-center items-center gap-3 py-3">
         <Layers size={20} />
-        <span className="font-bold">图层</span>
+        <span className="font-bold">Layers</span>
         <button
           className="absolute right-4 top-[50%] !translate-y-[-50%] btn btn-ghost btn-sm btn-circle opacity-80"
           onClick={() => setIsExpanded(!isExpanded)}
@@ -103,7 +103,7 @@ export const LayersPanel = () => {
         <div className="mt-1 rounded-lg overflow-hidden px-3 py-1">
           <input
             type="text"
-            placeholder="搜索名称或ID"
+            placeholder="ID or Name"
             className="input input-bordered input-sm text-base py-5 w-full"
             onChange={(e) => {
               setFilterValue(e.target.value);
@@ -210,7 +210,7 @@ const SortableItem = ({
         className={`flex flex-row justify-between items-center hover:bg-base-300 cursor-move ${selected ? 'bg-base-300' : ''} ${isFiltered ? 'font-bold' : ''} transition-all`}
       >
         <div className="flex flex-row items-center gap-2 p-2 w-[200px] h-[25px]">
-          {shape.type === 'rect' ? <Square size={16} /> : <Circle size={16} />}
+          {renderIconShape(shape)}
           {isEditMode ? (
             <input
               type="text"
@@ -222,6 +222,7 @@ const SortableItem = ({
               onBlur={() => {
                 handleSubmit();
               }}
+              onClick={(e) => e.stopPropagation()}
             />
           ) : (
             <span

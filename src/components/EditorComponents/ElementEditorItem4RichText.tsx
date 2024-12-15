@@ -7,7 +7,7 @@ interface TextEditorProps {
   selectedShape: Shape;
 }
 
-export const ElementRichTextEditor = ({ selectedShape }: TextEditorProps) => {
+export const ElementEditorItem4RichText = ({ selectedShape }: TextEditorProps) => {
   const handleTextInput = (e: ChangeEvent<HTMLTextAreaElement>) => {
     handleUpdate({ text: e.target.value, id: selectedShape.id });
   };

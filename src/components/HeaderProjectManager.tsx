@@ -1,8 +1,8 @@
+import getRandomId from '@/utils/getRandomId';
 import { useNavigate } from '@tanstack/react-router';
 import dayjs from 'dayjs';
 import { Box, Check, Edit2, Plus, Trash2 } from 'lucide-react';
 import React, { useRef } from 'react';
-import { v4 as uuidv4 } from 'uuid';
 
 import { Project, useHeaderStore } from './header.store';
 
@@ -20,8 +20,8 @@ export const HeaderProjectManager = () => {
   const handleCreateProject = () => {
     const { createProject } = useHeaderStore.getState();
     const newProject: Project = {
-      id: uuidv4(),
-      name: 'New Project',
+      id: getRandomId(),
+      name: 'Untitled Project',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };

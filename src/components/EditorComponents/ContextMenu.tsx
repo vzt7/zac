@@ -1,13 +1,19 @@
 import {
   ArrowDown,
   ArrowUp,
+  BringToFront,
   Copy,
+  Crop,
+  Edit,
   Group,
   Layers2,
+  ListEnd,
+  ListStart,
   Lock,
   LockOpen,
   MoveDown,
   MoveUp,
+  SendToBack,
   Trash,
   Ungroup,
 } from 'lucide-react';
@@ -17,6 +23,7 @@ import {
   handleDelete,
   handleDuplicate,
   handleGroup,
+  handleImageCrop,
   handleLockToggle,
   handleMoveDown,
   handleMoveToBottom,
@@ -26,6 +33,7 @@ import {
   handleUpdate,
 } from '../editor.handler';
 import { useEditorStore } from '../editor.store';
+import { ElementEditorItem4ImageCrop } from './ElementEditorItem4ImageCrop';
 
 interface ContextMenuProps {
   x: number;
@@ -57,31 +65,13 @@ export const ContextMenu = ({ x, y, onClose }: ContextMenuProps) => {
     >
       <ContextMenuItemButton
         onClick={() => {
-          handleMoveToTop(selectedShapes.map((shape) => shape.id));
-          onClose();
-        }}
-      >
-        <MoveUp size={16} />
-        <span>置顶</span>
-      </ContextMenuItemButton>
-      <ContextMenuItemButton
-        onClick={() => {
-          handleMoveToBottom(selectedShapes.map((shape) => shape.id));
-          onClose();
-        }}
-      >
-        <MoveDown size={16} />
-        <span>置底</span>
-      </ContextMenuItemButton>
-      <ContextMenuItemButton
-        onClick={() => {
           handleMoveUp(selectedShapes[0].id);
           onClose();
         }}
         disabled={selectedShapes.length > 1}
       >
         <ArrowUp size={16} />
-        <span>上移一层</span>
+        <span>Move Up</span>
       </ContextMenuItemButton>
       <ContextMenuItemButton
         onClick={() => {
@@ -91,7 +81,25 @@ export const ContextMenu = ({ x, y, onClose }: ContextMenuProps) => {
         disabled={selectedShapes.length > 1}
       >
         <ArrowDown size={16} />
-        <span>下移一层</span>
+        <span>Move Down</span>
+      </ContextMenuItemButton>
+      <ContextMenuItemButton
+        onClick={() => {
+          handleMoveToTop(selectedShapes.map((shape) => shape.id));
+          onClose();
+        }}
+      >
+        <BringToFront size={16} />
+        <span>Move Top</span>
+      </ContextMenuItemButton>
+      <ContextMenuItemButton
+        onClick={() => {
+          handleMoveToBottom(selectedShapes.map((shape) => shape.id));
+          onClose();
+        }}
+      >
+        <SendToBack size={16} />
+        <span>Move Bottom</span>
       </ContextMenuItemButton>
       <ContextMenuItemButton
         onClick={() => {
@@ -130,31 +138,51 @@ export const ContextMenu = ({ x, y, onClose }: ContextMenuProps) => {
         disabled={selectedShapes.length > 1}
       >
         <Layers2 size={16} />
-        <span>设为背景</span>
+        <span>Set as Background</span>
       </ContextMenuItemButton>
+
+      {/* 添加图片编辑功能 */}
+      {selectedShapes.length === 1 && selectedShapes[0].type === 'image' && (
+        <>
+          <div className="divider m-0"></div>
+          <ContextMenuItemButton
+            onClick={() => {
+              // 调用图片编辑处理函数
+              // handleEditImage(selectedShapes[0].id);
+              onClose();
+            }}
+            disabled={selectedShapes[0].isLocked}
+          >
+            <Edit size={16} />
+            <span>Edit Image</span>
+          </ContextMenuItemButton>
+        </>
+      )}
+
+      {selectedShapes.length === 1 && selectedShapes[0].type === 'image' && (
+        <ContextMenuItemButton
+          onClick={() => {
+            // 调用裁剪处理函数
+            handleImageCrop();
+            onClose();
+          }}
+          disabled={selectedShapes[0].isLocked}
+        >
+          <Crop size={16} />
+          <span>Crop Image</span>
+        </ContextMenuItemButton>
+      )}
 
       <div className="divider m-0"></div>
 
       <ContextMenuItemButton
         onClick={() => {
-          handleGroup(selectedShapes);
+          handleDuplicate(selectedShapes.map((shape) => shape.id));
           onClose();
         }}
-        disabled={selectedShapes.length <= 1}
       >
-        <Group size={16} />
-        <span>组合</span>
-      </ContextMenuItemButton>
-
-      <ContextMenuItemButton
-        onClick={() => {
-          handleUngroup(selectedShapes);
-          onClose();
-        }}
-        disabled={!selectedShapes.some((shape) => shape.type === 'group')}
-      >
-        <Ungroup size={16} />
-        <span>取消组合</span>
+        <Copy size={16} />
+        <span>Duplicate</span>
       </ContextMenuItemButton>
 
       <ContextMenuItemButton
@@ -165,18 +193,36 @@ export const ContextMenu = ({ x, y, onClose }: ContextMenuProps) => {
         disabled={selectedShapes.length > 1}
       >
         {isLocked ? <Lock size={16} /> : <LockOpen size={16} />}
-        <span>{isLocked ? '解锁' : '锁定'}</span>
+        <span>{isLocked ? 'Unlock' : 'Lock'}</span>
       </ContextMenuItemButton>
 
       <ContextMenuItemButton
         onClick={() => {
-          handleDuplicate(selectedShapes.map((shape) => shape.id));
+          handleGroup(selectedShapes);
           onClose();
         }}
+        disabled={selectedShapes.length <= 1}
       >
-        <Copy size={16} />
-        <span>复制</span>
+        <Group size={16} />
+        <span>Group</span>
       </ContextMenuItemButton>
+
+      <ContextMenuItemButton
+        onClick={() => {
+          handleUngroup(selectedShapes);
+          onClose();
+        }}
+        disabled={
+          selectedShapes.length !== 1 ||
+          selectedShapes[0].type !== 'group' ||
+          selectedShapes[0].isSvgGroup
+        }
+      >
+        <Ungroup size={16} />
+        <span>Ungroup</span>
+      </ContextMenuItemButton>
+
+      <div className="divider m-0"></div>
 
       <ContextMenuItemButton
         className={`text-red-500`}
@@ -187,7 +233,7 @@ export const ContextMenu = ({ x, y, onClose }: ContextMenuProps) => {
         }}
       >
         <Trash size={16} />
-        <span>删除</span>
+        <span>Delete</span>
       </ContextMenuItemButton>
     </div>
   );

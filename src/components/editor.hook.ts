@@ -191,16 +191,14 @@ const getScaledPosition = (
 };
 
 export const useSelection = (stageRef: React.RefObject<StageType>) => {
-  const [_, startTransition] = useTransition();
-
   // 添加鼠标位置状态
   const [selectionBox, setSelectionBox] = useState<{
-    x: number;
-    y: number;
+    x?: number;
+    y?: number;
     startX: number;
     startY: number;
-    width: number;
-    height: number;
+    width?: number;
+    height?: number;
   } | null>(null);
 
   const isDrawMode = useEditorStore((state) => state.isDrawMode);
@@ -234,10 +232,6 @@ export const useSelection = (stageRef: React.RefObject<StageType>) => {
       setSelectionBox({
         startX: position.x,
         startY: position.y,
-        x: Math.round(position.x),
-        y: Math.round(position.y),
-        width: 0,
-        height: 0,
       });
     },
     [isDragMode, isDrawMode],
@@ -250,12 +244,12 @@ export const useSelection = (stageRef: React.RefObject<StageType>) => {
       const stage = stageRef.current;
       if (!stage) return;
 
+      if (!isSelectMode || !selectionBox) return;
+
       const position = getScaledPosition(stage, {
         x: e.clientX,
         y: e.clientY,
       });
-
-      if (!isSelectMode || !selectionBox) return;
 
       // 计算选区的宽度度时也需要考虑缩放
       const width = position.x - selectionBox.startX;
@@ -277,35 +271,43 @@ export const useSelection = (stageRef: React.RefObject<StageType>) => {
 
     if (!isSelectMode || !selectionBox) return;
 
+    const isValidSelectionBox =
+      typeof selectionBox.width === 'number' &&
+      typeof selectionBox.height === 'number' &&
+      typeof selectionBox.x === 'number' &&
+      typeof selectionBox.y === 'number';
+
     // 计算选区范围内的元素，这里不需要修改因为selectionBox已经是基于缩放后的坐标
-    const selected = shapes.filter((shape) => {
-      const shapeRect = {
-        x: shape.x,
-        y: shape.y,
-        width: shape.width || 0,
-        height: shape.height || 0,
-      };
+    const selected = isValidSelectionBox
+      ? shapes.filter((shape) => {
+          const shapeRect = {
+            x: shape.x,
+            y: shape.y,
+            width: (shape.width || 0) * (shape.scaleX || 1),
+            height: (shape.height || 0) * (shape.scaleY || 1),
+          };
 
-      const selectionRect = {
-        x:
-          selectionBox.width >= 0
-            ? selectionBox.startX
-            : selectionBox.startX + selectionBox.width,
-        y:
-          selectionBox.height >= 0
-            ? selectionBox.startY
-            : selectionBox.startY + selectionBox.height,
-        width: Math.abs(selectionBox.width),
-        height: Math.abs(selectionBox.height),
-      };
+          const selectionRect = {
+            x:
+              selectionBox.width! >= 0
+                ? selectionBox.startX
+                : selectionBox.startX + selectionBox.width!,
+            y:
+              selectionBox.height! >= 0
+                ? selectionBox.startY
+                : selectionBox.startY + selectionBox.height!,
+            width: Math.abs(selectionBox.width!),
+            height: Math.abs(selectionBox.height!),
+          };
 
-      return (
-        shapeRect.x < selectionRect.x + selectionRect.width &&
-        shapeRect.x + shapeRect.width > selectionRect.x &&
-        shapeRect.y < selectionRect.y + selectionRect.height &&
-        shapeRect.y + shapeRect.height > selectionRect.y
-      );
-    });
+          return (
+            shapeRect.x < selectionRect.x + selectionRect.width &&
+            shapeRect.x + shapeRect.width > selectionRect.x &&
+            shapeRect.y < selectionRect.y + selectionRect.height &&
+            shapeRect.y + shapeRect.height > selectionRect.y
+          );
+        })
+      : [];
 
     if (selected.length > 0) {
       handleSelect(
@@ -791,7 +793,7 @@ export const useSnap = ({
 //     setLines([
 //       ...lines,
 //       createShape('freedraw', {
-//         id: `freedraw-${Date.now()}`,
+//         id: `freedraw-${getRandomId()}`,
 //         type: 'freedraw',
 //         isLocked: false,
 //         x: position.x,
