@@ -1,11 +1,18 @@
+import fontsIndex from '@/assets/fonts.json';
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { persist } from 'zustand/middleware';
 
-import { DEFAULT_FONTS, FontItem } from './SidebarFontsData';
+import { FontItem } from './SidebarFontsData';
 import { useEditorStore } from './editor.store';
 
-// TODO: 同步上次使用的字体
+// TODO: 更多字体
+const DEFAULT_FONTS: FontItem[] = fontsIndex.map((fontItem) => ({
+  ...fontItem,
+  value: fontItem.dir,
+  isUsed: false,
+  isLoaded: false,
+}));
 
 const _useSidebarStore = create<{
   fonts: FontItem[];
@@ -74,6 +81,7 @@ export const resetFontsState = () => {
     })),
   });
 };
+// Reset fonts state when the page is loaded (local fonts needs to be loaded)
 if (document.readyState !== 'loading') {
   resetFontsState();
 } else {
@@ -81,3 +89,23 @@ if (document.readyState !== 'loading') {
     resetFontsState();
   });
 }
+document.addEventListener('unload', () => {
+  resetFontsState();
+});
+
+useEditorStore.subscribe(
+  (state) => state.usingFonts,
+  (usingFonts) => {
+    const { fonts, customFonts } = useSidebarStore.getState();
+    useSidebarStore.setState({
+      fonts: fonts.map((f) => ({
+        ...f,
+        isUsed: usingFonts.includes(f.value),
+      })),
+      customFonts: customFonts.map((f) => ({
+        ...f,
+        isUsed: usingFonts.includes(f.value),
+      })),
+    });
+  },
+);

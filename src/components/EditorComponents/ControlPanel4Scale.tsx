@@ -12,17 +12,15 @@ export const ControlPanel4Scale = ({
   onFitScreen,
 }: ControlPanelRightBottomProps) => {
   const handleZoomIn = () => {
-    console.log('handleZoomIn', scale, Math.min(scale * 1.2, 1.5));
     onFitScreen(Math.min(scale * 1.2, 1.5));
   };
 
   const handleZoomOut = () => {
-    console.log('handleZoomOut', scale, Math.max(scale * 0.8, 0.5));
     onFitScreen(Math.max(scale * 0.8, 0.5));
   };
 
   return (
-    <div className="absolute left-4 bottom-4 flex items-center gap-2 bg-base-100 rounded-lg shadow-lg p-2">
+    <div className="flex items-center gap-2 rounded-lg shadow-md p-2 bg-base-200/40 hover:bg-base-100 transition-all duration-300 *:opacity-30 *:hover:opacity-100">
       <button className="btn btn-sm btn-circle" onClick={handleZoomOut}>
         -
       </button>
@@ -34,7 +32,7 @@ export const ControlPanel4Scale = ({
       </button>
 
       <button className="btn btn-sm" onClick={() => onFitScreen()}>
-        适应屏幕
+        Reset
       </button>
 
       <div className="divider divider-horizontal m-0 py-2"></div>

@@ -5,50 +5,26 @@ import {
   ELEMENT_EDITOR_WIDTH,
   ElementEditor,
 } from './EditorComponents/ElementEditor';
-import { HEADER_HEIGHT } from './Header';
-import { SIDEBAR_WIDTH } from './Sidebar';
 import { handleLoad } from './editor.handler';
-import { EditorStore, useEditorStore } from './editor.store';
+import { resetEditorStore, useEditorStore } from './editor.store';
+import { useHeaderStore } from './header.store';
 
-export const Container = ({
-  specificSafeArea,
-  projectId,
-}: {
-  specificSafeArea: EditorStore['safeArea'];
-  projectId: string;
-}) => {
+export const Container = () => {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const safeArea = useEditorStore((state) => state.safeArea);
 
+  const currentProject = useHeaderStore((state) => state.currentProject);
+  const currentProjectId = currentProject?.id;
   useEffect(() => {
-    const { projectId, safeArea } = useEditorStore.getState();
-    // if (safeArea.isInitialed) {
-    //   return;
-    // }
+    if (!currentProjectId) {
+      return;
+    }
 
-    const CONTAINER_WIDTH =
-      window.innerWidth - SIDEBAR_WIDTH - ELEMENT_EDITOR_WIDTH;
-    const CONTAINER_HEIGHT = window.innerHeight - HEADER_HEIGHT;
+    resetEditorStore();
 
-    useEditorStore.setState({
-      projectId,
-      editorProps: {
-        width: CONTAINER_WIDTH,
-        height: CONTAINER_HEIGHT,
-        scaleX: 1,
-        scaleY: 1,
-      },
-      safeArea: {
-        ...safeArea,
-        isInitialed: true,
-        width: specificSafeArea.width,
-        height: specificSafeArea.height,
-        x: (CONTAINER_WIDTH - specificSafeArea.width) / 2,
-        y: (CONTAINER_HEIGHT - specificSafeArea.height) / 2,
-      },
-    });
-    handleLoad(projectId); // 加载历史记录
-  }, [specificSafeArea, projectId]);
+    // 切换项目时恢复Editor数据
+    handleLoad(currentProjectId);
+  }, [currentProjectId]);
 
   return (
     <div

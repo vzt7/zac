@@ -1,16 +1,13 @@
+import { isMacOs } from '@/utils/platform';
 import dayjs from 'dayjs';
-import type { Layer as LayerType } from 'konva/lib/Layer';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import { Node as KonvaNode } from 'konva/lib/Node';
 import type { Stage as StageType } from 'konva/lib/Stage';
 import { debounce } from 'lodash-es';
-import { useCallback, useEffect, useLayoutEffect, useTransition } from 'react';
+import { useCallback, useEffect, useLayoutEffect } from 'react';
 import { useState } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
 
-import { ELEMENT_EDITOR_WIDTH } from './EditorComponents/ElementEditor';
-import { HEADER_HEIGHT } from './Header';
-import { SIDEBAR_WIDTH } from './Sidebar';
 import {
   createShape,
   handleCopy,
@@ -21,14 +18,8 @@ import {
   handleSelect,
   handleUndo,
 } from './editor.handler';
+import { fitToScreen } from './editor.resize';
 import { Shape, useEditorStore } from './editor.store';
-
-const isMacOs = () => {
-  return (
-    navigator.platform.toUpperCase().indexOf('MAC') >= 0 ||
-    navigator.userAgent.toUpperCase().indexOf('MAC') >= 0
-  );
-};
 
 // 添加快捷键处理
 export const useEditorHotkeys = () => {
@@ -347,19 +338,39 @@ export const useStageDrag = () => {
         useEditorStore.setState({ isDragMode: true });
       }
     };
-
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
         useEditorStore.setState({ isDragMode: false });
       }
     };
 
+    const handleMouseDown = (e: MouseEvent) => {
+      if (e.button === 1) {
+        useEditorStore.setState({
+          isDragMode: true,
+          keepMouseMiddleButton: true,
+        });
+      }
+    };
+    const handleMouseUp = (e: MouseEvent) => {
+      if (e.button === 1) {
+        useEditorStore.setState({
+          isDragMode: false,
+          keepMouseMiddleButton: false,
+        });
+      }
+    };
+
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('mouseup', handleMouseUp);
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('mousedown', handleMouseUp);
+      window.removeEventListener('mouseup', handleMouseUp);
     };
   }, []);
 
@@ -411,91 +422,25 @@ export const useContextMenu = () => {
   };
 };
 
-export const useResize = ({
-  stageRef,
-  layerRef,
-}: {
-  stageRef: React.RefObject<StageType>;
-  layerRef: React.RefObject<LayerType>;
-}) => {
-  const fitToScreen = useCallback((scale?: number) => {
-    if (!stageRef.current || !layerRef.current) {
-      return;
+export const useResize = () => {
+  const handleStageWheel = useCallback((e: KonvaEventObject<WheelEvent>) => {
+    e.evt.preventDefault();
+    const { isDragMode, editorProps } = useEditorStore.getState();
+    if (isDragMode) return;
+
+    const scaleBy = 1.1;
+    const stage = e.target as StageType;
+    if (!stage) return;
+
+    const oldScale = editorProps.scaleX;
+    if (e.evt.deltaY > 0) {
+      const scale = oldScale / scaleBy;
+      fitToScreen(scale);
+    } else {
+      const scale = oldScale * scaleBy;
+      fitToScreen(scale);
     }
-
-    const containerWidth =
-      window.innerWidth - SIDEBAR_WIDTH - ELEMENT_EDITOR_WIDTH;
-    const containerHeight = window.innerHeight - HEADER_HEIGHT;
-
-    const { safeArea, shapes } = useEditorStore.getState();
-
-    const MIN_WIDTH = 980;
-    const MIN_HEIGHT = 720;
-
-    const effectiveWidth = Math.max(containerWidth, MIN_WIDTH);
-    const effectiveHeight = Math.max(containerHeight, MIN_HEIGHT);
-
-    const scaleX = scale ?? effectiveWidth / (safeArea.width * 1.5);
-    const scaleY = scale ?? effectiveHeight / (safeArea.height * 1.5);
-    const scaleValue = Math.min(scaleX, scaleY);
-
-    const newX = (effectiveWidth - safeArea.width * scaleValue) / 2;
-    const newY = (effectiveHeight - safeArea.height * scaleValue) / 2;
-
-    const deltaX = newX / scaleValue - safeArea.x;
-    const deltaY = newY / scaleValue - safeArea.y;
-
-    // 更新所有 shapes 的位置
-    const newShapes = shapes.map((shape) => ({
-      ...shape,
-      x: shape.x + deltaX,
-      y: shape.y + deltaY,
-    }));
-
-    // 一次性更新所有状态
-    useEditorStore.setState({
-      editorProps: {
-        width: effectiveWidth,
-        height: effectiveHeight,
-        scaleX: scaleValue,
-        scaleY: scaleValue,
-      },
-      safeArea: {
-        ...safeArea,
-        x: newX / scaleValue,
-        y: newY / scaleValue,
-      },
-      shapes: newShapes,
-    });
-
-    // debouncedAddToHistory(newShapes);
-    // backgroundRef.current?.draw();
   }, []);
-
-  const handleStageWheel = useCallback(
-    (e: KonvaEventObject<WheelEvent>) => {
-      e.evt.preventDefault();
-      const { isDragMode, editorProps } = useEditorStore.getState();
-      if (isDragMode) return;
-
-      const scaleBy = 1.1;
-      const stage = e.target as StageType;
-      if (!stage) return;
-
-      // 限制最小和最大缩放
-      const MIN_SCALE = 0.5;
-      const MAX_SCALE = 1.5;
-      const oldScale = editorProps.scaleX;
-      if (e.evt.deltaY > 0) {
-        const scale = oldScale / scaleBy;
-        fitToScreen(Math.max(scale, MIN_SCALE));
-      } else {
-        const scale = oldScale * scaleBy;
-        fitToScreen(Math.min(scale, MAX_SCALE));
-      }
-    },
-    [fitToScreen],
-  );
 
   useLayoutEffect(() => {
     const debouncedFitToScreen = debounce(() => {
@@ -509,7 +454,7 @@ export const useResize = ({
     return () => {
       window.removeEventListener('resize', debouncedFitToScreen);
     };
-  }, [fitToScreen]);
+  }, []);
 
   return {
     fitToScreen,
@@ -772,120 +717,3 @@ export const useSnap = ({
     handleDragEnd,
   };
 };
-
-// export const useFreeDraw = () => {
-//   const [lines, setLines] = useState<
-//     NonNullable<ReturnType<typeof createShape>>[]
-//   >([]);
-//   const shapes = useEditorStore((state) => state.shapes);
-//   const drawingType = useEditorStore((state) => state.drawingType);
-//   const isFreeDrawing = drawingType === 'free';
-
-//   const handleFreeDrawMouseDown = (e: KonvaEventObject<MouseEvent>) => {
-//     if (!isFreeDrawing) return;
-
-//     const stage = e.target.getStage();
-//     if (!stage) return;
-
-//     const position = stage.getRelativePointerPosition();
-//     if (!position) return;
-
-//     setLines([
-//       ...lines,
-//       createShape('freedraw', {
-//         id: `freedraw-${getRandomId()}`,
-//         type: 'freedraw',
-//         isLocked: false,
-//         x: position.x,
-//         y: position.y,
-//         // scaleX: stage.scaleX(),
-//         // scaleY: stage.scaleY(),
-//         points: [0, 0, 0, 0],
-//         draggable: true,
-//       })!,
-//     ]);
-//   };
-
-//   const handleFreeDrawMouseMove = (e: KonvaEventObject<MouseEvent>) => {
-//     if (!isFreeDrawing) return;
-
-//     const stage = e.target.getStage();
-//     if (!stage) return;
-
-//     // 计算相对于舞台的实际位置，考虑缩放
-//     // const position = getScaledPosition(stage, {
-//     //   x: e.evt.clientX,
-//     //   y: e.evt.clientY,
-//     // });
-//     const position = stage.getRelativePointerPosition();
-//     if (!position) return;
-
-//     const lastLine = lines[lines.length - 1];
-//     if (!lastLine) return;
-
-//     setLines(
-//       lines.map((line, i) =>
-//         i === lines.length - 1
-//           ? {
-//               ...line,
-//               points: [
-//                 ...line.points,
-//                 (position.x - line.x) / stage.scaleX(),
-//                 (position.y - line.y) / stage.scaleY(),
-//               ],
-//             }
-//           : line,
-//       ) as Shape[],
-//     );
-//   };
-
-//   const handleFreeDrawMouseUp = (e: KonvaEventObject<MouseEvent>) => {
-//     if (!isFreeDrawing) return;
-
-//     // 计算绘制内容的边界框
-//     const points = lines[0]?.points || [];
-//     if (points.length < 4) return;
-
-//     const stage = e.target.getStage();
-//     if (!stage) return;
-
-//     let minX = Infinity;
-//     let minY = Infinity;
-//     let maxX = -Infinity;
-//     let maxY = -Infinity;
-
-//     // 计算边界框
-//     for (let i = 0; i < points.length; i += 2) {
-//       const x = points[i];
-//       const y = points[i + 1];
-//       minX = Math.min(minX, x);
-//       minY = Math.min(minY, y);
-//       maxX = Math.max(maxX, x);
-//       maxY = Math.max(maxY, y);
-//     }
-
-//     const width = maxX - minX;
-//     const height = maxY - minY;
-
-//     const newShapes = lines.filter(Boolean).map((line) => ({
-//       ...line,
-//       width: width * stage.scaleX(),
-//       height: height * stage.scaleY(),
-//     }));
-
-//     useEditorStore.setState({
-//       shapes: [...shapes, ...newShapes],
-//     });
-//     addToHistory([...shapes, ...newShapes]);
-//     setLines([]);
-//   };
-
-//   return {
-//     lines,
-//     isFreeDrawing,
-//     drawingType,
-//     handleFreeDrawMouseDown,
-//     handleFreeDrawMouseMove,
-//     handleFreeDrawMouseUp,
-//   };
-// };

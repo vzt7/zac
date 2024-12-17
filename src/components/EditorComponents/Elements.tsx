@@ -31,6 +31,9 @@ import useImage from 'use-image';
 
 import { Shape } from '../editor.store';
 
+const DEFAULT_FILL = '#000000';
+const DEFAULT_WIDTH = 100;
+
 // 合并后的渲染方法
 export const renderShape = (shape: Shape) => {
   const commonProps = shape;
@@ -51,9 +54,26 @@ export const renderShape = (shape: Shape) => {
         </Group>
       );
     case 'rect':
-      return <Rect key={commonProps.id} {...commonProps} />;
+      return (
+        <Rect
+          key={commonProps.id}
+          {...commonProps}
+          fill={commonProps.fill || DEFAULT_FILL}
+          width={commonProps.width || DEFAULT_WIDTH}
+          height={commonProps.height || DEFAULT_WIDTH}
+        />
+      );
     case 'circle':
-      return <Circle key={commonProps.id} {...commonProps} />;
+      return (
+        <Circle
+          key={commonProps.id}
+          {...commonProps}
+          fill={commonProps.fill || DEFAULT_FILL}
+          width={commonProps.width || DEFAULT_WIDTH}
+          height={commonProps.height || DEFAULT_WIDTH}
+          radius={commonProps.radius || DEFAULT_WIDTH / 2}
+        />
+      );
     case 'triangle':
       return (
         <RegularPolygon
@@ -61,6 +81,8 @@ export const renderShape = (shape: Shape) => {
           {...commonProps}
           radius={commonProps.radius || 50}
           sides={commonProps.sides || 3}
+          fill={commonProps.fill || DEFAULT_FILL}
+          points={commonProps.points || [0, -50, 50, 50, -50, 50]}
         />
       );
     case 'polygon':
@@ -68,8 +90,9 @@ export const renderShape = (shape: Shape) => {
         <RegularPolygon
           key={commonProps.id}
           {...commonProps}
-          radius={commonProps.radius || 50}
+          fill={commonProps.fill || DEFAULT_FILL}
           sides={commonProps.sides || 6}
+          radius={commonProps.radius || 50}
         />
       );
     case 'star':
@@ -80,31 +103,90 @@ export const renderShape = (shape: Shape) => {
           numPoints={commonProps.numPoints || 5}
           innerRadius={commonProps.innerRadius || 20}
           outerRadius={commonProps.outerRadius || 50}
+          fill={commonProps.fill || DEFAULT_FILL}
+          points={
+            commonProps.points || [
+              0, -50, 10, -20, 40, -20, 20, 0, 30, 30, 0, 20, -30, 30, -20, 0,
+              -40, -20, -10, -20,
+            ]
+          }
         />
       );
     case 'text':
-      return <TextElement key={commonProps.id} {...commonProps} />;
+      return (
+        <TextElement
+          key={commonProps.id}
+          {...commonProps}
+          fill={commonProps.fill || DEFAULT_FILL}
+        />
+      );
     // return <SvgElement src={commonProps.image as string} />;
     case 'svg':
-      return <Image {...commonProps} image={commonProps.image} />;
+      return (
+        <Image
+          {...commonProps}
+          image={commonProps.image}
+          fill={commonProps.fill || DEFAULT_FILL}
+        />
+      );
     case 'image':
       return (
         <ImageElement key={commonProps.id} {...commonProps} src={shape.src!} />
       );
     case 'line':
-      return <Line key={commonProps.id} {...commonProps} />;
-    case 'freedraw':
-      return <Line key={commonProps.id} {...commonProps} />;
+      return (
+        <Line
+          key={commonProps.id}
+          {...commonProps}
+          points={commonProps.points || [0, 0, 100, 0]}
+          lineCap={commonProps.lineCap || 'round'}
+          lineJoin={commonProps.lineJoin || 'round'}
+          strokeWidth={commonProps.strokeWidth || 2}
+          fill={commonProps.fill || ''}
+        />
+      );
+    // case 'freedraw':
+    //   return (
+    //     <Line
+    //       key={commonProps.id}
+    //       {...commonProps}
+    //       fill={commonProps.fill || DEFAULT_FILL}
+    //       stroke={commonProps.stroke || '#000000'}
+    //       strokeWidth={
+    //         commonProps.strokeWidth ||
+    //         5 / Math.min(editorProps.scaleX, editorProps.scaleY)
+    //       }
+    //       tension={commonProps.tension || 0.5}
+    //       lineCap={commonProps.lineCap || 'round'}
+    //       lineJoin={commonProps.lineJoin || 'round'}
+    //       globalCompositeOperation={
+    //         commonProps.globalCompositeOperation || 'source-over'
+    //       }
+    //       draggable={commonProps.draggable || true}
+    //     />
+    //   );
     case 'arrow':
       return (
         <Arrow
           key={commonProps.id}
           {...commonProps}
-          points={commonProps.points || [0, 0, 100, 100]}
+          points={commonProps.points || [0, 0, 100, 0]}
+          pointerLength={commonProps.pointerLength || 10}
+          pointerWidth={commonProps.pointerWidth || 10}
+          lineCap={commonProps.lineCap || 'round'}
+          lineJoin={commonProps.lineJoin || 'round'}
+          fill={commonProps.fill || ''}
+          strokeWidth={commonProps.strokeWidth || 2}
         />
       );
     case 'path':
-      return <Path key={commonProps.id} {...commonProps} />;
+      return (
+        <Path
+          key={commonProps.id}
+          {...commonProps}
+          fill={commonProps.fill || DEFAULT_FILL}
+        />
+      );
     default:
       return null;
   }

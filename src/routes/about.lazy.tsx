@@ -1,10 +1,10 @@
-import { Footer } from '@/components/Footer'
-import { Header } from '@/components/Header'
-import { createLazyFileRoute } from '@tanstack/react-router'
+import { Footer } from '@/components/Footer';
+import { Header } from '@/components/Header';
+import { createLazyFileRoute } from '@tanstack/react-router';
 
 export const Route = createLazyFileRoute('/about')({
   component: RouteComponent,
-})
+});
 
 function RouteComponent() {
   return (
@@ -15,7 +15,7 @@ function RouteComponent() {
         <div className="mx-auto max-w-screen-xl px-4 py-32 lg:flex lg:min-h-[66vh] lg:items-center">
           <div className="mx-auto max-w-xl text-center">
             <h1 className="text-3xl font-extrabold sm:text-5xl">
-              About Poster Master
+              About {import.meta.env.VITE_APP_NAME}
               <strong className="font-extrabold text-primary sm:block">
                 {' '}
                 Our Story{' '}
@@ -48,12 +48,12 @@ function RouteComponent() {
               <h2 className="text-3xl font-bold sm:text-4xl">Our Mission</h2>
 
               <p className="mt-4 text-gray-600">
-                At Poster Master, we believe that everyone has the potential to
-                create beautiful designs. Our platform is built to nurture
-                creativity, providing tools that are powerful yet easy to use.
-                We're committed to continually improving our service, ensuring
-                that our users always have access to cutting-edge design
-                capabilities.
+                At {import.meta.env.VITE_APP_NAME}, we believe that everyone has
+                the potential to create beautiful designs. Our platform is built
+                to nurture creativity, providing tools that are powerful yet
+                easy to use. We're committed to continually improving our
+                service, ensuring that our users always have access to cutting-
+                edge design capabilities.
               </p>
 
               <p className="mt-4 text-gray-600">
@@ -61,7 +61,8 @@ function RouteComponent() {
                 backgrounds, united by our love for design and technology. We
                 work tirelessly to bring you the best possible design
                 experience, and we're always excited to hear from our users
-                about how we can make Poster Master even better.
+                about how we can make {import.meta.env.VITE_APP_NAME} even
+                better.
               </p>
             </div>
           </div>
@@ -70,5 +71,5 @@ function RouteComponent() {
 
       <Footer />
     </div>
-  )
+  );
 }

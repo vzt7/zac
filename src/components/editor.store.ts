@@ -2,7 +2,6 @@ import { debug } from '@/utils/debug';
 import { Node as KonvaNode, NodeConfig } from 'konva/lib/Node';
 import { ShapeConfig } from 'konva/lib/Shape';
 import type { Stage as StageType } from 'konva/lib/Stage';
-import type { Image as KonvaImageElement } from 'konva/lib/shapes/Image';
 import { ComponentProps, MutableRefObject } from 'react';
 import { Stage } from 'react-konva';
 import { create } from 'zustand';
@@ -37,8 +36,16 @@ export interface Shape extends ShapeConfig {
   isSvgGroup?: boolean;
 }
 
+export interface ProjectCanvas {
+  id: string;
+  name: string;
+  category: string;
+  safeArea: SafeArea;
+}
+
 export interface SafeArea extends ShapeConfig {
   isInitialed?: boolean;
+  id?: string;
   x: number;
   y: number;
   width: number;
@@ -47,7 +54,7 @@ export interface SafeArea extends ShapeConfig {
 
 interface HistoryState {
   shapes: Shape[];
-  stage: {
+  stage?: {
     x: number;
     y: number;
     scaleX: number;
@@ -62,8 +69,10 @@ interface HistoryState {
 }
 
 export interface EditorStore {
+  // project data
+  projectId?: string | null;
+
   stageRef: MutableRefObject<StageType | null>;
-  projectId: string;
 
   isDragMode: boolean;
   isDrawMode: boolean;
@@ -75,9 +84,12 @@ export interface EditorStore {
 
   // 是否按住 shift 键
   keepShiftKey: boolean;
+  // 是否按住鼠标中键
+  keepMouseMiddleButton: boolean;
 
   // 正在使用的字体
   usingFonts: string[];
+  removeUsingFont: (font: string) => void;
 
   shapes: Shape[];
   setShapes: (shapes: Shape[]) => void;
@@ -124,87 +136,93 @@ export interface EditorStore {
 
   safeArea: SafeArea;
   setSafeArea: (safeArea: SafeArea) => void;
+
+  cacheVersion?: number;
 }
+
+const initialState = {
+  stageRef: { current: null },
+
+  isDragMode: false,
+  isDrawMode: false,
+  drawingType: null,
+  isSelectMode: false,
+  isElementEditing: false,
+  isImageCropping: false,
+
+  keepShiftKey: false,
+  keepMouseMiddleButton: false,
+
+  usingFonts: [],
+
+  shapes: [],
+
+  selectedIds: [],
+  selectedShapes: [],
+  selectedNodes: [],
+
+  selectionBox: null,
+
+  history: [],
+  historyIndex: 0,
+
+  editorProps: {
+    x: 0,
+    y: 0,
+    width: 0,
+    height: 0,
+    scaleX: 1,
+    scaleY: 1,
+  },
+
+  safeArea: {
+    isInitialed: false,
+    x: 0,
+    y: 0,
+    width: 0,
+    height: 0,
+  },
+};
 
 export const useEditorStore = create<EditorStore>()(
   subscribeWithSelector((set, get) => ({
-    stageRef: { current: null },
-    projectId: '',
+    ...initialState,
 
-    isDragMode: false,
-    isDrawMode: false,
-    drawingType: null,
-    isSelectMode: false,
-    isElementEditing: false,
-    isImageCropping: false,
+    removeUsingFont: (font) => {
+      set({
+        usingFonts: get().usingFonts.filter((f) => f !== font),
+        shapes: get().shapes.map((shape) => ({
+          ...shape,
+          fontFamily: shape.fontFamily === font ? undefined : shape.fontFamily,
+          children: shape.children?.map((child) => ({
+            ...child,
+            fontFamily:
+              child.fontFamily === font ? undefined : child.fontFamily,
+          })),
+        })),
+      });
+    },
 
-    keepShiftKey: false,
-    usingFonts: [],
-
-    shapes: [],
     setShapes: (shapes) => set({ shapes }),
 
-    selectedIds: [],
     setSelectedIds: (ids) => set({ selectedIds: ids }),
-    selectedShapes: [],
-    selectedNodes: [],
 
-    selectionBox: null,
     setSelectionBox: (box) => set({ selectionBox: box }),
 
-    history: [
-      {
-        shapes: [],
-        stage: {
-          x: 0,
-          y: 0,
-          scaleX: 1,
-          scaleY: 1,
-        },
-        safeArea: {
-          x: 0,
-          y: 0,
-          width: 1280,
-          height: 720,
-        },
-      },
-    ],
-    setHistory: (history) => set({ history }),
-    historyIndex: 0,
+    setHistory: (history) => set({ history: history.slice(0, 1000) }), // Max 1000 history steps
     setHistoryIndex: (index) => set({ historyIndex: index }),
 
-    editorProps: {
-      x: 0,
-      y: 0,
-      width: 0,
-      height: 0,
-      scaleX: 1,
-      scaleY: 1,
-    },
     setEditorProps: (editorProps) => set({ editorProps }),
 
-    safeArea: {
-      isInitialed: false,
-      x: 0,
-      y: 0,
-      width: 0,
-      height: 0,
-    },
     setSafeArea: (safeArea) => set({ safeArea }),
   })),
 );
 
 if (import.meta.env.DEV) {
   useEditorStore.subscribe(
-    (state) => state.safeArea,
-    (safeArea) => {
-      debug(`[safeArea]`, safeArea);
-    },
-  );
-  useEditorStore.subscribe(
-    (state) => state.shapes,
-    (shapes) => {
-      debug(`[shapes]`, shapes);
+    (state) => state,
+    (all) => {
+      debug(`[editorStore]`, all);
     },
   );
 }
@@ -251,3 +269,7 @@ window.addEventListener('keyup', (e) => {
     useEditorStore.setState({ keepShiftKey: false });
   }
 });
+
+export const resetEditorStore = () => {
+  useEditorStore.setState(initialState);
+};

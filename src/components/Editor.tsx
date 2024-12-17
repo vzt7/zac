@@ -3,21 +3,16 @@ import { KonvaEventObject } from 'konva/lib/Node';
 import type { Stage as StageType } from 'konva/lib/Stage';
 import type { Rect as RectType } from 'konva/lib/shapes/Rect';
 import { useEffect, useRef } from 'react';
-import {
-  Group,
-  Rect as KonvaRect,
-  Layer,
-  Line,
-  Rect,
-  Stage,
-} from 'react-konva';
+import { Group, Rect as KonvaRect, Layer, Line, Stage } from 'react-konva';
 
 import { Debugger } from './Debugger';
+import { AutoSaveIndicator } from './EditorComponents/AutoSaveIndicator';
 import { ContextMenu } from './EditorComponents/ContextMenu';
 import { ControlPanel4Scale } from './EditorComponents/ControlPanel4Scale';
 import { CustomTransformer } from './EditorComponents/CustomTransformer';
 import { SourcePanel } from './EditorComponents/ElementEditorSourcePanel';
 import { renderShape } from './EditorComponents/Elements';
+import { HelpCenter } from './EditorComponents/HelpCenter';
 import { LayersPanel } from './EditorComponents/LayerPanel';
 import {
   handleBackgroundClip,
@@ -40,9 +35,6 @@ import { useEditorStore } from './editor.store';
 import { useHeaderStore } from './header.store';
 
 export const Editor = () => {
-  // 添加快捷键支持
-  useEditorHotkeys();
-
   const stageRef = useRef<StageType>(null);
   useEffect(() => {
     useEditorStore.setState({ stageRef });
@@ -67,10 +59,7 @@ export const Editor = () => {
   // 上下文菜单
   const { contextMenu, handleContextMenu, closeContextMenu } = useContextMenu();
   // 缩放
-  const { fitToScreen, handleStageWheel } = useResize({
-    stageRef,
-    layerRef,
-  });
+  const { fitToScreen, handleStageWheel } = useResize();
   // 画布拖拽
   const { isDragMode } = useStageDrag();
   // 对齐辅助线
@@ -95,6 +84,16 @@ export const Editor = () => {
   //   handleFreeDrawMouseMove,
   //   handleFreeDrawMouseUp,
   // } = useFreeDraw();
+
+  // 添加快捷键支持
+  useEditorHotkeys();
+
+  useEffect(() => {
+    if (!safeArea.id) {
+      return;
+    }
+    fitToScreen();
+  }, [safeArea.id, fitToScreen]);
 
   return (
     <div
@@ -215,7 +214,7 @@ export const Editor = () => {
           ))}
         </Layer> */}
 
-        <Layer>
+        <Layer id="background-layer">
           {/* 绘制半透明背景 */}
           <Group
             ref={backgroundRef as any}
@@ -233,10 +232,11 @@ export const Editor = () => {
         />
       )}
 
-      {/* toolbar */}
-      <div
-        className={`absolute top-4 left-[50%] -translate-x-[50%] z-10 flex flex-col gap-2 bg-base-100 p-2 shadow-md shadow-black rounded-lg`}
-      >
+      <div className="absolute top-4 left-4">
+        <AutoSaveIndicator />
+      </div>
+
+      <div className={`absolute top-4 left-[50%] -translate-x-[50%]`}>
         <SourcePanel />
       </div>
 
@@ -244,10 +244,16 @@ export const Editor = () => {
         <LayersPanel />
       </div>
 
-      <ControlPanel4Scale
-        scale={editorProps.scaleX}
-        onFitScreen={fitToScreen}
-      />
+      <div className={`absolute bottom-4 right-4`}>
+        <HelpCenter />
+      </div>
+
+      <div className={`absolute left-4 bottom-4`}>
+        <ControlPanel4Scale
+          scale={editorProps.scaleX}
+          onFitScreen={fitToScreen}
+        />
+      </div>
 
       <Debugger />
     </div>

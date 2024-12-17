@@ -8,7 +8,7 @@ export const SidebarIcons = () => {
 
   return (
     <div className="flex flex-col gap-4 pb-10">
-      <div className="tabs tabs-boxed tabs-lg mx-4 border-2">
+      <div className="tabs tabs-boxed tabs-lg border-2 border-base-300">
         <button
           className={`tab ${activeTab === 'default' ? 'tab-active' : ''}`}
           onClick={() => setActiveTab('default')}
@@ -23,7 +23,7 @@ export const SidebarIcons = () => {
         </button>
       </div>
 
-      <div className="px-4">
+      <div>
         <Suspense fallback={<div>Loading...</div>}>
           {activeTab === 'default' && <SidebarIconsDefault />}
           {activeTab === 'more' && <SidebarIconsMore />}

@@ -84,7 +84,7 @@ export const handleUndo = () => {
     editorProps,
     setEditorProps,
   } = useEditorStore.getState();
-  if (historyIndex > 1) {
+  if (historyIndex >= 1) {
     handleSelect([]);
     setHistoryIndex(historyIndex - 1);
 
@@ -92,26 +92,15 @@ export const handleUndo = () => {
     setShapes(prevState.shapes);
     setSafeArea(prevState.safeArea);
     setEditorProps({
-      x: prevState.stage.x,
-      y: prevState.stage.y,
+      x: prevState.stage?.x || editorProps.x || 0,
+      y: prevState.stage?.y || editorProps.y || 0,
       width: editorProps.width,
       height: editorProps.height,
-      scaleX: prevState.stage.scaleX,
-      scaleY: prevState.stage.scaleY,
+      scaleX: prevState.stage?.scaleX || editorProps.scaleX || 1,
+      scaleY: prevState.stage?.scaleY || editorProps.scaleY || 1,
     });
 
-    // 恢复 stage 状态
-    const stage = stageRef.current;
-    if (stage) {
-      stage.position({
-        x: prevState.stage.x,
-        y: prevState.stage.y,
-      });
-      stage.scale({
-        x: prevState.stage.scaleX,
-        y: prevState.stage.scaleY,
-      });
-    }
+    stageRef.current?.draw();
   }
 };
 
@@ -134,32 +123,20 @@ export const handleRedo = () => {
     setShapes(nextState.shapes);
     setSafeArea(nextState.safeArea);
     setEditorProps({
-      x: nextState.stage.x,
-      y: nextState.stage.y,
+      x: nextState.stage?.x || editorProps.x || 0,
+      y: nextState.stage?.y || editorProps.y || 0,
       width: editorProps.width,
       height: editorProps.height,
-      scaleX: nextState.stage.scaleX,
-      scaleY: nextState.stage.scaleY,
+      scaleX: nextState.stage?.scaleX || editorProps.scaleX || 1,
+      scaleY: nextState.stage?.scaleY || editorProps.scaleY || 1,
     });
 
-    // 恢复 stage 状态
-    const stage = stageRef.current;
-    if (stage) {
-      stage.position({
-        x: nextState.stage.x,
-        y: nextState.stage.y,
-      });
-      stage.scale({
-        x: nextState.stage.scaleX,
-        y: nextState.stage.scaleY,
-      });
-    }
+    stageRef.current?.draw();
   }
 };
 
 export const createShape = (type: string, shape?: Partial<Shape>) => {
-  const { shapes, setShapes, safeArea, editorProps } =
-    useEditorStore.getState();
+  const { safeArea } = useEditorStore.getState();
   const editorCenter = {
     x: shape?.x ?? safeArea.x + safeArea.width / 2,
     y: shape?.y ?? safeArea.y + safeArea.height / 2,
@@ -169,105 +146,13 @@ export const createShape = (type: string, shape?: Partial<Shape>) => {
     id: `${type}-${getRandomId()}`,
     x: editorCenter.x,
     y: editorCenter.y,
-    fill: '#000000',
     ...shape,
   };
 
-  let newShape: Shape;
-
-  switch (type) {
-    case 'rect':
-      newShape = {
-        type,
-        width: 100,
-        height: 100,
-        ...baseShape,
-      } as Shape;
-      break;
-    case 'circle':
-      newShape = {
-        type,
-        radius: 50,
-        ...baseShape,
-      } as Shape;
-      break;
-    case 'triangle':
-      newShape = {
-        type,
-        points: [0, -50, 50, 50, -50, 50],
-        ...baseShape,
-      } as Shape;
-      break;
-    case 'polygon':
-      newShape = {
-        type,
-        sides: 6,
-        radius: 50,
-        ...baseShape,
-      } as Shape;
-      break;
-    case 'star':
-      newShape = {
-        type,
-        points: [
-          0, -50, 10, -20, 40, -20, 20, 0, 30, 30, 0, 20, -30, 30, -20, 0, -40,
-          -20, -10, -20,
-        ],
-        ...baseShape,
-      } as Shape;
-      break;
-    case 'freedraw':
-      newShape = {
-        type,
-        stroke: '#000000',
-        strokeWidth: 5 / Math.min(editorProps.scaleX, editorProps.scaleY),
-        tension: 0.5,
-        lineCap: 'round',
-        lineJoin: 'round',
-        globalCompositeOperation: 'source-over',
-        draggable: true,
-        ...baseShape,
-      } as any;
-      break;
-    case 'line':
-      newShape = {
-        type,
-        points: [0, 0, 100, 0], // 默认水平线，长度100
-        lineCap: 'round',
-        lineJoin: 'round',
-        strokeWidth: 2,
-        fill: '', // 线条不需要填充
-        ...baseShape,
-      } as Shape;
-      break;
-    case 'arrow':
-      newShape = {
-        type,
-        points: [0, 0, 100, 0], // 默认水平箭头，长度100
-        pointerLength: 10, // 箭头长度
-        pointerWidth: 10, // 箭头宽度
-        lineCap: 'round',
-        lineJoin: 'round',
-        fill: '', // 箭头线条不需要填充
-        strokeWidth: 2,
-        ...baseShape,
-      } as Shape;
-      break;
-    case 'path':
-      newShape = {
-        type,
-        ...baseShape,
-      } as Shape;
-      break;
-    case 'group':
-      newShape = {
-        type,
-        ...baseShape,
-      } as Shape;
-      break;
-    default:
-      return;
-  }
+  const newShape = {
+    type,
+    ...baseShape,
+  } as Shape;
 
   return newShape;
 };
@@ -285,7 +170,7 @@ export const handleAddShape = (
 };
 
 export const handleTransformEnd = (e: any) => {
-  const { shapes, setShapes, editorProps } = useEditorStore.getState();
+  const { shapes, setShapes } = useEditorStore.getState();
   const node = e.target as Node;
 
   // 获取所有变换属性
@@ -351,7 +236,7 @@ export const handleStageDragMove = (e: any) => {
 // 添加位置变化监听
 export const handleDragEnd = (e: any) => {
   const node = e.target;
-  const { shapes, setShapes } = useEditorStore.getState();
+  const { shapes } = useEditorStore.getState();
 
   const newShapes = shapes.map((shape) => {
     if (shape.id === node.id()) {
@@ -369,23 +254,44 @@ export const handleDragEnd = (e: any) => {
   debouncedAddToHistory(newShapes);
 };
 
-export const handleSave = (projectId: string) => {
-  const { shapes } = useEditorStore.getState();
-  const safeArea = useEditorStore.getState().safeArea;
-  const data = JSON.stringify({ shapes, safeArea });
+export const getCacheKey = (projectId: string) => {
+  return `_pm_${projectId}`;
+};
 
-  // TODO: 保存到服务器
-  localStorage.setItem(projectId, data);
+export const getCacheUpdatedAt = (projectId: string) => {
+  const data = JSON.parse(localStorage.getItem(getCacheKey(projectId)) || '{}');
+  return data?.cacheUpdatedAt;
+};
+
+export const handleSave = (projectId: string) => {
+  const { shapes, safeArea, editorProps } = useEditorStore.getState();
+  const data = JSON.stringify({
+    shapes,
+    safeArea,
+    editorProps,
+    cacheUpdatedAt: new Date().toISOString(),
+  });
+
+  localStorage.setItem(getCacheKey(projectId), data);
 };
 
 export const handleLoad = (projectId: string) => {
-  const { setShapes } = useEditorStore.getState();
-  // TODO: 从服务器加载
-  const data = localStorage.getItem(projectId);
+  const data = localStorage.getItem(getCacheKey(projectId));
   if (data) {
-    const { shapes, safeArea } = JSON.parse(data);
-    setShapes(shapes);
-    useEditorStore.setState({ safeArea });
+    const { shapes, safeArea, editorProps } = JSON.parse(data);
+    useEditorStore.setState({
+      shapes,
+      projectId,
+      safeArea,
+      editorProps,
+      history: [
+        {
+          shapes,
+          safeArea,
+        },
+      ],
+      historyIndex: 1,
+    });
     addToHistory(shapes);
   }
 };
@@ -499,7 +405,7 @@ const createImageShape = (
   }
 };
 
-export const handleAddSvgByPath = (
+export const handleAddSvgByTagStr = (
   svgString: string,
   shape?: Partial<Shape>,
 ) => {
@@ -509,32 +415,44 @@ export const handleAddSvgByPath = (
     `<div>${svgString}</div>`,
     'image/svg+xml',
   );
-  const paths = Array.from(svg.querySelectorAll('path')).map((el: Element) => ({
+  const getAttrs = (el: Element) => ({
     data: el.getAttribute('d'),
-    fill: el.getAttribute('fill'),
+    fill: el.getAttribute('fill') || undefined,
     stroke: el.getAttribute('stroke') || undefined,
     strokeWidth: Number(el.getAttribute('stroke-width')) || 1,
     lineCap: (el.getAttribute('stroke-linecap') as any) || undefined,
     lineJoin: (el.getAttribute('stroke-linejoin') as any) || undefined,
-  }));
+    fillRule: (el.getAttribute('fill-rule') as any) || undefined,
+    clipRule: (el.getAttribute('clip-rule') as any) || undefined,
+  });
+  const attrs = {
+    svg: getAttrs(svg.querySelector('svg')!),
+    paths: Array.from(svg.querySelectorAll('path')).map((el: Element) =>
+      getAttrs(el),
+    ),
+  };
   // TODO: 嵌套path或其他情况可能导致svg无法正常显示
-  debug('[handleAddSvgByPath] paths', paths, 'rawSvgString:', svgString);
+  debug('[handleAddSvgByTagStr] attrs', attrs, 'rawSvgString:', svgString);
 
   const newShape = createShape('group', {
+    ...attrs.svg,
     isSvgGroup: true,
     name: shape?.name,
-    children: paths
+    fill: attrs.svg.fill === 'none' ? undefined : attrs.svg.fill || '#000000',
+    children: attrs.paths
       .map(({ data, fill, ...restArgs }) =>
         createShape('path', {
           data,
-          fill: fill === 'none' ? undefined : (fill ?? '#000000'),
-          scaleX: 4 * editorProps.scaleX,
-          scaleY: 4 * editorProps.scaleY,
+          fill: fill === 'none' ? undefined : fill || '#000000',
+          scaleX: 5 * editorProps.scaleX,
+          scaleY: 5 * editorProps.scaleY,
           ...restArgs,
           ...shape,
           name: `path-${getRandomId()}`,
           x: 0,
           y: 0,
+          fillRule: 'evenodd',
+          clipRule: 'evenodd',
         }),
       )
       .filter((item): item is NonNullable<typeof item> => Boolean(item)),
@@ -555,7 +473,11 @@ const isImageUrl = (url: string) => {
   return /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(url);
 };
 
-export const handleAddImage = (imageShapeOrUrl: Shape | string) => {
+export const handleAddImage = (
+  imageShapeOrUrl: Shape | string,
+  shape?: Partial<Shape>,
+  { insertTo = 'top' }: { insertTo?: 'bottom' | 'top' } = {},
+) => {
   const { shapes, setShapes, safeArea } = useEditorStore.getState();
   if (typeof imageShapeOrUrl === 'string') {
     createImageShape(
@@ -565,7 +487,10 @@ export const handleAddImage = (imageShapeOrUrl: Shape | string) => {
         y: safeArea.y + safeArea.height / 2,
       },
       (newShape) => {
-        const newShapes = [...shapes, newShape];
+        const newShapes =
+          insertTo === 'bottom'
+            ? [{ ...newShape, ...shape }, ...shapes]
+            : [...shapes, { ...newShape, ...shape }];
         setShapes(newShapes);
         addToHistory(newShapes);
       },
@@ -797,7 +722,7 @@ export const handleBackgroundClip = (ctx: SceneContext) => {
   img.src = transparentBackground;
   // const pattern = ctx.createPattern(img, 'repeat');
   // ctx.fillStyle = pattern!;
-  ctx.globalAlpha = 0.4;
+  ctx.globalAlpha = 0.5;
 
   // 6. 使用 destination-over 确保遮罩在元素下方
   ctx.globalCompositeOperation = 'destination-over';
@@ -810,19 +735,27 @@ export const handleBackgroundClip = (ctx: SceneContext) => {
 
 /** Stage 点击事件 */
 export const handleStageClick = (e: KonvaEventObject<MouseEvent>) => {
-  // 阻止事件冒泡，避免触发父级Group的点击事件
-  e.cancelBubble = true;
-
   const isRightClick = e.evt.button === 2;
   if (isRightClick) {
+    e.cancelBubble = true;
     return;
   }
 
-  handleSelect([]);
-  debug('handleStageClick');
+  const isLeftClick = e.evt.button === 0;
+  if (isLeftClick) {
+    e.cancelBubble = true;
+    handleSelect([]);
+  }
 };
 
 export const handleShapeClick = (e: KonvaEventObject<MouseEvent>) => {
+  const isRightClick = e.evt.button === 2;
+  const isLeftClick = e.evt.button === 0;
+
+  if (!isRightClick && !isLeftClick) {
+    return;
+  }
+
   e.cancelBubble = true;
 
   // 获取实际点击的目标元素和其所属组
@@ -880,7 +813,7 @@ export const getSelectedIdsByClickEvent = (
 };
 
 export const handleEyeToggle = (id: string | string[]) => {
-  const { shapes, setShapes, setSelectedIds } = useEditorStore.getState();
+  const { shapes, setShapes } = useEditorStore.getState();
   const ids = ([] as string[]).concat(id);
   const newShapes = shapes.map((shape) => {
     if (ids.includes(shape.id)) {

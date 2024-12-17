@@ -7,12 +7,8 @@ import {
   Edit,
   Group,
   Layers2,
-  ListEnd,
-  ListStart,
   Lock,
   LockOpen,
-  MoveDown,
-  MoveUp,
   SendToBack,
   Trash,
   Ungroup,
@@ -33,7 +29,6 @@ import {
   handleUpdate,
 } from '../editor.handler';
 import { useEditorStore } from '../editor.store';
-import { ElementEditorItem4ImageCrop } from './ElementEditorItem4ImageCrop';
 
 interface ContextMenuProps {
   x: number;
@@ -104,13 +99,21 @@ export const ContextMenu = ({ x, y, onClose }: ContextMenuProps) => {
       <ContextMenuItemButton
         onClick={() => {
           const safeArea = useEditorStore.getState().safeArea;
+          const wh = {
+            width: safeArea.width,
+            height:
+              selectedShapes[0].height && selectedShapes[0].width
+                ? selectedShapes[0].height *
+                  (safeArea.width / selectedShapes[0].width)
+                : safeArea.height,
+          };
           handleUpdate(
             {
               id: selectedShapes[0].id,
-              width: safeArea.width,
-              height: safeArea.height,
-              x: safeArea.x,
-              y: safeArea.y,
+              width: wh.width,
+              height: wh.height,
+              x: safeArea.x + safeArea.width / 2 - wh.width / 2,
+              y: safeArea.y + safeArea.height / 2 - wh.height / 2,
               scaleX: 1,
               scaleY: 1,
               isLocked: true,

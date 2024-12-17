@@ -47,7 +47,7 @@ function RouteComponent() {
                 <span className="font-bold">Get Started for Free</span>
               </button>
               <a
-                className="link link-primary border-2 border-transparent hover:border-primary/40 px-4 py-2 rounded-lg no-underline transition-all font-bold"
+                className="link link-primary border-2 border-transparent hover:border-primary/40 px-4 py-3 rounded-lg no-underline transition-all font-bold"
                 onClick={(e) => {
                   e.preventDefault();
                   window.scrollTo({
@@ -82,10 +82,10 @@ function RouteComponent() {
                 </h2>
 
                 <p className="mt-4 text-gray-400">
-                  With Poster Master, you can create professional-looking
-                  designs in minutes. Our intuitive interface and vast library
-                  of templates make it easy for anyone to produce stunning
-                  visuals.
+                  With {import.meta.env.VITE_APP_NAME}, you can create
+                  professional-looking designs in minutes. Our intuitive
+                  interface and vast library of templates make it easy for
+                  anyone to produce stunning visuals.
                 </p>
               </div>
             </div>
@@ -114,10 +114,10 @@ function RouteComponent() {
                 </h2>
 
                 <p className="mt-4 text-gray-400">
-                  With Poster Master, you can create professional-looking
-                  designs in minutes. Our intuitive interface and vast library
-                  of templates make it easy for anyone to produce stunning
-                  visuals.
+                  With {import.meta.env.VITE_APP_NAME}, you can create
+                  professional-looking designs in minutes. Our intuitive
+                  interface and vast library of templates make it easy for
+                  anyone to produce stunning visuals.
                 </p>
 
                 <button

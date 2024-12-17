@@ -85,7 +85,7 @@ export const HomeComments = () => {
                   />
 
                   <div>
-                    <div className="flex justify-center gap-0.5 text-yellow-400">
+                    <div className="flex justify-start gap-0.5 text-yellow-400">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         className="size-5"

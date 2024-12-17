@@ -23,6 +23,7 @@ function RouteComponent() {
     }
   }, [isAuthed, navigate]);
 
+  // Read projectId from route params
   const { projectId } = Route.useParams();
   const projects = useHeaderStore((state) => state.projects);
   useEffect(() => {
@@ -67,10 +68,7 @@ function RouteComponent() {
         <div className="divider divider-horizontal m-0 w-0"></div>
 
         {isProjectReady && isFontsReady ? (
-          <Container
-            specificSafeArea={currentProject.canvas!.safeArea}
-            projectId={currentProject.id}
-          />
+          <Container />
         ) : (
           <div className="grid w-full h-full place-content-center px-4 bg-base-300">
             <h1 className="uppercase tracking-widest pointer-events-none">

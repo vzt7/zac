@@ -5,25 +5,11 @@ import {
   SiX,
   SiYoutube,
 } from '@icons-pack/react-simple-icons';
-import {
-  ChevronsLeftRightEllipsis,
-  MonitorSmartphone,
-  Smartphone,
-  Tv,
-} from 'lucide-react';
-import React from 'react';
+import { ChevronsLeftRightEllipsis } from 'lucide-react';
 
-import type { SafeArea } from './editor.store';
+import type { ProjectCanvas } from './editor.store';
 
-export interface ProjectCanvas {
-  id: string;
-  name: string;
-  icon: React.ReactNode;
-  category: string;
-  safeArea: SafeArea;
-}
-
-export const canvases: ProjectCanvas[] = [
+export const canvases: (ProjectCanvas & { icon: React.ReactNode })[] = [
   {
     id: 'custom',
     category: '',
@@ -62,7 +48,7 @@ export const canvases: ProjectCanvas[] = [
   },
   {
     id: 'x_profile_photo',
-    category: 'X (Twitter)',
+    category: 'X / Twitter',
     name: 'X Profile Photo',
     safeArea: {
       width: 400,
@@ -74,7 +60,7 @@ export const canvases: ProjectCanvas[] = [
   },
   {
     id: 'x_post_landscape',
-    category: 'X (Twitter)',
+    category: 'X / Twitter',
     name: 'X Post Landscape',
     safeArea: {
       width: 1600,

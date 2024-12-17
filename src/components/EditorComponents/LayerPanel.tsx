@@ -82,13 +82,23 @@ export const LayersPanel = () => {
 
   return (
     <div
-      className={`bg-base-100 rounded-lg overflow-hidden p-2 shadow-md z-10 select-none`}
+      className={`bg-base-100 overflow-hidden rounded-lg p-2 shadow-md z-10 select-none hover:bg-base-100 transition-all duration-300 ${
+        isExpanded
+          ? 'w-[360px] max-h-[500px]'
+          : 'w-[60px] max-h-[56px] min-h-[56px] bg-base-200/40 rounded-full'
+      }`}
     >
-      <div className="relative flex justify-center items-center gap-3 py-3">
-        <Layers size={20} />
-        <span className="font-bold">Layers</span>
+      <div className={`relative flex justify-center items-center py-2`}>
+        <div
+          className={`flex flex-row gap-3 ${isExpanded ? '' : 'opacity-0 w-0'}`}
+        >
+          <Layers size={20} />
+          <span className="font-bold">Layers</span>
+        </div>
         <button
-          className="absolute right-4 top-[50%] !translate-y-[-50%] btn btn-ghost btn-sm btn-circle opacity-80"
+          className={`absolute right-4 top-5 !translate-y-[-50%] btn btn-ghost ${
+            isExpanded ? 'btn-sm' : 'translate-x-[18px]'
+          } btn-circle opacity-80 transition-all duration-300`}
           onClick={() => setIsExpanded(!isExpanded)}
         >
           {isExpanded ? (
@@ -99,7 +109,11 @@ export const LayersPanel = () => {
         </button>
       </div>
 
-      <div className={`overflow-hidden ${isExpanded ? '' : 'h-[0px]'}`}>
+      <div
+        className={`overflow-hidden transition-all duration-300 ${
+          isExpanded ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
+        }`}
+      >
         <div className="mt-1 rounded-lg overflow-hidden px-3 py-1">
           <input
             type="text"
@@ -210,7 +224,7 @@ const SortableItem = ({
         className={`flex flex-row justify-between items-center hover:bg-base-300 cursor-move ${selected ? 'bg-base-300' : ''} ${isFiltered ? 'font-bold' : ''} transition-all`}
       >
         <div className="flex flex-row items-center gap-2 p-2 w-[200px] h-[25px]">
-          {renderIconShape(shape)}
+          <div className="flex-shrink-0">{renderIconShape(shape)}</div>
           {isEditMode ? (
             <input
               type="text"
@@ -257,7 +271,7 @@ const SortableItem = ({
             {shape.isLocked ? <Lock size={16} /> : <LockOpen size={16} />}
           </button>
           <button
-            className="btn btn-ghost btn-sm rounded-md p-1"
+            className={`btn btn-ghost btn-sm rounded-md p-1 ${shape.visible === false ? 'btn-active' : ''}`}
             onClick={(e) => {
               e.stopPropagation();
               handleEyeToggle(shape.id);

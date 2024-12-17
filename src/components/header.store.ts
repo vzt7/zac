@@ -1,9 +1,8 @@
-import { changeLanguage } from 'i18next';
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { persist } from 'zustand/middleware';
 
-import type { ProjectCanvas } from './SidebarCanvasesData';
+import type { ProjectCanvas } from './editor.store';
 
 export interface Project {
   id: string;

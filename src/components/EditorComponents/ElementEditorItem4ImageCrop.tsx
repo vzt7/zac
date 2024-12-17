@@ -1,14 +1,16 @@
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Cropper, { Area } from 'react-easy-crop';
 
 import { handleUpdate } from '../editor.handler';
 import { useEditorStore } from '../editor.store';
+
+enum CropRatio {
+  '1:1' = 1 / 1,
+  '4:3' = 4 / 3,
+  '16:9' = 16 / 9,
+  '3:4' = 3 / 4,
+  '9:16' = 9 / 16,
+}
 
 export const ElementEditorItem4ImageCrop = () => {
   const isImageCropping = useEditorStore((state) => state.isImageCropping);
@@ -19,6 +21,7 @@ export const ElementEditorItem4ImageCrop = () => {
   const [rotation, onRotationChange] = useState(0);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [aspect, setAspect] = useState<number>(4 / 3);
+  const [customAspect, setCustomAspect] = useState<number | null>(null);
   const [cropShape, setCropShape] = useState<'rect' | 'round'>('rect');
 
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -97,7 +100,7 @@ export const ElementEditorItem4ImageCrop = () => {
                 crop={crop}
                 zoom={zoom}
                 rotation={rotation}
-                aspect={aspect}
+                aspect={customAspect || aspect}
                 cropShape={cropShape}
                 // restrictPosition={false}
                 onCropChange={onCropChange}
@@ -118,16 +121,36 @@ export const ElementEditorItem4ImageCrop = () => {
             <div className="flex justify-between items-center gap-3">
               <label className="label flex-shrink-0">Crop Ratio</label>
               <select
-                value={aspect}
-                onChange={(e) => setAspect(parseFloat(e.target.value))}
+                value={customAspect === null ? aspect : 0}
+                onChange={(e) => {
+                  setCustomAspect(null);
+                  setAspect(parseFloat(e.target.value));
+                }}
                 className="select select-bordered w-full max-w-xs"
               >
-                <option value={1 / 1}>1:1</option>
-                <option value={4 / 3}>4:3</option>
-                <option value={16 / 9}>16:9</option>
-                <option value={3 / 4}>3:4</option>
-                <option value={9 / 16}>9:16</option>
+                <option value={CropRatio['1:1']}>1:1</option>
+                <option value={CropRatio['4:3']}>4:3</option>
+                <option value={CropRatio['16:9']}>16:9</option>
+                <option value={CropRatio['3:4']}>3:4</option>
+                <option value={CropRatio['9:16']}>9:16</option>
+                {customAspect && <option value={0}>Custom</option>}
               </select>
+              <span>=</span>
+              <input
+                type="number"
+                value={
+                  customAspect === null ? aspect.toPrecision(3) : customAspect
+                }
+                onChange={(e) => {
+                  setCustomAspect(Number(e.target.value));
+                }}
+                onBlur={(e) => {
+                  setCustomAspect(
+                    e.target.value ? Number(e.target.value) : null,
+                  );
+                }}
+                className="input input-bordered w-full max-w-xs"
+              />
             </div>
 
             <div className="flex justify-between items-center gap-3">
@@ -173,15 +196,15 @@ export const ElementEditorItem4ImageCrop = () => {
             </div>
 
             <button
-              className="btn btn-primary w-full"
+              className="btn btn-primary w-full mt-4"
               onClick={showCroppedImage}
             >
-              确认
+              Confirm
             </button>
           </div>
         </div>
         <form method="dialog" className="modal-backdrop">
-          <button>关闭</button>
+          <button>Close</button>
         </form>
       </dialog>
     </div>
@@ -211,7 +234,7 @@ const getCroppedImg = async (
   const ctx = canvas.getContext('2d');
 
   if (!ctx) {
-    throw new Error('无法获取Canvas上下文');
+    throw new Error('Failed to get Canvas context');
   }
 
   const radians = getRadianAngle(rotation);

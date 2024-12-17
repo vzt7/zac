@@ -1,6 +1,12 @@
+import '@fontsource/poppins';
+import '@fontsource/poppins/300.css';
+import '@fontsource/poppins/400.css';
+import '@fontsource/poppins/500.css';
+import '@fontsource/poppins/700.css';
 import { RouterProvider, createRouter } from '@tanstack/react-router';
 import ReactDOM from 'react-dom/client';
 
+// Specify weight
 import './index.scss';
 // Import the generated route tree
 import { routeTree } from './routeTree.gen';

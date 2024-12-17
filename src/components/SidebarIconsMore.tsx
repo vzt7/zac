@@ -1,3 +1,4 @@
+import { getShapeRandomId } from '@/utils/getRandomId';
 import { Icon, IconifyIcon } from '@iconify/react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { debounce } from 'lodash-es';
@@ -5,7 +6,7 @@ import { ArrowLeft, Ellipsis } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { InView } from 'react-intersection-observer';
 
-import { handleAddSvgByPath } from './editor.handler';
+import { handleAddSvgByTagStr } from './editor.handler';
 
 const ICONIFY_API = 'https://api.iconify.design';
 
@@ -38,8 +39,6 @@ const useIconSets = () => {
         .then((res) => res.json())
         .then((res) => Object.entries(res));
     },
-    gcTime: 1000 * 60 * 60 * 24,
-    // TODO: persist cache
   });
 };
 
@@ -108,8 +107,10 @@ export const SidebarIconsMore = () => {
       iconSet,
       icons: [icon],
     });
-    for (const icon of Object.values(icons)) {
-      handleAddSvgByPath(icon.body);
+    for (const iconItem of Object.values(icons)) {
+      handleAddSvgByTagStr(iconItem.body, {
+        name: getShapeRandomId(`icon-${icon}`),
+      });
     }
     setLoadingItem(null);
   };
@@ -145,8 +146,6 @@ export const SidebarIconsMore = () => {
   );
 
   const containerRef = useRef<HTMLDivElement>(null);
-
-  console.log(iconSets);
 
   return (
     <div className="flex flex-col gap-4 pb-10">
@@ -291,13 +290,16 @@ const IconItem = ({
   } | null;
   onClick: (itemSetId: string, itemIcon: string) => void;
 }) => {
+  const isLoading =
+    loading?.iconSet === itemSetId && loading?.icon === itemIcon;
+
   return (
     <div
       className="relative flex flex-col items-center p-2 border-2 rounded-lg cursor-pointer hover:bg-base-300 bg-base-200 dark:border-gray-600 border-gray-300 hover:border-primary transition-colors overflow-hidden min-h-12"
-      onClick={() => onClick(itemSetId, itemIcon)}
+      onClick={() => (isLoading ? null : onClick(itemSetId, itemIcon))}
     >
       <Icon icon={`${itemSetId}:${itemIcon}`} fontSize={48} />
-      {loading?.iconSet === itemSetId && loading?.icon === itemIcon && (
+      {isLoading && (
         <div className="absolute top-0 left-0 bg-base-200/80 w-full h-full flex items-center justify-center">
           <span className="loading loading-spinner loading-md"></span>
         </div>

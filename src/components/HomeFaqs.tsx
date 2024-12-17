@@ -14,13 +14,7 @@ export const HomeFaqs = () => {
           },
           {
             title: 'Can I export my designs?',
-            content:
-              'Of course, you can export your design in PNG format.',
-          },
-          {
-            title: 'Does it support multiple languages?',
-            content:
-              'Yes, our tool supports multiple languages, including Simplified Chinese and English.',
+            content: 'Of course, you can export your design in PNG format.',
           },
           {
             title: 'How to contact customer service?',

@@ -15,8 +15,9 @@ export default defineConfig({
       '@': path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'src'),
     },
   },
-  plugins: [TanStackRouterVite(), react(), writeFontsIndex()],
+  plugins: [TanStackRouterVite(), react(), writeFontsIndex(), writeSvgsIndex()],
 });
+
 function writeFontsIndex() {
   return {
     name: 'write-fonts-index',
@@ -66,6 +67,37 @@ function writeFontsIndex() {
     watch: {
       // 监视 public/fonts 目录的变化
       include: 'public/fonts/**',
+      handler: () => {
+        // @ts-ignore
+        this.buildStart();
+      },
+    },
+  };
+}
+
+function writeSvgsIndex() {
+  return {
+    name: 'write-svgs-index',
+    buildStart() {
+      const rootDir = path.dirname(fileURLToPath(import.meta.url));
+      const svgsDir = path.resolve(rootDir, 'public/svgs/');
+      const dirs = fs.readdirSync(svgsDir);
+      const svgs = dirs.map((item) => {
+        return {
+          name: item,
+          url: `/svgs/${item}`,
+        };
+      });
+      // 将字体信息写入 svgs/index.json
+      const targetPath = path.resolve(rootDir, 'src/assets/svgs.json');
+      fs.writeFileSync(targetPath, JSON.stringify(svgs, null, 2), {
+        flag: 'w',
+      });
+      console.log('[svgs] json file added:', targetPath);
+    },
+    watch: {
+      // 监视 public/svgs 目录的变化
+      include: 'public/svgs/**',
       handler: () => {
         // @ts-ignore
         this.buildStart();

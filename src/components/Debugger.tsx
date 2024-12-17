@@ -4,7 +4,6 @@ import { useEditorStore } from './editor.store';
 
 const StageDebugger = () => {
   const safeArea = useEditorStore((state) => state.safeArea);
-  const selectedIds = useEditorStore((state) => state.selectedIds);
 
   const dialogRef = useRef<HTMLDialogElement>(null);
   const shapes = useEditorStore((state) => state.shapes);
@@ -26,22 +25,11 @@ const StageDebugger = () => {
   };
 
   return (
-    <div className="absolute top-0 left-0 bg-warning text-warning-content px-2 py-1 rounded-br-2xl">
+    <div className="absolute bottom-0 left-[50%] translate-x-[-50%] bg-warning text-warning-content p-2 rounded-2xl">
       <div className="flex flex-col relative">
         <span>
           画布: {safeArea.width} x {safeArea.height}
         </span>
-        <span>已选择:</span>
-        <div className="max-w-[200px]">
-          {selectedIds.map((id) => (
-            <div
-              key={id}
-              className="text-ellipsis overflow-hidden whitespace-nowrap"
-            >
-              {id}
-            </div>
-          ))}
-        </div>
         <button
           className="btn btn-sm my-1"
           onClick={() => dialogRef.current?.showModal()}

@@ -11,8 +11,9 @@ export const Footer = ({ className }: { className?: string }) => {
         </div>
 
         <p className="mx-auto mt-6 max-w-md text-center leading-relaxed text-gray-500">
-          Create stunning posters and images with ease. <br /> Poster Master is
-          your go-to tool for all your design needs.
+          Create stunning posters and images with ease. <br />{' '}
+          {import.meta.env.VITE_APP_NAME} is your go-to tool for all your design
+          needs.
         </p>
 
         <ul className="mt-12 flex flex-wrap justify-center gap-6 md:gap-8 lg:gap-12">

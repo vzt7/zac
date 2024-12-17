@@ -2,12 +2,15 @@ import { ChangeEvent, useEffect, useRef } from 'react';
 
 import { handleUpdate } from '../editor.handler';
 import { Shape } from '../editor.store';
+import { useSidebarStore } from '../sidebar.store';
 
 interface TextEditorProps {
   selectedShape: Shape;
 }
 
-export const ElementEditorItem4RichText = ({ selectedShape }: TextEditorProps) => {
+export const ElementEditorItem4RichText = ({
+  selectedShape,
+}: TextEditorProps) => {
   const handleTextInput = (e: ChangeEvent<HTMLTextAreaElement>) => {
     handleUpdate({ text: e.target.value, id: selectedShape.id });
   };
@@ -16,6 +19,7 @@ export const ElementEditorItem4RichText = ({ selectedShape }: TextEditorProps) =
     handleUpdate({ [property]: value, id: selectedShape.id });
   };
 
+  // Focus the text input when double-clicking on the text element
   const textRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
     const fn = () => {
@@ -30,29 +34,35 @@ export const ElementEditorItem4RichText = ({ selectedShape }: TextEditorProps) =
     };
   }, []);
 
+  const builtInFonts = useSidebarStore((state) => state.fonts);
+  const customFonts = useSidebarStore((state) => state.customFonts);
+  const additionalFonts = customFonts
+    .concat(builtInFonts)
+    .filter((item) => item.isLoaded);
+
   return (
     <div className="collapse collapse-arrow bg-base-200">
       <input type="checkbox" defaultChecked />
-      <div className="collapse-title font-medium">文字设置</div>
+      <div className="collapse-title font-medium">Text Properties</div>
       <div className="collapse-content space-y-4">
-        {/* 文本内容 */}
+        {/* Text Content */}
         <div className="form-control">
           <label className="label">
-            <span className="label-text">文本内容</span>
+            <span className="label-text">Text Content</span>
           </label>
           <textarea
             ref={textRef}
             className="textarea textarea-bordered h-24"
             value={selectedShape.text || ''}
             onChange={handleTextInput}
-            placeholder="请输入文本内容..."
+            placeholder="Please enter text content..."
           />
         </div>
 
-        {/* 字体设置 */}
+        {/* Font Settings */}
         <div className="form-control">
           <label className="label">
-            <span className="label-text">字体</span>
+            <span className="label-text">Font</span>
           </label>
           <select
             className="select select-bordered select-sm"
@@ -62,16 +72,19 @@ export const ElementEditorItem4RichText = ({ selectedShape }: TextEditorProps) =
             <option value="Arial">Arial</option>
             <option value="Helvetica">Helvetica</option>
             <option value="Times New Roman">Times New Roman</option>
-            <option value="SimSun">宋体</option>
-            <option value="Microsoft YaHei">微软雅黑</option>
+            <option value="SimSun">SimSun</option>
+            <option value="Microsoft YaHei">Microsoft YaHei</option>
+            {additionalFonts.map((fontItem) => (
+              <option value={fontItem.value}>{fontItem.name}</option>
+            ))}
           </select>
         </div>
 
-        {/* 字号和行高 */}
+        {/* Font Size and Line Height */}
         <div className="grid grid-cols-2 gap-2">
           <div className="form-control">
             <label className="label">
-              <span className="label-text">字号</span>
+              <span className="label-text">Font Size</span>
             </label>
             <input
               type="number"
@@ -85,7 +98,7 @@ export const ElementEditorItem4RichText = ({ selectedShape }: TextEditorProps) =
           </div>
           <div className="form-control">
             <label className="label">
-              <span className="label-text">行高</span>
+              <span className="label-text">Line Height</span>
             </label>
             <input
               type="number"
@@ -100,10 +113,10 @@ export const ElementEditorItem4RichText = ({ selectedShape }: TextEditorProps) =
           </div>
         </div>
 
-        {/* 对齐方式 */}
+        {/* Text Alignment */}
         <div className="form-control">
           <label className="label">
-            <span className="label-text">对齐方式</span>
+            <span className="label-text">Text Alignment</span>
           </label>
           <div className="join">
             {['left', 'center', 'right'].map((align) => (
@@ -115,19 +128,19 @@ export const ElementEditorItem4RichText = ({ selectedShape }: TextEditorProps) =
                 onClick={() => handleFontChange('align', align)}
               >
                 {align === 'left'
-                  ? '左对齐'
+                  ? 'Left Align'
                   : align === 'center'
-                    ? '居中'
-                    : '右对齐'}
+                    ? 'Center'
+                    : 'Right Align'}
               </button>
             ))}
           </div>
         </div>
 
-        {/* 文字装饰 */}
+        {/* Text Decoration */}
         <div className="form-control">
           <label className="label">
-            <span className="label-text">文字装饰</span>
+            <span className="label-text">Text Decoration</span>
           </label>
           <div className="flex flex-wrap gap-2">
             <label className="label cursor-pointer gap-2">
@@ -149,7 +162,7 @@ export const ElementEditorItem4RichText = ({ selectedShape }: TextEditorProps) =
                   handleFontChange('textDecoration', decorations.join(' '));
                 }}
               />
-              <span className="label-text">下划线</span>
+              <span className="label-text">Underline</span>
             </label>
             <label className="label cursor-pointer gap-2">
               <input
@@ -171,7 +184,7 @@ export const ElementEditorItem4RichText = ({ selectedShape }: TextEditorProps) =
                   handleFontChange('textDecoration', decorations.join(' '));
                 }}
               />
-              <span className="label-text">删除线</span>
+              <span className="label-text">Strikethrough</span>
             </label>
           </div>
         </div>

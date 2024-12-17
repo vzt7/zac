@@ -1,9 +1,5 @@
-import { useEffect, useState } from 'react';
-
 import { useTemplates } from './SidebarTemplatesData';
 import { handleAddImage, handleAddShape } from './editor.handler';
-import { Shape } from './editor.store';
-import { useHeaderStore } from './header.store';
 
 export const SidebarTemplates = () => {
   const { templates } = useTemplates();
@@ -25,9 +21,9 @@ export const SidebarTemplates = () => {
   };
 
   return (
-    <div className="flex flex-col gap-4 pb-10 py-4">
+    <div className="flex flex-col gap-4 pb-12">
       {/* 模板网格 */}
-      <div className="grid grid-cols-1 gap-4 px-4">
+      <div className="grid grid-cols-1 gap-4">
         {templates.map((template) => (
           <div
             key={template.id}

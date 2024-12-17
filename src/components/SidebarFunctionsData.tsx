@@ -1,4 +1,4 @@
-import QRCode from 'qrcode';
+import QRCodeStyling from 'qr-code-styling';
 import React, { useEffect, useRef, useState } from 'react';
 import BarCode from 'react-barcode';
 
@@ -34,36 +34,83 @@ export const useFunctions = () => {
 
 function QrCodeFunction() {
   const [text, setText] = useState('');
-  const [level, setLevel] = useState<'L' | 'M' | 'Q' | 'H'>('M');
   const [width, setWidth] = useState(300);
+  const [dotType, setDotType] = useState<
+    | 'rounded'
+    | 'dots'
+    | 'square'
+    | 'classy'
+    | 'classy-rounded'
+    | 'extra-rounded'
+  >('square');
+  const [dotColor, setDotColor] = useState('#000000');
+  const [backgroundColor, setBackgroundColor] = useState('#ffffff');
+  const [imageUrl, setImageUrl] = useState('');
+  const [imageSize, setImageSize] = useState(0.4);
+  const [shape, setShape] = useState<'circle' | 'square'>('circle');
+  const [margin, setMargin] = useState(0);
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
+  const [cornerType, setCornerType] = useState<
+    'square' | 'dot' | 'extra-rounded'
+  >('square');
+  const [cornerColor, setCornerColor] = useState('#000000');
 
   const [url, setUrl] = useState<string>();
+  const qrRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!text) return;
+    if (!text || !qrRef.current) return;
 
-    QRCode.toDataURL(
-      text,
-      {
-        type: 'image/png',
-        errorCorrectionLevel: level,
-        width,
+    const qrCode = new QRCodeStyling({
+      shape,
+      width,
+      height: width,
+      data: text,
+      margin,
+      dotsOptions: {
+        type: dotType,
+        color: dotColor,
+        gradient: undefined,
+      },
+      cornersSquareOptions: {
+        type: cornerType,
+        color: cornerColor,
+      },
+      backgroundOptions: {
+        color: backgroundColor,
+      },
+      imageOptions: {
+        imageSize,
         margin: 0,
       },
-      (err, url) => {
-        if (err) {
-          console.error(`[QrCode]`, err);
-          return;
-        }
-        setUrl(url);
-      },
-    );
-  }, [text, level, width]);
+      ...(imageUrl ? { image: imageUrl } : {}),
+    });
+
+    qrRef.current.innerHTML = '';
+    qrCode.append(qrRef.current);
+
+    // 转换为图片URL
+    qrCode.getRawData('png').then((blob) => {
+      const url = URL.createObjectURL(blob as any);
+      setUrl(url);
+      return () => URL.revokeObjectURL(url);
+    });
+  }, [
+    text,
+    width,
+    dotType,
+    dotColor,
+    backgroundColor,
+    imageUrl,
+    imageSize,
+    margin,
+    cornerType,
+    cornerColor,
+    shape,
+  ]);
 
   const handleAdd = () => {
-    if (!url) {
-      return;
-    }
+    if (!url) return;
     handleAddImage(url);
   };
 
@@ -71,43 +118,150 @@ function QrCodeFunction() {
     <div className="mt-6 flex flex-col gap-4">
       <textarea
         className="textarea textarea-bordered"
-        placeholder="请输入文本或URL"
+        placeholder="Enter text or URL"
         value={text}
         onChange={(e) => setText(e.target.value)}
       />
 
-      <select
-        className="select select-bordered w-full"
-        value={level}
-        onChange={(e) => setLevel(e.target.value as 'L' | 'M' | 'Q' | 'H')}
-      >
-        <option disabled>Error correction level</option>
-        <option value="L">Low(7%)</option>
-        <option value="M">Medium(15%)</option>
-        <option value="Q">Quartile(25%)</option>
-        <option value="H">High(30%)</option>
-        {/* <option value="L">低级纠错(7%)</option>
-        <option value="M">中级纠错(15%)</option>
-        <option value="Q">高级纠错(25%)</option>
-        <option value="H">最高级纠错(30%)</option> */}
-      </select>
-
-      <label className="input input-bordered flex items-center gap-2">
+      <div className="collapse collapse-arrow bg-base-200">
         <input
-          type="number"
-          className="input input-ghost border-none ml-0 px-0 w-full"
-          value={width}
-          onChange={(e) => setWidth(Number(e.target.value))}
-          min={1}
-          max={2048}
-          step={10}
+          type="checkbox"
+          checked={isAdvancedOpen}
+          onChange={(e) => setIsAdvancedOpen(e.target.checked)}
         />
-        <span>px</span>
-      </label>
+        <div className="collapse-title font-medium">Advanced Settings</div>
+        <div className="collapse-content">
+          <div className="grid grid-cols-1 gap-2 pt-2">
+            <div className="grid grid-cols-1 gap-2">
+              <label className="input input-bordered flex items-center gap-2">
+                <span>Width</span>
+                <input
+                  type="number"
+                  className="grow"
+                  value={width}
+                  onChange={(e) => setWidth(Number(e.target.value))}
+                  min={100}
+                  max={2048}
+                />
+                <span>px</span>
+              </label>
+            </div>
+
+            <select
+              className="select select-bordered w-full"
+              value={shape}
+              onChange={(e) => setShape(e.target.value as typeof shape)}
+            >
+              <option value="circle">Circle</option>
+              <option value="square">Square</option>
+            </select>
+
+            <select
+              className="select select-bordered w-full"
+              value={dotType}
+              onChange={(e) => setDotType(e.target.value as typeof dotType)}
+            >
+              <option value="square">Square Dots</option>
+              <option value="rounded">Rounded Dots</option>
+              <option value="dots">Circular Dots</option>
+              <option value="classy">Classy</option>
+              <option value="classy-rounded">Classy Rounded</option>
+              <option value="extra-rounded">Extra Rounded</option>
+            </select>
+
+            <label className="input input-bordered flex items-center gap-2">
+              <span className="flex-shrink-0">Dot Color</span>
+              <input
+                type="color"
+                className="flex-grow"
+                value={dotColor}
+                onChange={(e) => setDotColor(e.target.value)}
+              />
+            </label>
+
+            <select
+              className="select select-bordered w-full"
+              value={cornerType}
+              onChange={(e) =>
+                setCornerType(e.target.value as typeof cornerType)
+              }
+            >
+              <option value="square">Square Corners</option>
+              <option value="dot">Dot Corners</option>
+              <option value="extra-rounded">Extra Rounded Corners</option>
+            </select>
+
+            <label className="input input-bordered flex items-center gap-2">
+              <span className="flex-shrink-0">Corner Color</span>
+              <input
+                type="color"
+                className="flex-grow"
+                value={cornerColor}
+                onChange={(e) => setCornerColor(e.target.value)}
+              />
+            </label>
+
+            <label className="input input-bordered flex items-center gap-2">
+              <span>Margin</span>
+              <input
+                type="number"
+                className="grow"
+                value={margin}
+                onChange={(e) => setMargin(Number(e.target.value))}
+                min={0}
+                max={100}
+              />
+              <span>px</span>
+            </label>
+
+            <label className="input input-bordered flex items-center gap-2">
+              <span>Background</span>
+              <input
+                type="color"
+                className="flex-grow"
+                value={backgroundColor}
+                onChange={(e) => setBackgroundColor(e.target.value)}
+              />
+            </label>
+
+            <label className="input input-bordered flex items-center gap-2">
+              <span>Logo</span>
+              <input
+                type="file"
+                hidden
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  if (imageUrl) {
+                    URL.revokeObjectURL(imageUrl);
+                  }
+                  setImageUrl(URL.createObjectURL(file));
+                }}
+              />
+              <div className="btn btn-ghost btn-sm flex-grow">Add Image</div>
+            </label>
+
+            <label className="input input-bordered flex items-center gap-2">
+              <span className="flex-shrink-0">Logo Size</span>
+              <input
+                type="range"
+                className="range range-xs grow"
+                value={imageSize}
+                onChange={(e) => setImageSize(Number(e.target.value))}
+                min={0.1}
+                max={0.9}
+                step={0.1}
+              />
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div ref={qrRef} className="hidden" />
 
       {url && (
-        <div className={`w-[200px] h-[200px] bg-transparent mx-auto p-2`}>
-          <img src={url} className="object-contain" />
+        <div className="w-[200px] h-[200px] bg-transparent mx-auto p-2">
+          <img src={url} className="object-contain" alt="QR Code" />
         </div>
       )}
 
@@ -161,6 +315,7 @@ function BarCodeFunction() {
             value={text}
             displayValue={enableDisplayValue}
             renderer="img"
+            background="transparent"
           />
         </div>
       )}

@@ -4,6 +4,7 @@ import dayjs from 'dayjs';
 import { Box, Check, Edit2, Plus, Trash2 } from 'lucide-react';
 import React, { useRef } from 'react';
 
+import { getCacheKey } from './editor.handler';
 import { Project, useHeaderStore } from './header.store';
 
 export const HeaderProjectManager = () => {
@@ -52,6 +53,8 @@ export const HeaderProjectManager = () => {
       if (currentProject?.id === project.id) {
         useHeaderStore.getState().selectProject(null);
       }
+
+      localStorage.removeItem(getCacheKey(project.id));
     }
   };
 
@@ -74,7 +77,7 @@ export const HeaderProjectManager = () => {
         onClick={handleOpenModal}
       >
         <Box size={16} />
-        <span>{currentProject?.name || '新项目'}</span>
+        <span>{currentProject?.name || 'New Project'}</span>
         <span className="badge badge-accent">current</span>
         <Edit2 size={16} />
       </button>

@@ -2,9 +2,10 @@ import logoUrl from '@/assets/logo.png';
 import { useAuth } from '@/hooks/useAuth';
 import { Link, useMatch, useRouterState } from '@tanstack/react-router';
 import i18n from 'i18next';
-import { Languages, Moon, Sun } from 'lucide-react';
-import { forwardRef, useEffect, useState } from 'react';
+import { Gem, Languages, LogOut, Moon, Sun, User } from 'lucide-react';
+import { forwardRef, useEffect, useRef, useState } from 'react';
 
+import { HeaderProfile } from './HeaderProfile';
 import { HeaderProjectManager } from './HeaderProjectManager';
 import { useHeaderStore } from './header.store';
 
@@ -15,7 +16,9 @@ export const HeaderLogo = () => {
     <a className="flex flex-row items-center text-[#7b41f3]" href="/">
       <span className="sr-only">Home</span>
       <img src={logoUrl} alt="logo" className="h-12" />
-      <span className="text-2xl font-bold">Poster Master</span>
+      <span className="text-2xl font-bold">
+        {import.meta.env.VITE_APP_NAME}
+      </span>
     </a>
   );
 };
@@ -64,6 +67,8 @@ export const Header = forwardRef<
   });
   const isProjectPage = matched?.id !== undefined;
 
+  const profileRef = useRef<HTMLDivElement>(null);
+
   return (
     <header
       ref={ref}
@@ -82,7 +87,7 @@ export const Header = forwardRef<
         <div className="flex items-center gap-10">
           <div className="md:flex hidden flex-row items-center gap-6">
             <label
-              className="swap text-9xl"
+              className="swap text-9xl !hidden"
               style={{
                 visibility: toolbar?.language === false ? 'hidden' : 'visible',
               }}
@@ -125,34 +130,43 @@ export const Header = forwardRef<
           </div>
 
           {isAuthed ? (
-            <div className="dropdown dropdown-end z-[999]">
+            <div className="dropdown dropdown-end z-50">
               <div
                 tabIndex={0}
                 role="button"
                 className="btn btn-ghost btn-circle avatar"
               >
                 <div className="w-10 rounded-full">
-                  <img
-                    alt="Tailwind CSS Navbar component"
-                    src="/logo.png"
-                  />
+                  <img alt="Tailwind CSS Navbar component" src="/logo.png" />
                 </div>
               </div>
               <ul
                 tabIndex={0}
-                className="menu menu-lg dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow"
+                className="menu menu-lg dropdown-content bg-base-100 rounded-box z-[1] w-52 p-2 border border-base/5 dark:border-gray-600 shadow-lg"
               >
                 <li>
-                  <a className="justify-between">
-                    Profile
-                    <span className="badge">New</span>
+                  <a
+                    className="flex flex-row items-center gap-3"
+                    onClick={() => profileRef.current?.click()}
+                  >
+                    <User size={22} />
+                    <span>Profile</span>
                   </a>
                 </li>
                 <li>
-                  <a>Settings</a>
+                  <a
+                    className="flex flex-row items-center gap-3"
+                    onClick={() => profileRef.current?.click()}
+                  >
+                    <Gem size={20} />
+                    Upgrade
+                  </a>
                 </li>
                 <li>
-                  <a>Logout</a>
+                  <a className="flex flex-row items-center gap-3 text-red-500">
+                    <LogOut size={20} />
+                    Logout
+                  </a>
                 </li>
               </ul>
             </div>
@@ -167,7 +181,7 @@ export const Header = forwardRef<
                 </button>
 
                 <button
-                  className="btn btn-outline btn-sm h-10 px-5 font-medium text-primary animate-none"
+                  className="btn btn-outline btn-sm h-10 px-5 font-medium text-primary animate-none hover:bg-primary hover:border-primary/80"
                   onClick={() => {}}
                 >
                   Register
@@ -177,6 +191,8 @@ export const Header = forwardRef<
           )}
         </div>
       </div>
+
+      <HeaderProfile ref={profileRef} />
     </header>
   );
 });

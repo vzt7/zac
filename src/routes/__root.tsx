@@ -16,6 +16,9 @@ const TanStackRouterDevtools = import.meta.env.PROD
 
 const queryClient = new QueryClient({
   defaultOptions: {
+    queries: {
+      gcTime: 1000 * 60 * 60 * 20, // 20 hours
+    },
     mutations: {
       onError: (error, variables, context) => {
         debug('[QueryClient_onError]', {
