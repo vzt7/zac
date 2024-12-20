@@ -57,7 +57,7 @@ export const SidebarFonts = () => {
   };
 
   if (!isCanvasReady) {
-    return null;
+    return <div>Waiting for Canvas...</div>;
   }
 
   return (

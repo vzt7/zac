@@ -23,6 +23,7 @@ const functions: FunctionItem[] = [
   {
     id: 'bar_code',
     title: 'Bar Code',
+    description: 'Create Bar Code from text or URL',
     content: <BarCodeFunction />,
   },
   // ... 更多功能项
@@ -300,7 +301,7 @@ function BarCodeFunction() {
     <div className="mt-6 flex flex-col gap-4">
       <textarea
         className="textarea textarea-bordered"
-        placeholder="请输入文本或URL"
+        placeholder="Enter text or URL"
         value={text}
         onChange={(e) => setText(e.target.value)}
       />
