@@ -5,6 +5,7 @@ import type { SimpleIcon } from 'simple-icons';
 import * as simpleIcons from 'simple-icons';
 
 import { handleAddSvgByTagStr } from './editor.handler';
+import { useHeaderStore } from './header.store';
 
 const ITEMS_PER_PAGE = 300;
 
@@ -85,6 +86,8 @@ export const SidebarIconsDefault = () => {
     return () => observer.disconnect();
   }, [displayedIcons, filteredIcons, isLoading, loadMore, page]);
 
+  const theme = useHeaderStore((state) => state.theme);
+
   return (
     <div className="flex flex-col gap-4 pb-10 h-full">
       <div className="flex items-center justify-between">
@@ -119,7 +122,7 @@ export const SidebarIconsDefault = () => {
         <div className="grid grid-cols-3 gap-2">
           {displayedIcons.map((item, index) => (
             <div
-              key={index}
+              key={`${('name' in item && item.name) || ('title' in item && item.title) || ''}-${index}`}
               className="flex flex-col items-center p-2 border-2 rounded-lg cursor-pointer hover:bg-base-300 bg-base-200 dark:border-gray-600 border-gray-300 hover:border-primary transition-colors"
               onClick={async () => {
                 if ('svg' in item && item?.svg) {
@@ -141,7 +144,7 @@ export const SidebarIconsDefault = () => {
               }}
             >
               <div
-                className="w-16 h-16 flex items-center justify-center rounded-md overflow-hidden *:object-cover *:fill-current"
+                className={`w-16 h-16 flex items-center justify-center rounded-md overflow-hidden *:object-cover ${theme === 'dark' ? '*:fill-[#cccccc]' : '*:fill-[#000000]'}`}
                 dangerouslySetInnerHTML={
                   'svg' in item && item?.svg
                     ? {
@@ -151,7 +154,11 @@ export const SidebarIconsDefault = () => {
                 }
               >
                 {'url' in item && item.url ? (
-                  <img src={item.url} className="w-full h-full" />
+                  <img
+                    src={item.url}
+                    className="w-full h-full"
+                    style={{ filter: theme === 'dark' ? 'invert(80%)' : '' }}
+                  />
                 ) : null}
               </div>
             </div>
