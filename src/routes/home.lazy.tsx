@@ -18,6 +18,13 @@ function RouteComponent() {
     // TODO: 跳转到登录页面
   };
 
+  // 产品特色介绍部分
+  // 使用场景展示
+  // 用户评价轮播
+  // 常见问题解答
+  // 博客文章链接
+  // 底部导航和链接
+
   return (
     <div data-theme="dark">
       <Header

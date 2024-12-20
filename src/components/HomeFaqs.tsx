@@ -26,6 +26,12 @@ export const HomeFaqs = () => {
             content:
               'You can contact customer service through the contact form on our official website.You can contact customer service through the contact form on our official website.You can contact customer service through the contact form on our official website.You can contact customer service through the contact form on our official website.You can contact customer service through the contact form on our official website.',
           },
+          // 支持哪些文件格式?
+          // 如何使用模板?
+          // 能否导入自定义字体?
+          // 作品版权归属?
+          // 付费版本有哪些功能?
+          // 如何保存和分享作品?
         ].map((item) => (
           <div className="collapse collapse-arrow border-base-300 bg-base-200/90 border backdrop-blur-md">
             <input type="checkbox" className="peer" />

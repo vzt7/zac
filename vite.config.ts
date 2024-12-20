@@ -1,5 +1,6 @@
 import { TanStackRouterVite } from '@tanstack/router-plugin/vite';
 import react from '@vitejs/plugin-react';
+import dayjs from 'dayjs';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -21,6 +22,7 @@ export default defineConfig({
     writeFontsIndex(),
     writeIconsIndex(),
     writeSvgsIndex(),
+    writeSitemap(),
   ],
   build: {
     rollupOptions: {
@@ -158,6 +160,32 @@ function writeSvgsIndex() {
         // @ts-ignore
         this.buildStart();
       },
+    },
+  };
+}
+
+const sitemap = `
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://canvave.com</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://canvave.com"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://canvave.com"/>
+    <lastmod>${dayjs().format('YYYY-MM-DD')}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>
+`;
+function writeSitemap() {
+  return {
+    name: 'write-sitemap',
+    buildStart() {
+      const rootDir = path.dirname(fileURLToPath(import.meta.url));
+      const sitemapPath = path.resolve(rootDir, 'public/sitemap.xml');
+      fs.writeFileSync(sitemapPath, sitemap, {
+        flag: 'w',
+      });
     },
   };
 }

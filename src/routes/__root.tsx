@@ -1,3 +1,4 @@
+import { SeoHead } from '@/components/SeoHead';
 import { debug } from '@/utils/debug';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Outlet, createRootRoute } from '@tanstack/react-router';
@@ -35,6 +36,8 @@ export const Route = createRootRoute({
   component: () => {
     return (
       <>
+        <SeoHead />
+
         <QueryClientProvider client={queryClient}>
           <Outlet />
         </QueryClientProvider>

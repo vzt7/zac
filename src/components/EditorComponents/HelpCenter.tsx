@@ -9,6 +9,13 @@ export const HelpCenter = () => {
   ) : (
     <kbd className="kbd">ctrl</kbd>
   );
+
+  // 详细的使用教程
+  // 视频教学
+  // 常用功能说明
+  // 快捷键完整列表
+  // 问题排查指南
+
   return (
     <div className="rounded-lg shadow-lg">
       <button
