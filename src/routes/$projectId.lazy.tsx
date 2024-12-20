@@ -1,16 +1,13 @@
+import { Container } from '@/components/Container';
 import { useHeaderStore } from '@/components/header.store';
 import { SIDEBAR_TABS, useSidebarStore } from '@/components/sidebar.store';
 import { useAuth } from '@/hooks/useAuth';
 import { useProjectPageStore } from '@/store/projectPage';
 import { createLazyFileRoute, useNavigate } from '@tanstack/react-router';
-import { lazy, useEffect } from 'react';
+import { useEffect } from 'react';
 
 import { Header } from '../components/Header';
 import { Sidebar } from '../components/Sidebar';
-
-const Container = lazy(() =>
-  import('../components/Container').then((mod) => ({ default: mod.Container })),
-);
 
 export const Route = createLazyFileRoute('/$projectId')({
   component: RouteComponent,
