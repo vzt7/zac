@@ -20,13 +20,12 @@ export const HeaderProjectManager = () => {
 
   const handleCreateProject = () => {
     const { createProject } = useHeaderStore.getState();
-    const newProject: Project = {
+    createProject({
       id: getRandomId(),
       name: 'Untitled Project',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-    };
-    createProject(newProject);
+    });
   };
 
   const handleStartEdit = (project: Project) => {
@@ -60,7 +59,6 @@ export const HeaderProjectManager = () => {
 
   const navigate = useNavigate();
   const handleSelectProject = (project: Project) => {
-    useHeaderStore.getState().selectProject(project);
     modalRef.current?.close();
     navigate({
       to: '/$projectId',
