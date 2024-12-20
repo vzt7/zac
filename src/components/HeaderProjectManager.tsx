@@ -103,7 +103,7 @@ export const HeaderProjectManager = () => {
                   {editingId === project.id ? (
                     <input
                       type="text"
-                      className="input input-sm input-bordered"
+                      className="input input-bordered"
                       value={editName}
                       onClick={(e) => e.stopPropagation()}
                       onChange={(e) => {
@@ -124,8 +124,7 @@ export const HeaderProjectManager = () => {
                   ) : (
                     <>
                       <span className="font-medium">
-                        <Box className="inline-block mr-2" size={14} />
-                        {project.name}
+                        <span className="text-lg">{project.name}</span>
                         {currentProject?.id === project.id && (
                           <span className="badge badge-accent ml-2">
                             current
