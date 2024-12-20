@@ -39,7 +39,7 @@ export const HomeDemoProjects = () => {
         >
           <img
             alt=""
-            src={'/logo.png'}
+            src={'/logo.webp'}
             className="absolute inset-0 h-full w-full object-cover"
           />
 

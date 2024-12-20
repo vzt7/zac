@@ -1,4 +1,4 @@
-import logoUrl from '@/assets/logo.png';
+import logoUrl from '@/assets/logo.webp';
 import { useAuth } from '@/hooks/useAuth';
 import { Link, useMatch, useRouterState } from '@tanstack/react-router';
 import i18n from 'i18next';
@@ -145,7 +145,7 @@ export const Header = forwardRef<
                 className="btn btn-ghost btn-circle avatar"
               >
                 <div className="w-10 rounded-full">
-                  <img alt="Avatar" src="/logo.png" />
+                  <img alt="Avatar" src="/logo.webp" />
                 </div>
               </div>
               <ul

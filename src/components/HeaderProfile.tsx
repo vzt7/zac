@@ -90,7 +90,7 @@ export const Profile = () => {
                 className="btn btn-accent rounded-full btn-outline text-base-content"
                 onClick={() => setIsEditing(true)}
               >
-                <img src="/logo2.png" className="w-5 h-5" />
+                <img src="/logo0.png" className="w-5 h-5" />
                 <span className="text-sm">Upgrade to Pro</span>
               </button>
             </div>
