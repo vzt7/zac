@@ -108,9 +108,14 @@ export const SidebarIconsMore = () => {
       icons: [icon],
     });
     for (const iconItem of Object.values(icons)) {
-      handleAddSvgByTagStr(iconItem.body, {
-        name: getShapeRandomId(`icon-${icon}`),
-      });
+      handleAddSvgByTagStr(
+        `<svg xmlns="http://www.w3.org/2000/svg">${iconItem.body}</svg>`,
+        {
+          name: getShapeRandomId(`icon-${icon}`),
+          width: 64,
+          height: 64,
+        },
+      );
     }
     setLoadingItem(null);
   };
@@ -123,7 +128,6 @@ export const SidebarIconsMore = () => {
   const [debounceHandleSearch] = useState(() =>
     debounce((e: React.ChangeEvent<HTMLInputElement>) => {
       const searchTerm = e.target.value.toLowerCase();
-      console.log(searchTerm, currentSetId);
       if (currentSetId) {
         setFilteredIcons(
           searchTerm
@@ -172,9 +176,14 @@ export const SidebarIconsMore = () => {
         {(isIconSetsLoading || isIconsLoading) && <div>Loading...</div>}
 
         <div ref={containerRef} className={`overflow-y-auto`}>
-          {(filteredIconSets || iconSets) &&
+          {(filteredIconSets && filteredIconSets?.length > 0
+            ? filteredIconSets
+            : iconSets) &&
             !currentSetId &&
-            (filteredIconSets || iconSets)?.map(([id, itemSet], index) => (
+            (filteredIconSets && filteredIconSets?.length > 0
+              ? filteredIconSets
+              : iconSets
+            )?.map(([id, itemSet], index) => (
               <InView
                 key={`${id}_${index}`}
                 rootMargin="50% 0% 50% 0%"

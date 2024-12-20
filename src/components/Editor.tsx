@@ -2,7 +2,7 @@ import type { Layer as LayerType } from 'konva/lib/Layer';
 import { KonvaEventObject } from 'konva/lib/Node';
 import type { Stage as StageType } from 'konva/lib/Stage';
 import type { Rect as RectType } from 'konva/lib/shapes/Rect';
-import { useEffect, useRef } from 'react';
+import { RefObject, useEffect, useLayoutEffect, useRef } from 'react';
 import { Group, Rect as KonvaRect, Layer, Line, Stage } from 'react-konva';
 
 import { Debugger } from './Debugger';
@@ -32,18 +32,14 @@ import {
 } from './editor.hook';
 import { useSnap } from './editor.hook';
 import { useEditorStore } from './editor.store';
-import { useHeaderStore } from './header.store';
 
 export const Editor = () => {
   const stageRef = useRef<StageType>(null);
-  useEffect(() => {
+  useLayoutEffect(() => {
     useEditorStore.setState({ stageRef });
   }, []);
   const layerRef = useRef<LayerType>(null);
   const backgroundRef = useRef<RectType>(null);
-
-  const theme = useHeaderStore((state) => state.theme);
-  const lang = useHeaderStore((state) => state.lang);
 
   // 画布
   const editorProps = useEditorStore((state) => state.editorProps);
@@ -51,7 +47,6 @@ export const Editor = () => {
   // 选择
   const selectedIds = useEditorStore((state) => state.selectedIds);
   const shapes = useEditorStore((state) => state.shapes);
-  const selectedNodes = useEditorStore((state) => state.selectedNodes);
   // 绘制模式
   const isDrawMode = useEditorStore((state) => state.isDrawMode);
   // 选择
@@ -164,10 +159,16 @@ export const Editor = () => {
                 }
               },
               onMouseEnter: (e: any) => {
+                if (shape.isLocked || !shape.visible) {
+                  return;
+                }
                 const container = e.target.getStage().container();
                 container.style.cursor = 'move';
               },
               onMouseLeave: (e: any) => {
+                if (shape.isLocked || !shape.visible) {
+                  return;
+                }
                 const container = e.target.getStage().container();
                 container.style.cursor = 'default';
               },
@@ -189,9 +190,7 @@ export const Editor = () => {
             />
           ))}
 
-          {!isDragMode && !isDrawMode && (
-            <CustomTransformer selectedNodes={selectedNodes} />
-          )}
+          {!isDragMode && !isDrawMode && <CustomTransformer />}
 
           {/* 渲染选区 */}
           {selectionBox && (

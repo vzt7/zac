@@ -4,6 +4,7 @@ import getRandomId from '@/utils/getRandomId';
 import type { SceneContext } from 'konva/lib/Context';
 import type { KonvaEventObject, Node } from 'konva/lib/Node';
 import { debounce } from 'lodash-es';
+import { parseSync as svgParseSync } from 'svgson';
 
 import { Shape } from './editor.store';
 import { useEditorStore } from './editor.store';
@@ -157,12 +158,9 @@ export const createShape = (type: string, shape?: Partial<Shape>) => {
   return newShape;
 };
 
-export const handleAddShape = (
-  type: string,
-  position?: { x: number; y: number },
-) => {
+export const handleAddShape = (type: string, shape?: Partial<Shape>) => {
   const { shapes, setShapes } = useEditorStore.getState();
-  const newShape = createShape(type, { ...position });
+  const newShape = createShape(type, { ...shape });
   if (!newShape) return;
   const newShapes = [...shapes, newShape];
   setShapes(newShapes);
@@ -405,58 +403,103 @@ const createImageShape = (
   }
 };
 
-export const handleAddSvgByTagStr = (
+export const handleAddSvgByTagStr = async (
   svgString: string,
   shape?: Partial<Shape>,
 ) => {
   const { shapes, setShapes, editorProps } = useEditorStore.getState();
 
-  const svg = new DOMParser().parseFromString(
-    `<div>${svgString}</div>`,
-    'image/svg+xml',
-  );
-  const getAttrs = (el: Element) => ({
-    data: el.getAttribute('d'),
-    fill: el.getAttribute('fill') || undefined,
-    stroke: el.getAttribute('stroke') || undefined,
-    strokeWidth: Number(el.getAttribute('stroke-width')) || 1,
-    lineCap: (el.getAttribute('stroke-linecap') as any) || undefined,
-    lineJoin: (el.getAttribute('stroke-linejoin') as any) || undefined,
-    fillRule: (el.getAttribute('fill-rule') as any) || undefined,
-    clipRule: (el.getAttribute('clip-rule') as any) || undefined,
-  });
-  const attrs = {
-    svg: getAttrs(svg.querySelector('svg')!),
-    paths: Array.from(svg.querySelectorAll('path')).map((el: Element) =>
-      getAttrs(el),
-    ),
-  };
-  // TODO: 嵌套path或其他情况可能导致svg无法正常显示
-  debug('[handleAddSvgByTagStr] attrs', attrs, 'rawSvgString:', svgString);
+  const svgAttrs = (() => {
+    try {
+      return svgParseSync(svgString, {
+        camelcase: true,
+      });
+    } catch (err) {
+      debug(`Svg parse error`, err, 'rawString', svgString);
+    }
+  })();
+  if (!svgAttrs) {
+    return;
+  }
 
-  const newShape = createShape('group', {
-    ...attrs.svg,
-    isSvgGroup: true,
-    name: shape?.name,
-    fill: attrs.svg.fill === 'none' ? undefined : attrs.svg.fill || '#000000',
-    children: attrs.paths
-      .map(({ data, fill, ...restArgs }) =>
-        createShape('path', {
-          data,
-          fill: fill === 'none' ? undefined : fill || '#000000',
-          scaleX: 5 * editorProps.scaleX,
-          scaleY: 5 * editorProps.scaleY,
-          ...restArgs,
-          ...shape,
-          name: `path-${getRandomId()}`,
-          x: 0,
-          y: 0,
-          fillRule: 'evenodd',
-          clipRule: 'evenodd',
-        }),
-      )
-      .filter((item): item is NonNullable<typeof item> => Boolean(item)),
-  });
+  // TODO: 嵌套path或其他情况可能导致svg无法正常显示
+  debug('[handleAddSvgByTagStr] attrs', svgAttrs, 'rawSvgString:', svgString);
+
+  const canNotParsePerfectly = (
+    children: (typeof svgAttrs)['children'],
+  ): boolean =>
+    children.some(
+      (item) =>
+        item.name !== 'path' ||
+        (item.children && canNotParsePerfectly(item.children)),
+    );
+
+  if (canNotParsePerfectly(svgAttrs.children)) {
+    const url =
+      'data:image/svg+xml;charset=utf8,' + encodeURIComponent(svgString);
+    const img = new Image();
+    img.onload = () => {
+      const width =
+        shape?.width ||
+        Number(
+          svgAttrs.attributes.width ||
+            svgAttrs.attributes.viewBox?.split(' ')[2] ||
+            100,
+        );
+      const height =
+        shape?.height ||
+        Number(
+          svgAttrs.attributes.height ||
+            svgAttrs.attributes.viewBox?.split(' ')[3] ||
+            100,
+        );
+      handleAddImage(url, {
+        ...shape,
+        name: shape?.name,
+        scaleX: 3 * editorProps.scaleX,
+        scaleY: 3 * editorProps.scaleY,
+        width,
+        height,
+      });
+      debug('[handleAddSvgByTagStr] url', url, svgAttrs);
+    };
+    img.src = url;
+    return;
+  }
+
+  const createSvgWithGroup = (itemAttrs: typeof svgAttrs): Shape => {
+    return createShape('group', {
+      // ...itemAttrs.attributes,
+      isSvgGroup: true,
+      name: shape?.name,
+      fill:
+        itemAttrs.attributes.fill === 'none'
+          ? undefined
+          : itemAttrs.attributes.fill || '#000000',
+      children: itemAttrs.children
+        .map((item) => {
+          if (item.name === 'path') {
+            return createShape('path', {
+              ...item.attributes,
+              ...shape,
+              data: item.attributes.d,
+              fill:
+                item.attributes.fill === 'none'
+                  ? undefined
+                  : item.attributes.fill || '#000000',
+              scaleX: 5 * editorProps.scaleX,
+              scaleY: 5 * editorProps.scaleY,
+              name: `path-${getRandomId()}`,
+              x: 0,
+              y: 0,
+            });
+          }
+        })
+        .filter((item): item is NonNullable<typeof item> => Boolean(item)),
+    });
+  };
+
+  const newShape = createSvgWithGroup(svgAttrs);
   if (!newShape) return;
   const newShapes = [...shapes, newShape];
   setShapes(newShapes);

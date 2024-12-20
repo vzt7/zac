@@ -12,6 +12,8 @@ export const Route = createLazyFileRoute('/home')({
 });
 
 function RouteComponent() {
+  return null;
+
   const handleGetStarted = () => {
     // TODO: 跳转到登录页面
   };

@@ -1,5 +1,4 @@
 import {
-  Blocks,
   Box,
   Component,
   Puzzle,
@@ -7,7 +6,9 @@ import {
   SquareMousePointer,
   TypeOutline,
 } from 'lucide-react';
-import { Suspense, lazy, useState } from 'react';
+import { Suspense, lazy } from 'react';
+
+import { SIDEBAR_TABS, useSidebarStore } from './sidebar.store';
 
 const SidebarCanvases = lazy(() =>
   import('./SidebarCanvases').then((mod) => ({ default: mod.SidebarCanvases })),
@@ -35,58 +36,49 @@ const SidebarFunctions = lazy(() =>
   })),
 );
 
-export const SIDEBAR_WIDTH = 421;
-
-enum TABS {
-  CANVAS = 'canvas',
-  TEMPLATE = 'template',
-  SHAPE = 'shape',
-  IMAGE = 'image',
-  ICON = 'icon',
-  FONT = 'font',
-  COMPONENT = 'component',
-}
+export const SIDEBAR_WIDTH = 461;
 
 const TABS_LIST = [
   {
-    id: TABS.CANVAS,
+    id: SIDEBAR_TABS.CANVAS,
     icon: SquareMousePointer,
     label: 'Canvas',
   },
   // {
-  //   id: TABS.TEMPLATE,
+  //   id: SIDEBAR_TABS.TEMPLATE,
   //   icon: Blocks,
   //   label: 'Templates',
   // },
   {
-    id: TABS.IMAGE,
+    id: SIDEBAR_TABS.IMAGE,
     icon: Puzzle,
     label: 'Images',
   },
   {
-    id: TABS.SHAPE,
+    id: SIDEBAR_TABS.SHAPE,
     icon: Shapes,
     label: 'Shapes',
   },
   {
-    id: TABS.ICON,
+    id: SIDEBAR_TABS.ICON,
     icon: Box,
     label: 'Icons',
   },
   {
-    id: TABS.FONT,
+    id: SIDEBAR_TABS.FONT,
     icon: TypeOutline,
     label: 'Fonts',
   },
   {
-    id: TABS.COMPONENT,
+    id: SIDEBAR_TABS.COMPONENT,
     icon: Component,
     label: 'Functions',
   },
 ];
 
 export const Sidebar = () => {
-  const [currentTab, setCurrentTab] = useState<TABS>(TABS.CANVAS);
+  const currentTab = useSidebarStore((state) => state.currentTab);
+  const setCurrentTab = useSidebarStore((state) => state.setCurrentTab);
 
   return (
     <div
@@ -114,13 +106,13 @@ export const Sidebar = () => {
 
       <div className="flex flex-col flex-grow h-full bg-base-200 p-4 overflow-y-auto overflow-visible">
         <Suspense fallback={<div>Loading...</div>}>
-          {currentTab === TABS.CANVAS && <SidebarCanvases />}
-          {/* {currentTab === TABS.TEMPLATE && <SidebarTemplates />} */}
-          {currentTab === TABS.IMAGE && <SidebarImages />}
-          {currentTab === TABS.SHAPE && <SidebarShapes />}
-          {currentTab === TABS.ICON && <SidebarIcons />}
-          {currentTab === TABS.FONT && <SidebarFonts />}
-          {currentTab === TABS.COMPONENT && <SidebarFunctions />}
+          {currentTab === SIDEBAR_TABS.CANVAS && <SidebarCanvases />}
+          {/* {currentTab === SIDEBAR_TABS.TEMPLATE && <SidebarTemplates />} */}
+          {currentTab === SIDEBAR_TABS.IMAGE && <SidebarImages />}
+          {currentTab === SIDEBAR_TABS.SHAPE && <SidebarShapes />}
+          {currentTab === SIDEBAR_TABS.ICON && <SidebarIcons />}
+          {currentTab === SIDEBAR_TABS.FONT && <SidebarFonts />}
+          {currentTab === SIDEBAR_TABS.COMPONENT && <SidebarFunctions />}
         </Suspense>
       </div>
     </div>

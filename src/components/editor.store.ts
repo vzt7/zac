@@ -97,7 +97,6 @@ export interface EditorStore {
   selectedIds: string[];
   setSelectedIds: (ids: string[]) => void;
   selectedShapes: Shape[];
-  selectedNodes: KonvaNode<NodeConfig>[];
 
   selectionBox: {
     startX: number;
@@ -159,7 +158,6 @@ const initialState = {
 
   selectedIds: [],
   selectedShapes: [],
-  selectedNodes: [],
 
   selectionBox: null,
 
@@ -230,20 +228,14 @@ if (import.meta.env.DEV) {
 useEditorStore.subscribe(
   (state) => state.selectedIds,
   (selectedIds) => {
-    const { shapes, stageRef } = useEditorStore.getState();
+    const { shapes } = useEditorStore.getState();
 
     const selectedShapes = shapes.filter((shape) =>
       selectedIds?.includes(shape.id),
     );
 
-    // 监听 selectedIds 的变化，更新 transformer 的节点
-    const selectedNodes = selectedIds
-      .map((_id) => stageRef.current?.findOne(`#${_id}`))
-      .filter((item): item is NonNullable<typeof item> => Boolean(item));
-
     useEditorStore.setState({
       selectedShapes,
-      selectedNodes,
     });
     debug(`[selectedShapes]`, selectedShapes);
   },

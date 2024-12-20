@@ -7,6 +7,8 @@ import { useHeaderStore } from '../header.store';
 
 export const DownloadModal = forwardRef<HTMLButtonElement, any>(
   (props, ref) => {
+    // const { isAuthed } = useAuth();
+    const isAuthed = false;
     const dialogRef = useRef<HTMLDialogElement>(null);
 
     const currentProject = useHeaderStore((state) => state.currentProject);
@@ -54,7 +56,9 @@ export const DownloadModal = forwardRef<HTMLButtonElement, any>(
             )}
 
             <div className="flex flex-col gap-2 py-6">
-              <div>
+              <div
+                className={`${!isAuthed ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
                 <label htmlFor="pixel-ratio">
                   Pixel Ratio{' '}
                   <span className="text-xs text-gray-500">
@@ -65,6 +69,7 @@ export const DownloadModal = forwardRef<HTMLButtonElement, any>(
                   id="pixel-ratio"
                   type="range"
                   className="range mt-2"
+                  disabled={!isAuthed}
                   max={3}
                   min={1}
                   step={1}

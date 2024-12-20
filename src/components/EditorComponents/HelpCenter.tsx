@@ -19,14 +19,25 @@ export const HelpCenter = () => {
         <CircleHelp size={22} opacity={0.9} />
       </button>
       <dialog ref={modalRef} className="modal">
-        <div className="modal-box">
-          <h3 className="font-bold text-2xl pb-2">Help Center</h3>
-          <p className="text-sm text-gray-500">
-            {import.meta.env.VITE_APP_NAME} is a tool for creating posters or
-            any images.
-          </p>
-          <div className="mt-4">
-            <h4 className="font-semibold">Hotkeys Guide</h4>
+        <div className="modal-box flex flex-col gap-6">
+          <div>
+            <h1 className="font-bold text-3xl pb-1">Help Center</h1>
+            <p className="text-sm text-gray-500">
+              {import.meta.env.VITE_APP_NAME} is a tool for creating posters or
+              any images.
+            </p>
+          </div>
+
+          <div>
+            <h2 className="text-xl font-semibold">Auto Save</h2>
+            <p className="text-sm text-gray-500">
+              Automatically save your projects in local browser storage every 10
+              seconds.
+            </p>
+          </div>
+
+          <div>
+            <h2 className="text-xl font-semibold">Hotkeys Guide</h2>
             <table className="table w-full table-zebra">
               <thead>
                 <tr>
@@ -79,10 +90,9 @@ export const HelpCenter = () => {
                   </td>
                 </tr>
                 <tr>
-                  <td>Move Canvas</td>
+                  <td>Drag Mode (Canvas)</td>
                   <td>
-                    Holding <kbd className="kbd">Space</kbd> + Mouse Left Click
-                    + Mouse Move
+                    <kbd className="kbd">Space</kbd>
                   </td>
                 </tr>
               </tbody>

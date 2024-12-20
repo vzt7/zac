@@ -13,7 +13,7 @@ import {
   Triangle as LucideTriangle,
   Type as LucideType,
 } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ComponentProps } from 'react';
 import {
   Arrow,
@@ -29,6 +29,7 @@ import {
 import { Text } from 'react-konva';
 import useImage from 'use-image';
 
+import { handleUpdate } from '../editor.handler';
 import { Shape } from '../editor.store';
 
 const DEFAULT_FILL = '#000000';
@@ -58,7 +59,6 @@ export const renderShape = (shape: Shape) => {
         <Rect
           key={commonProps.id}
           {...commonProps}
-          fill={commonProps.fill || DEFAULT_FILL}
           width={commonProps.width || DEFAULT_WIDTH}
           height={commonProps.height || DEFAULT_WIDTH}
         />
@@ -68,7 +68,6 @@ export const renderShape = (shape: Shape) => {
         <Circle
           key={commonProps.id}
           {...commonProps}
-          fill={commonProps.fill || DEFAULT_FILL}
           width={commonProps.width || DEFAULT_WIDTH}
           height={commonProps.height || DEFAULT_WIDTH}
           radius={commonProps.radius || DEFAULT_WIDTH / 2}
@@ -81,7 +80,6 @@ export const renderShape = (shape: Shape) => {
           {...commonProps}
           radius={commonProps.radius || 50}
           sides={commonProps.sides || 3}
-          fill={commonProps.fill || DEFAULT_FILL}
           points={commonProps.points || [0, -50, 50, 50, -50, 50]}
         />
       );
@@ -165,20 +163,8 @@ export const renderShape = (shape: Shape) => {
     //       draggable={commonProps.draggable || true}
     //     />
     //   );
-    case 'arrow':
-      return (
-        <Arrow
-          key={commonProps.id}
-          {...commonProps}
-          points={commonProps.points || [0, 0, 100, 0]}
-          pointerLength={commonProps.pointerLength || 10}
-          pointerWidth={commonProps.pointerWidth || 10}
-          lineCap={commonProps.lineCap || 'round'}
-          lineJoin={commonProps.lineJoin || 'round'}
-          fill={commonProps.fill || ''}
-          strokeWidth={commonProps.strokeWidth || 2}
-        />
-      );
+    // case 'arrow':
+    //   return <ArrowElement key={commonProps.id} {...commonProps} />;
     case 'path':
       return (
         <Path
@@ -261,3 +247,100 @@ const TextElement = (props: Shape) => {
     />
   );
 };
+
+// const ArrowElement = (commonProps: Shape) => {
+//   const arrowRef = useRef<Konva.Arrow>(null);
+//   const anchor1Ref = useRef<Konva.Circle>(null);
+//   const anchor2Ref = useRef<Konva.Circle>(null);
+
+//   const syncRef = useRef(() => {});
+
+//   // 获取初始points
+//   const points = commonProps.points || [0, 0, 100, 0];
+
+//   const handleDragMove = (e: any, isStart: boolean) => {
+//     if (!arrowRef.current) return;
+
+//     // 获取相对于Group的位置
+//     const pos = e.target.position();
+//     const group = e.target.getParent();
+
+//     // 创建新的points数组
+//     const newPoints = [...points];
+//     if (isStart) {
+//       newPoints[0] = pos.x;
+//       newPoints[1] = pos.y;
+//     } else {
+//       newPoints[2] = pos.x;
+//       newPoints[3] = pos.y;
+//     }
+
+//     // 更新Arrow的points
+//     arrowRef.current.points(newPoints);
+//     arrowRef.current.getLayer()?.batchDraw();
+//   };
+
+//   const handleDragEnd = (e: any) => {
+//     // 获取 Group 的位置
+//     const group = e.target.getParent();
+//     const groupPos = group.position();
+
+//     // 更新 commonProps 中的位置
+//     handleUpdate({
+//       id: commonProps.id,
+//       x: groupPos.x,
+//       y: groupPos.y,
+//     });
+//   };
+
+//   console.log('points', points);
+
+//   return (
+//     <Group
+//       x={commonProps.x}
+//       y={commonProps.y}
+//       draggable={commonProps.draggable}
+//       onDragEnd={handleDragEnd}
+//     >
+//       <Arrow
+//         ref={arrowRef}
+//         {...commonProps}
+//         x={0}
+//         y={0}
+//         points={points}
+//         pointerLength={commonProps.pointerLength ?? 10}
+//         pointerWidth={commonProps.pointerWidth ?? 10}
+//         lineCap={commonProps.lineCap || 'round'}
+//         lineJoin={commonProps.lineJoin || 'round'}
+//         fill={commonProps.fill || ''}
+//         strokeWidth={commonProps.strokeWidth ?? 2}
+//       />
+
+//       {/* 起点锚点 */}
+//       <Circle
+//         ref={anchor1Ref}
+//         x={points[0]}
+//         y={points[1]}
+//         radius={8}
+//         fill="white"
+//         stroke="black"
+//         strokeWidth={1}
+//         draggable
+//         onDragMove={(e) => handleDragMove(e, true)}
+//       />
+
+//       {/* 终点锚点 */}
+//       <Circle
+//         ref={anchor2Ref}
+//         x={points[2]}
+//         y={points[3]}
+//         radius={8}
+//         fill="white"
+//         stroke="black"
+//         strokeWidth={1}
+//         draggable
+//         onDragMove={(e) => handleDragMove(e, false)}
+//       />
+//     </Group>
+//   );
+// };

@@ -75,7 +75,9 @@ export const ElementEditorItem4RichText = ({
             <option value="SimSun">SimSun</option>
             <option value="Microsoft YaHei">Microsoft YaHei</option>
             {additionalFonts.map((fontItem) => (
-              <option value={fontItem.value}>{fontItem.name}</option>
+              <option key={fontItem.value} value={fontItem.value}>
+                {fontItem.name}
+              </option>
             ))}
           </select>
         </div>

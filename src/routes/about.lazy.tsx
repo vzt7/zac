@@ -7,6 +7,8 @@ export const Route = createLazyFileRoute('/about')({
 });
 
 function RouteComponent() {
+  return null;
+
   return (
     <div className="bg-base-100">
       <Header />

@@ -5,13 +5,7 @@ import { Transformer } from 'react-konva';
 import { useEditorStore } from '../editor.store';
 import { useHeaderStore } from '../header.store';
 
-interface CustomTransformerProps {
-  selectedNodes: any[];
-}
-
-export const CustomTransformer = ({
-  selectedNodes,
-}: CustomTransformerProps) => {
+export const CustomTransformer = () => {
   const transformerRef = useRef<any>(null);
   const theme = useHeaderStore((state) => state.theme);
   const keepShiftKey = useEditorStore((state) => state.keepShiftKey);
@@ -32,12 +26,18 @@ export const CustomTransformer = ({
 
   const currentTheme = theme === 'light' ? colors.light : colors.dark;
 
+  const selectedIds = useEditorStore((state) => state.selectedIds);
   useEffect(() => {
     if (transformerRef.current) {
+      // 监听 selectedIds 的变化，更新 transformer 的节点
+      const stage = transformerRef.current.getStage();
+      const selectedNodes = selectedIds
+        .map((_id) => stage!.findOne(`#${_id}`))
+        .filter((item): item is NonNullable<typeof item> => Boolean(item));
       transformerRef.current.nodes(selectedNodes);
       transformerRef.current.getLayer()?.batchDraw();
     }
-  }, [selectedNodes]);
+  }, [selectedIds]);
 
   if (isElementEditing) {
     return null;

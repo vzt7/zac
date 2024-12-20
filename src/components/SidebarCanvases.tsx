@@ -146,7 +146,19 @@ export const SidebarCanvases = () => {
                 />
               </div>
               <button
-                onClick={() => handleSelectCanvas(selected)}
+                onClick={() =>
+                  handleSelectCanvas({
+                    id: 'custom',
+                    name: 'Custom',
+                    category: 'Custom',
+                    safeArea: {
+                      width: customConfig.width!,
+                      height: customConfig.height!,
+                      x: 0,
+                      y: 0,
+                    },
+                  })
+                }
                 className="btn btn-primary w-full btn-sm h-10 mt-4"
                 disabled={!selected || !isValidCustomConfig}
               >

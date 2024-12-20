@@ -14,7 +14,20 @@ const DEFAULT_FONTS: FontItem[] = fontsIndex.map((fontItem) => ({
   isLoaded: false,
 }));
 
+export enum SIDEBAR_TABS {
+  CANVAS = 'canvas',
+  TEMPLATE = 'template',
+  SHAPE = 'shape',
+  IMAGE = 'image',
+  ICON = 'icon',
+  FONT = 'font',
+  COMPONENT = 'component',
+}
+
 const _useSidebarStore = create<{
+  currentTab: SIDEBAR_TABS;
+  setCurrentTab: (tab: SIDEBAR_TABS) => void;
+
   fonts: FontItem[];
   upsertFont: (font: FontItem) => void;
 
@@ -27,6 +40,11 @@ export const useSidebarStore = _useSidebarStore(
   subscribeWithSelector(
     persist(
       (set, get) => ({
+        currentTab: SIDEBAR_TABS.CANVAS,
+        setCurrentTab: (tab) => {
+          set({ currentTab: tab });
+        },
+
         fonts: [...DEFAULT_FONTS],
         upsertFont: (font) => {
           set({
@@ -109,3 +127,12 @@ useEditorStore.subscribe(
     });
   },
 );
+
+if (import.meta.env.DEV) {
+  useSidebarStore.subscribe(
+    (state) => state,
+    (all) => {
+      console.log('[sidebarStore]', all);
+    },
+  );
+}

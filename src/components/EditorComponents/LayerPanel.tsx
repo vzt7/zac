@@ -17,14 +17,12 @@ import {
   Check,
   ChevronsDownUp,
   ChevronsUpDown,
-  Circle,
   Edit,
   Eye,
   EyeOff,
   Layers,
   Lock,
   LockOpen,
-  Square,
   Trash2,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -128,7 +126,7 @@ export const LayersPanel = () => {
 
         <div
           ref={layerPanelRef}
-          className="max-h-[400px] overflow-x-hidden overflow-y-auto"
+          className="max-h-[400px] pb-4 overflow-x-hidden overflow-y-auto scrollbar-thin scrollbar-thumb-base-300 scrollbar-thumb-rounded-full scrollbar-track-transparent"
         >
           <DndContext
             sensors={sensors}

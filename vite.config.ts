@@ -15,7 +15,22 @@ export default defineConfig({
       '@': path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'src'),
     },
   },
-  plugins: [TanStackRouterVite(), react(), writeFontsIndex(), writeSvgsIndex()],
+  plugins: [
+    TanStackRouterVite(),
+    react(),
+    writeFontsIndex(),
+    writeIconsIndex(),
+    writeSvgsIndex(),
+  ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          simpleIcons: ['simple-icons'],
+        },
+      },
+    },
+  },
 });
 
 function writeFontsIndex() {
@@ -67,6 +82,47 @@ function writeFontsIndex() {
     watch: {
       // 监视 public/fonts 目录的变化
       include: 'public/fonts/**',
+      handler: () => {
+        // @ts-ignore
+        this.buildStart();
+      },
+    },
+  };
+}
+
+function writeIconsIndex() {
+  return {
+    name: 'write-icons-index',
+    buildStart() {
+      const rootDir = path.dirname(fileURLToPath(import.meta.url));
+      const icons = [
+        ...fs
+          .readdirSync(path.resolve(rootDir, 'public/icons/filled'))
+          .map((item) => {
+            return {
+              name: item,
+              url: `/icons/filled/${item}`,
+            };
+          }),
+        ...fs
+          .readdirSync(path.resolve(rootDir, 'public/icons/outline/'))
+          .map((item) => {
+            return {
+              name: item,
+              url: `/icons/outline/${item}`,
+            };
+          }),
+      ];
+      // 将字体信息写入 icons/index.json
+      const targetPath = path.resolve(rootDir, 'src/assets/icons.json');
+      fs.writeFileSync(targetPath, JSON.stringify(icons, null, 2), {
+        flag: 'w',
+      });
+      console.log('[icons] json file added:', targetPath);
+    },
+    watch: {
+      // 监视 public/icons 目录的变化
+      include: 'public/icons/**',
       handler: () => {
         // @ts-ignore
         this.buildStart();

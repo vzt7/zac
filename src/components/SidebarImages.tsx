@@ -1,148 +1,75 @@
-import { debug } from '@/utils/debug';
-import { useQuery } from '@tanstack/react-query';
-import { Search, TriangleAlert } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  PIXABAY_CATEGORY,
+  PIXABAY_COLORS,
+  PIXABAY_IMAGE_TYPE,
+  createPixabayRequestUrl,
+  usePixabayApi,
+} from '@/hooks/usePixabayApi';
+import { useEffect, useState } from 'react';
 
-import { handleAddImage } from './editor.handler';
-import { useEditorStore } from './editor.store';
-
-interface PixabayResponse {
-  total: number;
-  totalHits: number;
-  hits: Array<{
-    id: number;
-    pageURL: string;
-    type: string;
-    tags: string;
-    previewURL: string;
-    previewWidth: number;
-    previewHeight: number;
-    webformatURL: string;
-    webformatWidth: number;
-    webformatHeight: number;
-    largeImageURL: string;
-    fullHDURL: string;
-    imageURL: string;
-    imageWidth: number;
-    imageHeight: number;
-    imageSize: number;
-    views: number;
-    downloads: number;
-    likes: number;
-    comments: number;
-    user_id: number;
-    user: string;
-    userImageURL: string;
-  }>;
-  xRateLimitLimit: number; // The maximum number of requests that the consumer is permitted to make in 60 seconds.
-  xRateLimitRemaining: number; // The number of requests remaining in the current rate limit window.
-  xRateLimitReset: number; // The remaining time in seconds after which the current rate limit window resets.
-}
-
-enum CATEGORY {
-  BACKGROUNDS = 'backgrounds',
-  FASHION = 'fashion',
-  NATURE = 'nature',
-  SCIENCE = 'science',
-  EDUCATION = 'education',
-  FEELINGS = 'feelings',
-  HEALTH = 'health',
-  PEOPLE = 'people',
-  RELIGION = 'religion',
-  PLACES = 'places',
-  ANIMALS = 'animals',
-  INDUSTRIES = 'industries',
-  COMPUTER = 'computer',
-  FOOD = 'food',
-  SPORTS = 'sports',
-  TRANSPORTATION = 'transportation',
-  TRAVEL = 'travel',
-  BUILDINGS = 'buildings',
-  BUSINESS = 'business',
-  MUSIC = 'music',
-}
-
-const usePixabayBackgrounds = ({
-  page,
-  search,
-  category = 'backgrounds',
-}: {
-  page: number;
-  search?: string | null;
-  category?: string | null;
-}) => {
-  useState<PixabayResponse | null>(null);
-  return useQuery({
-    queryKey: ['elements', 'backgrounds', page, search, category],
-    queryFn: async () => {
-      const startTime = Date.now();
-      const res = await fetch(
-        `https://pixabay.com/api/?key=${import.meta.env.VITE_PIXABAY_API_KEY}&category=${category}&image_type=photo&page=${page}&per_page=20${
-          search ? `&q=${search}` : ''
-        }`,
-      )
-        .then(async (res) => {
-          const data: PixabayResponse = await res.json();
-          return {
-            ...data,
-            page,
-            search,
-            xRateLimitReset: Number(res.headers.get('x-ratelimit-limit')),
-            xRateLimitRemaining: Number(
-              res.headers.get('x-ratelimit-remaining'),
-            ),
-            xRateLimitLimit: Number(res.headers.get('x-ratelimit-reset')),
-          };
-        })
-        .then(async (res) => {
-          const endTime = Date.now();
-          if (endTime - startTime <= 1000) {
-            await new Promise((resolve) =>
-              setTimeout(resolve, 1000 - (endTime - startTime)),
-            );
-          }
-          return res;
-        });
-      return res;
-    },
-  });
-};
+import {
+  PixabayImageList,
+  PixabayImageListRateLimitTip,
+  PixabayImageListSearchInput,
+} from './PixabayImageList';
 
 export const SidebarImages = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState<string | null>(null);
-  const observerTarget = useRef<HTMLDivElement>(null);
 
-  const [category, setCategory] = useState<string | null>(CATEGORY.BACKGROUNDS);
+  const [category, setCategory] = useState<PIXABAY_CATEGORY>(
+    PIXABAY_CATEGORY.BACKGROUNDS,
+  );
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setCategory(e.target.value);
+    setCategory(e.target.value as PIXABAY_CATEGORY);
     setPage(1);
-    setSearch(null);
+  };
+
+  const [imageType, setImageType] = useState<PIXABAY_IMAGE_TYPE>(
+    PIXABAY_IMAGE_TYPE.ALL,
+  );
+  const handleImageTypeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setImageType(e.target.value as PIXABAY_IMAGE_TYPE);
+    setPage(1);
+  };
+
+  const [colors, setColors] = useState<PIXABAY_COLORS>(PIXABAY_COLORS.ALL);
+  const handleColorsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setColors(e.target.value as PIXABAY_COLORS);
+    setPage(1);
   };
 
   const {
-    data: _pixabayBackgrounds,
+    data: rawData,
     isLoading: isLoadingPixabayBackgrounds,
     error,
     refetch,
-  } = usePixabayBackgrounds({ page, search, category });
-  const [pixabayBackgrounds, setPixabayBackgrounds] =
-    useState<PixabayResponse | null>(null);
+  } = usePixabayApi(
+    createPixabayRequestUrl({
+      page,
+      search,
+      category,
+      image_type: imageType,
+      colors,
+    }),
+  );
+  const [pixabayBackgrounds, setPixabayBackgrounds] = useState<
+    typeof rawData | null
+  >(null);
   useEffect(() => {
-    if (!_pixabayBackgrounds) return;
+    if (!rawData) return;
 
     setPixabayBackgrounds((prev) =>
-      _pixabayBackgrounds.page === 1
-        ? _pixabayBackgrounds
+      rawData.args.page === 1
+        ? rawData
         : {
-            ..._pixabayBackgrounds,
-            hits: [...(prev?.hits || []), ...(_pixabayBackgrounds?.hits || [])],
+            ...rawData,
+            hits: [...(prev?.hits || []), ...(rawData?.hits || [])],
           },
     );
-  }, [_pixabayBackgrounds]);
+  }, [rawData]);
 
-  const [searchValue, setSearchValue] = useState<string | null>(null);
-  const handleSearch = () => {
+  const handleSearch = (searchValue: string) => {
     if (searchValue === search && page === 1) {
       refetch();
     } else {
@@ -151,79 +78,9 @@ export const SidebarImages = () => {
     }
   };
 
-  // Intersection Observer for infinite scroll
-  const handleObserver = useCallback(
-    (entries: IntersectionObserverEntry[]) => {
-      const target = entries[0];
-      if (target.isIntersecting && !isLoadingPixabayBackgrounds) {
-        setPage((prev) => prev + 1);
-      }
-    },
-    [isLoadingPixabayBackgrounds],
-  );
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(handleObserver, {
-      threshold: 1.0,
-    });
-
-    if (observerTarget.current) {
-      observer.observe(observerTarget.current);
-    }
-
-    return () => observer.disconnect();
-  }, [handleObserver]);
-
-  const [isImageLoading, setIsImageLoading] = useState<number[]>([]);
-  const handleAdd2Canvas = async (image: PixabayResponse['hits'][number]) => {
-    debug('[handleAdd2Canvas]', image);
-
-    setIsImageLoading((prev) => [...prev, image.id]);
-    await fetch(image.largeImageURL).catch(() => null); // TODO: 处理图片加载失败 & 链接过期或失效时
-    setIsImageLoading((prev) => prev.filter((id) => id !== image.id));
-
-    const asBackground = category === CATEGORY.BACKGROUNDS;
-    if (asBackground) {
-      const { safeArea } = useEditorStore.getState();
-      const bgShape = {
-        width: safeArea.width,
-        height: image.imageHeight * (safeArea.width / image.imageWidth),
-      };
-      handleAddImage(
-        image.largeImageURL,
-        {
-          ...bgShape,
-          x: safeArea.x + safeArea.width / 2 - bgShape.width / 2,
-          y: safeArea.y + safeArea.height / 2 - bgShape.height / 2,
-          isLocked: true,
-        },
-        { insertTo: 'bottom' },
-      );
-    } else {
-      handleAddImage(image.largeImageURL);
-    }
-  };
-
   // Handle rate limit error
   if (error) {
-    const resetTime = pixabayBackgrounds?.xRateLimitReset || 0;
-    return (
-      <div role="alert" className="alert alert-warning items-start">
-        <TriangleAlert size={20} className="mt-2" />
-        <div className="leading-tight">
-          <p>
-            <span>Rate limit exceeded</span>
-            <span>Reset in {resetTime} seconds</span>
-          </p>
-          <button
-            className="btn btn-sm btn-outline w-full mt-2"
-            onClick={() => refetch()}
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
+    return <PixabayImageListRateLimitTip data={rawData} onRefetch={refetch} />;
   }
 
   return (
@@ -234,109 +91,142 @@ export const SidebarImages = () => {
       </p>
 
       {/* Category Selector */}
-      <div className="w-full flex flex-row items-center gap-2">
+      <div className="w-full flex flex-col gap-2">
+        <label htmlFor="category" className="text-sm font-semibold ml-1">
+          Category
+        </label>
         <select
+          id="category"
           className="select select-bordered select-sm h-10 w-full"
           onChange={handleCategoryChange}
+          value={category}
         >
-          <option value={CATEGORY.BACKGROUNDS}>Backgrounds</option>
-          <option value={CATEGORY.FASHION}>Fashion</option>
-          <option value={CATEGORY.NATURE}>Nature</option>
-          <option value={CATEGORY.SCIENCE}>Science</option>
-          <option value={CATEGORY.EDUCATION}>Education</option>
-          <option value={CATEGORY.FEELINGS}>Feelings</option>
-          <option value={CATEGORY.HEALTH}>Health</option>
-          <option value={CATEGORY.PEOPLE}>People</option>
-          <option value={CATEGORY.RELIGION}>Religion</option>
-          <option value={CATEGORY.PLACES}>Places</option>
-          <option value={CATEGORY.ANIMALS}>Animals</option>
-          <option value={CATEGORY.INDUSTRIES}>Industry</option>
-          <option value={CATEGORY.COMPUTER}>Computer</option>
-          <option value={CATEGORY.FOOD}>Food</option>
-          <option value={CATEGORY.SPORTS}>Sports</option>
-          <option value={CATEGORY.TRANSPORTATION}>Transportation</option>
-          <option value={CATEGORY.TRAVEL}>Travel</option>
-          <option value={CATEGORY.BUILDINGS}>Buildings</option>
-          <option value={CATEGORY.BUSINESS}>Business</option>
-          <option value={CATEGORY.MUSIC}>Music</option>
+          <option value={PIXABAY_CATEGORY.ALL}>All</option>
+          <option value={PIXABAY_CATEGORY.BACKGROUNDS}>Backgrounds</option>
+          <option value={PIXABAY_CATEGORY.FASHION}>Fashion</option>
+          <option value={PIXABAY_CATEGORY.NATURE}>Nature</option>
+          <option value={PIXABAY_CATEGORY.SCIENCE}>Science</option>
+          <option value={PIXABAY_CATEGORY.EDUCATION}>Education</option>
+          <option value={PIXABAY_CATEGORY.FEELINGS}>Feelings</option>
+          <option value={PIXABAY_CATEGORY.HEALTH}>Health</option>
+          <option value={PIXABAY_CATEGORY.PEOPLE}>People</option>
+          <option value={PIXABAY_CATEGORY.RELIGION}>Religion</option>
+          <option value={PIXABAY_CATEGORY.PLACES}>Places</option>
+          <option value={PIXABAY_CATEGORY.ANIMALS}>Animals</option>
+          <option value={PIXABAY_CATEGORY.INDUSTRIES}>Industry</option>
+          <option value={PIXABAY_CATEGORY.COMPUTER}>Computer</option>
+          <option value={PIXABAY_CATEGORY.FOOD}>Food</option>
+          <option value={PIXABAY_CATEGORY.SPORTS}>Sports</option>
+          <option value={PIXABAY_CATEGORY.TRANSPORTATION}>
+            Transportation
+          </option>
+          <option value={PIXABAY_CATEGORY.TRAVEL}>Travel</option>
+          <option value={PIXABAY_CATEGORY.BUILDINGS}>Buildings</option>
+          <option value={PIXABAY_CATEGORY.BUSINESS}>Business</option>
+          <option value={PIXABAY_CATEGORY.MUSIC}>Music</option>
         </select>
       </div>
 
-      {/* Search Input */}
-      <div className="w-full mb-4 flex flex-row items-center gap-2">
-        <input
-          type="text"
-          placeholder="Search images..."
-          className="input input-bordered w-full"
-          onChange={(e) => setSearchValue(e.target.value)}
-          disabled={isLoadingPixabayBackgrounds}
-        />
-        <button
-          className="btn btn-primary"
-          onClick={() => handleSearch()}
-          disabled={isLoadingPixabayBackgrounds}
-        >
-          {isLoadingPixabayBackgrounds ? (
-            <span className="loading loading-spinner loading-sm"></span>
-          ) : (
-            <Search size={20} />
-          )}
-        </button>
-      </div>
-
-      {/* Images Grid */}
-      <div className="grid grid-cols-1 gap-4">
-        {pixabayBackgrounds?.hits.map((image) => (
-          <div
-            key={image.id}
-            className="card bg-base-100 overflow-hidden transition-all cursor-pointer hover:shadow-xl hover:[&_img]:scale-125"
-            onClick={() => handleAdd2Canvas(image)}
-          >
-            <figure>
-              <img
-                src={image.webformatURL}
-                alt={image.tags}
-                className="w-full h-48 object-cover transition-all duration-500"
+      <div className="w-full flex flex-col gap-2">
+        <label htmlFor="category" className="text-sm font-semibold ml-1">
+          Image Type
+        </label>
+        <div className="flex flex-row flex-wrap gap-2">
+          <div className="form-control">
+            <label className="label cursor-pointer flex gap-2">
+              <input
+                type="radio"
+                name="radio-10"
+                className="radio radio-sm"
+                onChange={handleImageTypeChange}
+                value={PIXABAY_IMAGE_TYPE.ALL}
+                defaultChecked
               />
-              <div className="absolute bottom-0 left-0 w-full p-2 text-xs opacity-70 bg-base-100/50 hover:bg-base-100/80 transition-all cursor-auto">
-                By{' '}
-                <a
-                  href={image.pageURL}
-                  target="_blank"
-                  className="link link-primary no-underline hover:underline"
-                >
-                  {image.user}
-                </a>{' '}
-                on{' '}
-                <a
-                  className="link link-primary no-underline hover:underline"
-                  target="_blank"
-                  href="https://pixabay.com"
-                >
-                  Pixabay
-                </a>
-              </div>
-
-              {isImageLoading.includes(image.id) && (
-                <div className="absolute inset-0 flex items-center justify-center bg-base-100/40">
-                  <span className="loading loading-spinner loading-lg"></span>
-                </div>
-              )}
-            </figure>
-            {/* <div className="card-body p-2"></div> */}
+              <span className="label-text">ALL</span>
+            </label>
           </div>
-        ))}
+          <div className="form-control">
+            <label className="label cursor-pointer flex gap-2">
+              <input
+                type="radio"
+                name="radio-10"
+                className="radio radio-sm checked:bg-red-500"
+                onChange={handleImageTypeChange}
+                value={PIXABAY_IMAGE_TYPE.PHOTO}
+              />
+              <span className="label-text">Photo</span>
+            </label>
+          </div>
+          <div className="form-control">
+            <label className="label cursor-pointer flex gap-2">
+              <input
+                type="radio"
+                name="radio-10"
+                className="radio radio-sm checked:bg-blue-500"
+                onChange={handleImageTypeChange}
+                value={PIXABAY_IMAGE_TYPE.ILLUSTRATION}
+              />
+              <span className="label-text">Illustration</span>
+            </label>
+          </div>
+          <div className="form-control">
+            <label className="label cursor-pointer flex gap-2">
+              <input
+                type="radio"
+                name="radio-10"
+                className="radio radio-sm checked:bg-green-500"
+                onChange={handleImageTypeChange}
+                value={PIXABAY_IMAGE_TYPE.VECTOR}
+              />
+              <span className="label-text">Vector</span>
+            </label>
+          </div>
+        </div>
       </div>
 
-      {/* Loading State */}
-      <div className="flex justify-center my-12">
-        {isLoadingPixabayBackgrounds && (
-          <span className="loading loading-spinner loading-md"></span>
-        )}
+      <div className="w-full flex flex-col gap-2">
+        <label htmlFor="category" className="text-sm font-semibold ml-1">
+          Colors
+        </label>
+        <div className="flex flex-row flex-wrap gap-2">
+          {(
+            Object.keys(PIXABAY_COLORS) as Array<keyof typeof PIXABAY_COLORS>
+          ).map((key) => (
+            <div key={key} className="form-control">
+              <label className="label cursor-pointer flex gap-2">
+                <input
+                  type="radio"
+                  name="radio-colors"
+                  className={`radio radio-sm`}
+                  onChange={handleColorsChange}
+                  value={PIXABAY_COLORS[key]}
+                  defaultChecked={key === 'ALL'}
+                />
+                <span className="label-text">
+                  {PIXABAY_COLORS[key] || 'ALL'}
+                </span>
+              </label>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Intersection Observer Target */}
-      <div ref={observerTarget} className="h-4" />
+      {/* Search Input */}
+      <div className="w-full mb-4">
+        <PixabayImageListSearchInput
+          isLoading={isLoadingPixabayBackgrounds}
+          isDisabled={isLoadingPixabayBackgrounds}
+          onSearch={handleSearch}
+        />
+      </div>
+
+      {pixabayBackgrounds && (
+        <PixabayImageList
+          data={pixabayBackgrounds}
+          isLoading={isLoadingPixabayBackgrounds}
+          onChangePage={setPage}
+        />
+      )}
     </div>
   );
 };

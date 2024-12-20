@@ -2,7 +2,15 @@ import logoUrl from '@/assets/logo.png';
 import { useAuth } from '@/hooks/useAuth';
 import { Link, useMatch, useRouterState } from '@tanstack/react-router';
 import i18n from 'i18next';
-import { Gem, Languages, LogOut, Moon, Sun, User } from 'lucide-react';
+import {
+  CircleUser,
+  Gem,
+  Languages,
+  LogOut,
+  Moon,
+  Sun,
+  User,
+} from 'lucide-react';
 import { forwardRef, useEffect, useRef, useState } from 'react';
 
 import { HeaderProfile } from './HeaderProfile';
@@ -60,7 +68,7 @@ export const Header = forwardRef<
     };
   }, []);
 
-  const { isAuthed } = useAuth();
+  const { isAuthed, isAnonymous } = useAuth();
   const matched = useMatch({
     from: '/$projectId',
     shouldThrow: false,
@@ -129,7 +137,7 @@ export const Header = forwardRef<
             </label>
           </div>
 
-          {isAuthed ? (
+          {isAuthed && !isAnonymous ? (
             <div className="dropdown dropdown-end z-50">
               <div
                 tabIndex={0}
@@ -137,7 +145,7 @@ export const Header = forwardRef<
                 className="btn btn-ghost btn-circle avatar"
               >
                 <div className="w-10 rounded-full">
-                  <img alt="Tailwind CSS Navbar component" src="/logo.png" />
+                  <img alt="Avatar" src="/logo.png" />
                 </div>
               </div>
               <ul
@@ -176,6 +184,7 @@ export const Header = forwardRef<
                 <button
                   className="btn btn-primary btn-sm h-10 px-6 font-medium shadow animate-none"
                   onClick={() => {}}
+                  disabled={true}
                 >
                   Login
                 </button>
@@ -183,6 +192,7 @@ export const Header = forwardRef<
                 <button
                   className="btn btn-outline btn-sm h-10 px-5 font-medium text-primary animate-none hover:bg-primary hover:border-primary/80"
                   onClick={() => {}}
+                  disabled={true}
                 >
                   Register
                 </button>

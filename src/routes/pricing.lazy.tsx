@@ -7,6 +7,8 @@ export const Route = createLazyFileRoute('/pricing')({
 });
 
 function RouteComponent() {
+  return null;
+
   const handleGetStarted = () => {
     // TODO: 跳转到登录页面
   };

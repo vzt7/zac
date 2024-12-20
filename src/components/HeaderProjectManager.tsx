@@ -70,6 +70,8 @@ export const HeaderProjectManager = () => {
     });
   };
 
+  const isMaxProjects = projects.length >= 3;
+
   return (
     <div className="flex flex-row items-center gap-2">
       <button
@@ -88,9 +90,10 @@ export const HeaderProjectManager = () => {
             <button
               className="btn btn-primary w-full gap-2 my-4"
               onClick={handleCreateProject}
+              disabled={isMaxProjects}
             >
               <Plus size={16} />
-              Create Project
+              {isMaxProjects ? 'Max projects reached' : 'Create Project'}
             </button>
             {projects.map((project) => (
               <div
