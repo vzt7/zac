@@ -1,16 +1,7 @@
-import logoUrl from '@/assets/logo.webp';
 import { useAuth } from '@/hooks/useAuth';
 import { Link, useMatch, useRouterState } from '@tanstack/react-router';
 import i18n from 'i18next';
-import {
-  CircleUser,
-  Gem,
-  Languages,
-  LogOut,
-  Moon,
-  Sun,
-  User,
-} from 'lucide-react';
+import { Gem, Languages, LogOut, Moon, Sun, User } from 'lucide-react';
 import { forwardRef, useEffect, useRef, useState } from 'react';
 
 import { HeaderProfile } from './HeaderProfile';
@@ -23,7 +14,7 @@ export const HeaderLogo = () => {
   return (
     <a className="flex flex-row items-center text-[#7b41f3]" href="/">
       <span className="sr-only">Home</span>
-      <img src={logoUrl} alt="logo" className="h-12" />
+      <img src={'/logo.webp'} alt="logo" className="h-12" />
       <span className="text-2xl font-bold">
         {import.meta.env.VITE_APP_NAME}
       </span>
