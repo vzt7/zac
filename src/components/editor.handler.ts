@@ -307,7 +307,7 @@ export const handleAddText = (textShape?: Partial<Shape>) => {
     type: 'text',
     x: editorCenter.x + Math.random() * 100,
     y: editorCenter.y + Math.random() * 100,
-    text: '默认文本',
+    text: 'Default Text',
     fontSize: 48 / Math.min(editorProps.scaleX, editorProps.scaleY),
     rotation: 0,
     scaleX: editorProps.scaleX,

@@ -68,7 +68,6 @@ export const SidebarShapesDefault = () => {
         <h3 className="text-lg font-bold pb-1">Custom Shape</h3>
         <p className="text-sm text-gray-500 pb-2">
           You can add your own SVG to the canvas by pasting the SVG code here.
-          Generate more shapes on
         </p>
         <textarea
           placeholder="<svg>...</svg>"
