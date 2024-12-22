@@ -1,4 +1,4 @@
-import { Hand, Image, ScanEye, Type } from 'lucide-react';
+import { Hand, Image, Type } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { siOpenai } from 'simple-icons';
 

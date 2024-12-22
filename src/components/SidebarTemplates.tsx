@@ -6,7 +6,6 @@ export const SidebarTemplates = () => {
 
   // 应用模板
   const handleApplyTemplate = (template: (typeof templates)[number]) => {
-    console.log(template);
     template.elements.forEach((element) => {
       if (element.type === 'image') {
         handleAddImage({

@@ -47,7 +47,6 @@ export const addToHistory = (newShapes: Shape[]) => {
 export const handleSelect = (id: string | string[]) => {
   const { setSelectedIds } = useEditorStore.getState();
   const ids = ([] as string[]).concat(id);
-  console.log('[handleSelect]', ids, 'from', id);
   setSelectedIds(ids);
 };
 

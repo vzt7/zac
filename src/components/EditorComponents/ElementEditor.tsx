@@ -1,10 +1,7 @@
-import { ImageDown, RefreshCw, Save } from 'lucide-react';
+import { ImageDown } from 'lucide-react';
 import { useRef } from 'react';
 
-import { handleLoad, handleSave } from '../editor.handler';
-import { useExport } from '../editor.hook';
 import { useEditorStore } from '../editor.store';
-import { useHeaderStore } from '../header.store';
 import { DownloadModal } from './DownloadModal';
 import { ElementEditorItems } from './ElementEditorItems';
 

@@ -131,14 +131,14 @@ export const Editor = () => {
         <Layer ref={layerRef} listening={!isDragMode && !isDrawMode}>
           {/* safeArea 边框 */}
           <KonvaRect
-            {...safeArea}
+            listening={false}
             fill="#FFFFFF"
             strokeWidth={1}
-            listening={false}
             shadowColor="black"
             shadowBlur={50}
             shadowOpacity={0.5}
             shadowOffset={{ x: 0, y: 0 }}
+            {...safeArea}
           />
 
           {shapes.map((shape) => {

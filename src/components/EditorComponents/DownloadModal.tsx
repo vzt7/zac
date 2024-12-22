@@ -1,6 +1,7 @@
 import { Download } from 'lucide-react';
 import { forwardRef, useEffect, useRef, useState } from 'react';
 
+import { handleSelect } from '../editor.handler';
 import { useExport } from '../editor.hook';
 import { useEditorStore } from '../editor.store';
 import { useHeaderStore } from '../header.store';
@@ -25,6 +26,7 @@ export const DownloadModal = forwardRef<HTMLButtonElement, any>(
         setPreviewImage(null);
         return;
       }
+      handleSelect([]);
       const src = stageRef.current?.toDataURL();
       if (!src) {
         return;
@@ -100,7 +102,7 @@ export const DownloadModal = forwardRef<HTMLButtonElement, any>(
             </div>
             <button
               className="btn btn-primary w-full"
-              onClick={() => exportToPNG(currentProject!.name!)}
+              onClick={() => exportToPNG(currentProject!.name!, { pixelRatio })}
             >
               <Download size={20} />
               <span>Download as PNG</span>

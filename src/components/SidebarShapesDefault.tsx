@@ -48,7 +48,6 @@ const SHAPES = [
       const svgString = await fetch(item.url).then((res) => res.text());
       const svgTagString = svgString;
       // svgString.match(/<svg[^>]*>([\s\S]*?)<\/svg>/)?.[1] || '';
-      console.log('[handleAddSvgByTagStr] svgTagString', svgTagString);
       handleAddSvgByTagStr(svgTagString, {
         name: getShapeRandomId('shape'),
       });

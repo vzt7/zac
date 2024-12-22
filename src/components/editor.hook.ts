@@ -105,7 +105,7 @@ export const useExport = () => {
 
   const exportToPNG = (
     name: string,
-    { pixelRatio = 2 }: { pixelRatio?: number } = {},
+    { pixelRatio = 1 }: { pixelRatio?: number } = {},
   ) => {
     const stage = stageRef.current;
     if (!stage) return;
@@ -120,6 +120,7 @@ export const useExport = () => {
 
     // 重置缩放以确保导出原始大小
     tempStage.scale({ x: 1, y: 1 });
+    tempStage.position({ x: 0, y: 0 });
 
     // 根据缩放调整裁剪区域
     const adjustedSafeArea = {
