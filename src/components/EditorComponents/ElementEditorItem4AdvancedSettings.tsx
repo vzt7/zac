@@ -14,8 +14,12 @@ const formatNumber = (value: number, precision: number = 2) => {
 };
 
 export const ElementEditorItem4AdvancedSettings = ({
+  defaultChecked = false,
+  onCheckedChange,
   selectedShape,
 }: {
+  defaultChecked?: boolean;
+  onCheckedChange?: (checked: boolean) => void;
   selectedShape: Shape;
 }) => {
   const handleNumberInput = (
@@ -36,7 +40,11 @@ export const ElementEditorItem4AdvancedSettings = ({
 
   return (
     <>
-      <input type="checkbox" defaultChecked />
+      <input
+        type="checkbox"
+        defaultChecked={defaultChecked}
+        onChange={(e) => onCheckedChange?.(e.target.checked)}
+      />
       <div className="collapse-title font-medium">Advanced</div>
       <div className="collapse-content space-y-4">
         {/* Scale */}

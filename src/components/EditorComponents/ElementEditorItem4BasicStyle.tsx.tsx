@@ -40,8 +40,12 @@ const formatNumber = (value: number, precision: number = 2) => {
 };
 
 export const ElementEditorItem4BasicStyle = ({
+  defaultChecked = false,
+  onCheckedChange,
   selectedShape,
 }: {
+  defaultChecked?: boolean;
+  onCheckedChange?: (checked: boolean) => void;
   selectedShape: Shape;
 }) => {
   const handleColorInput = (e: ChangeEvent<HTMLInputElement>) => {
@@ -54,7 +58,11 @@ export const ElementEditorItem4BasicStyle = ({
 
   return (
     <>
-      <input type="checkbox" defaultChecked />
+      <input
+        type="checkbox"
+        defaultChecked={defaultChecked}
+        onChange={(e) => onCheckedChange?.(e.target.checked)}
+      />
       <div className="collapse-title font-medium">Style</div>
       <div className="collapse-content space-y-4">
         {/* Color Picker */}

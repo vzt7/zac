@@ -14,6 +14,7 @@ export const canvases: (ProjectCanvas & { icon: React.ReactNode })[] = [
     id: 'custom',
     category: '',
     name: 'Custom',
+    type: 'canvas_image',
     safeArea: {
       width: 0,
       height: 0,
@@ -26,6 +27,7 @@ export const canvases: (ProjectCanvas & { icon: React.ReactNode })[] = [
     id: 'youtube_channel_cover',
     category: 'Youtube',
     name: 'Youtube Channel Cover',
+    type: 'canvas_image',
     safeArea: {
       width: 2560,
       height: 1440,
@@ -38,6 +40,7 @@ export const canvases: (ProjectCanvas & { icon: React.ReactNode })[] = [
     id: 'youtube_video_thumbnail',
     category: 'Youtube',
     name: 'Youtube Video Thumbnail',
+    type: 'canvas_image',
     safeArea: {
       width: 1280,
       height: 720,
@@ -50,6 +53,7 @@ export const canvases: (ProjectCanvas & { icon: React.ReactNode })[] = [
     id: 'x_profile_photo',
     category: 'X / Twitter',
     name: 'X Profile Photo',
+    type: 'canvas_image',
     safeArea: {
       width: 400,
       height: 400,
@@ -62,6 +66,7 @@ export const canvases: (ProjectCanvas & { icon: React.ReactNode })[] = [
     id: 'x_post_landscape',
     category: 'X / Twitter',
     name: 'X Post Landscape',
+    type: 'canvas_image',
     safeArea: {
       width: 1600,
       height: 1600,
@@ -74,6 +79,7 @@ export const canvases: (ProjectCanvas & { icon: React.ReactNode })[] = [
     id: 'amazon_product_image',
     category: 'Amazon',
     name: 'Amazon Product Image',
+    type: 'canvas_image',
     safeArea: {
       width: 2000,
       height: 2000,
@@ -86,6 +92,7 @@ export const canvases: (ProjectCanvas & { icon: React.ReactNode })[] = [
     id: 'instagram_cover_square',
     category: 'Instagram',
     name: 'Instagram Post (Square)',
+    type: 'canvas_image',
     safeArea: {
       width: 1080,
       height: 1080,
@@ -98,6 +105,7 @@ export const canvases: (ProjectCanvas & { icon: React.ReactNode })[] = [
     id: 'instagram_cover_portrait',
     category: 'Instagram',
     name: 'Instagram Post (Portrait)',
+    type: 'canvas_image',
     safeArea: {
       width: 1080,
       height: 1350,
@@ -110,6 +118,7 @@ export const canvases: (ProjectCanvas & { icon: React.ReactNode })[] = [
     id: 'facebook_post_square',
     category: 'Facebook',
     name: 'Facebook Post (Square)',
+    type: 'canvas_image',
     safeArea: {
       width: 1200,
       height: 1200,
@@ -122,6 +131,7 @@ export const canvases: (ProjectCanvas & { icon: React.ReactNode })[] = [
     id: 'facebook_cover',
     category: 'Facebook',
     name: 'Facebook Cover',
+    type: 'canvas_image',
     safeArea: {
       width: 820,
       height: 312,

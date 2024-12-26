@@ -3,7 +3,7 @@ import { debug } from '@/utils/debug';
 import getRandomId from '@/utils/getRandomId';
 import type { SceneContext } from 'konva/lib/Context';
 import type { KonvaEventObject, Node } from 'konva/lib/Node';
-import { debounce } from 'lodash-es';
+import { debounce, keyBy } from 'lodash-es';
 import { parseSync as svgParseSync } from 'svgson';
 
 import { Shape } from './editor.store';
@@ -261,11 +261,14 @@ export const getCacheUpdatedAt = (projectId: string) => {
 };
 
 export const handleSave = (projectId: string) => {
-  const { shapes, safeArea, editorProps } = useEditorStore.getState();
+  const { shapes, safeArea, editorProps, animations, backupShapes } =
+    useEditorStore.getState();
   const data = JSON.stringify({
     shapes,
     safeArea,
     editorProps,
+    animations,
+    backupShapes,
     cacheUpdatedAt: new Date().toISOString(),
   });
 
@@ -275,12 +278,20 @@ export const handleSave = (projectId: string) => {
 export const handleLoad = (projectId: string) => {
   const data = localStorage.getItem(getCacheKey(projectId));
   if (data) {
-    const { shapes, safeArea, editorProps } = JSON.parse(data);
+    const {
+      shapes,
+      safeArea,
+      editorProps,
+      animations = null,
+      backupShapes = [],
+    } = JSON.parse(data);
     useEditorStore.setState({
       shapes,
       projectId,
       safeArea,
       editorProps,
+      animations,
+      backupShapes,
       history: [
         {
           shapes,
@@ -545,7 +556,7 @@ export const handleAddImage = (
 };
 
 // 处理文件上传
-export const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+export const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
   const file = e.target.files?.[0];
   if (file && isImageFile(file.type)) {
     const { safeArea, shapes, setShapes } = useEditorStore.getState();
@@ -571,7 +582,7 @@ export const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
 };
 
 // 处理拖拽放置
-export const handleImageDrop = (e: React.DragEvent<HTMLDivElement>) => {
+export const handleFileDrop = (e: React.DragEvent<HTMLDivElement>) => {
   e.preventDefault();
   const { shapes, setShapes, stageRef } = useEditorStore.getState();
 
@@ -983,14 +994,19 @@ export const handlePaste = () => {
 
   try {
     const copiedShapes = JSON.parse(clipboardData);
+    const { shapes } = useEditorStore.getState();
+    const shapesMap = keyBy(shapes, 'id');
     const newShapes = copiedShapes.map((shape: Shape) => ({
       ...shape,
-      id: `${shape.type}-${getRandomId()}`,
-      x: shape.x + 20, // 偏移一点距离以区分
-      y: shape.y + 20,
+      ...(shapesMap[shape.id]
+        ? {
+            id: `${shape.type}-${getRandomId()}`,
+            x: shape.x + 20, // 偏移一点距离以区分
+            y: shape.y + 20,
+          }
+        : {}),
     }));
 
-    const { shapes } = useEditorStore.getState();
     const updatedShapes = [...shapes, ...newShapes];
 
     useEditorStore.setState({ shapes: updatedShapes });

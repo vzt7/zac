@@ -6,6 +6,7 @@ import '@fontsource/poppins/700.css';
 import { RouterProvider, createRouter } from '@tanstack/react-router';
 import ReactDOM from 'react-dom/client';
 
+import './gsap';
 // Specify weight
 import './index.scss';
 // Import the generated route tree

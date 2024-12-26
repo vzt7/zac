@@ -128,11 +128,11 @@ useEditorStore.subscribe(
   },
 );
 
-if (import.meta.env.DEV) {
-  useSidebarStore.subscribe(
-    (state) => state,
-    (all) => {
-      console.log('[sidebarStore]', all);
-    },
-  );
-}
+// if (import.meta.env.DEV) {
+//   useSidebarStore.subscribe(
+//     (state) => state,
+//     (all) => {
+//       console.log('[sidebarStore]', all);
+//     },
+//   );
+// }

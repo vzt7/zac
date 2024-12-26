@@ -25,7 +25,19 @@ export const fitToScreen = (
     window.innerWidth - SIDEBAR_WIDTH - ELEMENT_EDITOR_WIDTH;
   const containerHeight = window.innerHeight - HEADER_HEIGHT;
 
-  const { safeArea, shapes, editorProps } = useEditorStore.getState();
+  const {
+    safeArea,
+    shapes,
+    backupShapes,
+    editorProps,
+    animations,
+    isAnimationPlaying,
+  } = useEditorStore.getState();
+  if (isAnimationPlaying) {
+    // 如果正在播放动画，则不进行缩放，保证动画的流畅性和位置正确
+    return;
+  }
+
   const scale =
     typeof scaleOrScaleFn === 'function'
       ? scaleOrScaleFn(Math.min(editorProps.scaleX, editorProps.scaleY))
@@ -51,6 +63,20 @@ export const fitToScreen = (
     x: shape.x + deltaX,
     y: shape.y + deltaY,
   }));
+  const newBackupShapes = backupShapes.map((shape) => ({
+    ...shape,
+    x: shape.x + deltaX,
+    y: shape.y + deltaY,
+  }));
+
+  const newAnimations = animations?.map((item) => ({
+    ...item,
+    shapes: item.shapes.map((shapeItem) => ({
+      ...shapeItem,
+      x: shapeItem.x + deltaX,
+      y: shapeItem.y + deltaY,
+    })),
+  }));
 
   // 一次性更新所有状态
   useEditorStore.setState({
@@ -66,6 +92,8 @@ export const fitToScreen = (
       y: newY / scaleValue,
     },
     shapes: newShapes,
+    backupShapes: newBackupShapes,
+    animations: newAnimations,
   });
 
   debouncedStageDraw();

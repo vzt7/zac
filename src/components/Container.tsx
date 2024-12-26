@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import { useEffect, useRef } from 'react';
 
 import { Editor } from './Editor';
@@ -28,7 +29,10 @@ export const Container = () => {
 
   return (
     <div
-      className={`relative flex flex-row w-full h-full bg-transparent overflow-hidden`}
+      className={clsx(
+        `relative flex flex-row w-full h-full bg-transparent overflow-hidden`,
+        '[&_*]:scrollbar-thin [&_*]:scrollbar-thumb-base-300 [&_*]:scrollbar-thumb-rounded-full [&_*]:scrollbar-track-transparent',
+      )}
       ref={wrapperRef}
     >
       <div className="">{safeArea.isInitialed && <Editor />}</div>

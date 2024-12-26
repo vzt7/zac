@@ -5,10 +5,14 @@ import { Shape } from '../editor.store';
 import { useSidebarStore } from '../sidebar.store';
 
 interface TextEditorProps {
+  defaultChecked?: boolean;
+  onCheckedChange?: (checked: boolean) => void;
   selectedShape: Shape;
 }
 
 export const ElementEditorItem4RichText = ({
+  defaultChecked = false,
+  onCheckedChange,
   selectedShape,
 }: TextEditorProps) => {
   const handleTextInput = (e: ChangeEvent<HTMLTextAreaElement>) => {
@@ -41,8 +45,12 @@ export const ElementEditorItem4RichText = ({
     .filter((item) => item.isLoaded);
 
   return (
-    <div className="collapse collapse-arrow bg-base-200">
-      <input type="checkbox" defaultChecked />
+    <>
+      <input
+        type="checkbox"
+        defaultChecked={defaultChecked}
+        onChange={(e) => onCheckedChange?.(e.target.checked)}
+      />
       <div className="collapse-title font-medium">Text Properties</div>
       <div className="collapse-content space-y-4">
         {/* Text Content */}
@@ -191,6 +199,6 @@ export const ElementEditorItem4RichText = ({
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };

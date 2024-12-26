@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import type { Layer as LayerType } from 'konva/lib/Layer';
 import { KonvaEventObject } from 'konva/lib/Node';
 import type { Stage as StageType } from 'konva/lib/Stage';
@@ -17,7 +18,7 @@ import { LayersPanel } from './EditorComponents/LayerPanel';
 import {
   handleBackgroundClip,
   handleDragEnd,
-  handleImageDrop,
+  handleFileDrop,
   handleShapeClick,
   handleStageClick,
   handleStageDragMove,
@@ -90,14 +91,28 @@ export const Editor = () => {
     fitToScreen();
   }, [safeArea.id, fitToScreen]);
 
+  const isAnimationPlaying = useEditorStore(
+    (state) => state.isAnimationPlaying,
+  );
+
   return (
     <div
-      className={`relative w-full h-full overflow-hidden transparent-bg-img`}
+      className={clsx(
+        `relative w-full h-full overflow-hidden transparent-bg-img`,
+        isAnimationPlaying && '!cursor-not-allowed pointer-events-none',
+      )}
       onDragOver={(e) => e.preventDefault()}
       onDrop={(e) => {
-        handleImageDrop(e);
+        handleFileDrop(e);
       }}
     >
+      <div
+        className={clsx(
+          'absolute w-full h-full border-4 border-accent z-10 transition-all pointer-events-none',
+          isAnimationPlaying ? 'opacity-100' : 'opacity-0',
+        )}
+      ></div>
+
       <Stage
         {...editorProps}
         ref={stageRef}
@@ -231,23 +246,48 @@ export const Editor = () => {
         />
       )}
 
-      <div className="absolute top-4 left-4">
+      <div
+        className={clsx(
+          'absolute top-4 left-4 transition-all',
+          isAnimationPlaying && 'opacity-0',
+        )}
+      >
         <AutoSaveIndicator />
       </div>
 
-      <div className={`absolute top-4 left-[50%] -translate-x-[50%]`}>
+      <div
+        className={clsx(
+          `absolute top-4 left-[50%] -translate-x-[50%] transition-all`,
+          isAnimationPlaying && 'opacity-0',
+        )}
+      >
         <SourcePanel />
       </div>
 
-      <div className={`absolute top-4 right-4 max-w-[400px]`}>
+      <div
+        className={clsx(
+          `absolute top-4 right-4 max-w-[400px] transition-all`,
+          !import.meta.env.DEV && isAnimationPlaying && 'opacity-0',
+        )}
+      >
         <LayersPanel />
       </div>
 
-      <div className={`absolute bottom-4 right-4`}>
+      <div
+        className={clsx(
+          `absolute bottom-4 right-4 transition-all`,
+          isAnimationPlaying && 'opacity-0',
+        )}
+      >
         <HelpCenter />
       </div>
 
-      <div className={`absolute left-4 bottom-4`}>
+      <div
+        className={clsx(
+          `absolute left-4 bottom-4 transition-all`,
+          isAnimationPlaying && 'opacity-0',
+        )}
+      >
         <ControlPanel4Scale
           scale={editorProps.scaleX}
           onFitScreen={fitToScreen}

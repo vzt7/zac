@@ -1,5 +1,4 @@
 import { debug } from '@/utils/debug';
-import { Node as KonvaNode, NodeConfig } from 'konva/lib/Node';
 import { ShapeConfig } from 'konva/lib/Shape';
 import type { Stage as StageType } from 'konva/lib/Stage';
 import { ComponentProps, MutableRefObject } from 'react';
@@ -34,6 +33,9 @@ export interface Shape extends ShapeConfig {
   textDecoration?: string;
   align?: string;
   isSvgGroup?: boolean;
+  _animationKeyFrameRecords?: Record<string, any>;
+  _animationTargetIndex?: number;
+  _animationItemIndex?: number; // 动画编辑模式下，当前编辑的动画项索引
 }
 
 export interface ProjectCanvas {
@@ -41,6 +43,7 @@ export interface ProjectCanvas {
   name: string;
   category: string;
   safeArea: SafeArea;
+  type: 'canvas_image' | 'canvas_animation';
 }
 
 export interface SafeArea extends ShapeConfig {
@@ -81,7 +84,10 @@ export interface EditorStore {
   // TODO:
   isElementEditing: boolean;
   isImageCropping: boolean;
-
+  isAnimationEditing: boolean;
+  isAnimationPlaying: boolean;
+  /** @deprecated */
+  currentAnimationItemIndex?: number | null;
   // 是否按住 shift 键
   keepShiftKey: boolean;
   // 是否按住鼠标中键
@@ -93,6 +99,7 @@ export interface EditorStore {
 
   shapes: Shape[];
   setShapes: (shapes: Shape[]) => void;
+  tempShapes: Shape[];
 
   selectedIds: string[];
   setSelectedIds: (ids: string[]) => void;
@@ -136,6 +143,14 @@ export interface EditorStore {
   safeArea: SafeArea;
   setSafeArea: (safeArea: SafeArea) => void;
 
+  animations:
+    | {
+        id: string;
+        name: string;
+        shapes: Shape[];
+      }[]
+    | null;
+
   cacheVersion?: number;
 }
 
@@ -148,6 +163,8 @@ const initialState = {
   isSelectMode: false,
   isElementEditing: false,
   isImageCropping: false,
+  isAnimationEditing: false,
+  isAnimationPlaying: false,
 
   keepShiftKey: false,
   keepMouseMiddleButton: false,
@@ -155,6 +172,7 @@ const initialState = {
   usingFonts: [],
 
   shapes: [],
+  tempShapes: [],
 
   selectedIds: [],
   selectedShapes: [],
@@ -180,6 +198,8 @@ const initialState = {
     width: 0,
     height: 0,
   },
+
+  animations: null,
 };
 
 export const useEditorStore = create<EditorStore>()(
@@ -216,28 +236,38 @@ export const useEditorStore = create<EditorStore>()(
   })),
 );
 
-if (import.meta.env.DEV) {
-  useEditorStore.subscribe(
-    (state) => state,
-    (all) => {
-      debug(`[editorStore]`, all);
-    },
-  );
-}
+// if (import.meta.env.DEV) {
+//   useEditorStore.subscribe(
+//     (state) => state,
+//     (all) => {
+//       debug(`[editorStore]`, {
+//         shapes: all.shapes,
+//         animations: all.animations,
+//       });
+//     },
+//   );
+// }
 
 useEditorStore.subscribe(
   (state) => state.selectedIds,
   (selectedIds) => {
-    const { shapes } = useEditorStore.getState();
+    if (selectedIds.length === 0) {
+      useEditorStore.setState({
+        selectedShapes: [],
+      });
+      debug(`[selectedShapes]`, []);
+    } else {
+      const { shapes } = useEditorStore.getState();
 
-    const selectedShapes = shapes.filter((shape) =>
-      selectedIds?.includes(shape.id),
-    );
+      const selectedShapes = shapes.filter((shape) =>
+        selectedIds?.includes(shape.id),
+      );
 
-    useEditorStore.setState({
-      selectedShapes,
-    });
-    debug(`[selectedShapes]`, selectedShapes);
+      useEditorStore.setState({
+        selectedShapes,
+      });
+      debug(`[selectedShapes]`, selectedShapes);
+    }
   },
 );
 

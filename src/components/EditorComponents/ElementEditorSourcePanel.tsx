@@ -2,7 +2,7 @@ import { Hand, Image, Type } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { siOpenai } from 'simple-icons';
 
-import { handleAddText, handleImageUpload } from '../editor.handler';
+import { handleAddText, handleFileUpload } from '../editor.handler';
 import { useEditorStore } from '../editor.store';
 import { AiModal } from './AiModal';
 
@@ -61,7 +61,7 @@ export const SourcePanel = () => {
           type="file"
           accept="image/*"
           style={{ display: 'none' }}
-          onChange={handleImageUpload}
+          onChange={handleFileUpload}
         />
       </button>
 

@@ -13,10 +13,9 @@ import {
   Triangle as LucideTriangle,
   Type as LucideType,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import type { ComponentProps } from 'react';
 import {
-  Arrow,
   Circle,
   Group,
   Image,
@@ -29,7 +28,6 @@ import {
 import { Text } from 'react-konva';
 import useImage from 'use-image';
 
-import { handleUpdate } from '../editor.handler';
 import { Shape } from '../editor.store';
 
 const DEFAULT_FILL = '#000000';
