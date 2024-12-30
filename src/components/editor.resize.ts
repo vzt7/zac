@@ -18,6 +18,8 @@ const debouncedStageDraw = debounce(() => {
   stageRef.current.draw();
 }, 500);
 
+let timeout: NodeJS.Timeout | null = null;
+
 export const fitToScreen = (
   scaleOrScaleFn?: number | ((currentScale: number) => number),
 ) => {
@@ -28,14 +30,24 @@ export const fitToScreen = (
   const {
     safeArea,
     shapes,
-    backupShapes,
+    tempShapes,
     editorProps,
     animations,
     isAnimationPlaying,
   } = useEditorStore.getState();
   if (isAnimationPlaying) {
     // 如果正在播放动画，则不进行缩放，保证动画的流畅性和位置正确
+    if (!timeout) {
+      timeout = setTimeout(() => {
+        timeout = null;
+        fitToScreen(scaleOrScaleFn);
+      }, 500);
+    }
     return;
+  }
+  if (timeout) {
+    clearTimeout(timeout);
+    timeout = null;
   }
 
   const scale =
@@ -63,12 +75,11 @@ export const fitToScreen = (
     x: shape.x + deltaX,
     y: shape.y + deltaY,
   }));
-  const newBackupShapes = backupShapes.map((shape) => ({
+  const newTempShapes = tempShapes.map((shape) => ({
     ...shape,
     x: shape.x + deltaX,
     y: shape.y + deltaY,
   }));
-
   const newAnimations = animations?.map((item) => ({
     ...item,
     shapes: item.shapes.map((shapeItem) => ({
@@ -92,7 +103,7 @@ export const fitToScreen = (
       y: newY / scaleValue,
     },
     shapes: newShapes,
-    backupShapes: newBackupShapes,
+    tempShapes: newTempShapes,
     animations: newAnimations,
   });
 

@@ -6,6 +6,7 @@ import { forwardRef, useEffect, useRef, useState } from 'react';
 
 import { HeaderProfile } from './HeaderProfile';
 import { HeaderProjectManager } from './HeaderProjectManager';
+import { useEditorStore } from './editor.store';
 import { useHeaderStore } from './header.store';
 
 export const HEADER_HEIGHT = 66;
@@ -47,7 +48,6 @@ export const Header = forwardRef<
   }, [theme]);
 
   const [isScrolled, setIsScrolled] = useState(false);
-
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 0);

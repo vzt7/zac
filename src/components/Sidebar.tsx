@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import {
   Box,
   Component,
@@ -8,6 +9,7 @@ import {
 } from 'lucide-react';
 import { Suspense, lazy } from 'react';
 
+import { useEditorStore } from './editor.store';
 import { SIDEBAR_TABS, useSidebarStore } from './sidebar.store';
 
 const SidebarCanvases = lazy(() =>
@@ -79,7 +81,9 @@ const TABS_LIST = [
 export const Sidebar = () => {
   const currentTab = useSidebarStore((state) => state.currentTab);
   const setCurrentTab = useSidebarStore((state) => state.setCurrentTab);
-
+  const disabledSidebarTabs = useSidebarStore(
+    (state) => state.disabledSidebarTabs,
+  );
   return (
     <div
       className={`relative box-border flex-shrink-0 h-full flex flex-row bg-base border-r-2 border-base-300`}
@@ -95,6 +99,7 @@ export const Sidebar = () => {
               currentTab === tab.id ? 'btn-active' : ''
             }`}
             onClick={() => setCurrentTab(tab.id)}
+            disabled={disabledSidebarTabs?.includes(tab.id)}
           >
             <tab.icon size={24} />
             <span>{tab.label}</span>
@@ -104,7 +109,13 @@ export const Sidebar = () => {
 
       <div className="divider divider-horizontal m-0 w-0"></div>
 
-      <div className="flex flex-col flex-grow h-full bg-base-200 p-4 overflow-y-auto overflow-visible">
+      <div
+        className={clsx(
+          'flex flex-col flex-grow h-full bg-base-200 p-4 overflow-y-auto overflow-visible',
+          disabledSidebarTabs?.includes(currentTab) &&
+            'pointer-events-none opacity-50',
+        )}
+      >
         <Suspense fallback={<div>Loading...</div>}>
           {currentTab === SIDEBAR_TABS.CANVAS && <SidebarCanvases />}
           {/* {currentTab === SIDEBAR_TABS.TEMPLATE && <SidebarTemplates />} */}

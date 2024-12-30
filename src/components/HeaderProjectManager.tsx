@@ -1,7 +1,7 @@
 import getRandomId from '@/utils/getRandomId';
 import { useNavigate } from '@tanstack/react-router';
 import dayjs from 'dayjs';
-import { Box, Check, Edit2, Plus, Trash2 } from 'lucide-react';
+import { Box, Check, Edit, Edit2, Plus, Trash2 } from 'lucide-react';
 import React, { useRef } from 'react';
 
 import { getCacheKey } from './editor.handler';
@@ -10,6 +10,9 @@ import { Project, useHeaderStore } from './header.store';
 export const HeaderProjectManager = () => {
   const currentProject = useHeaderStore((state) => state.currentProject);
   const projects = useHeaderStore((state) => state.projects);
+  const disabledProjectManager = useHeaderStore(
+    (state) => state.disabledProjectManager,
+  );
   const [editingId, setEditingId] = React.useState<string | null>(null);
   const [editName, setEditName] = React.useState('');
 
@@ -75,11 +78,11 @@ export const HeaderProjectManager = () => {
       <button
         className="btn btn-ghost btn-sm h-10 px-4 text-base"
         onClick={handleOpenModal}
+        disabled={disabledProjectManager}
       >
         <Box size={16} />
         <span>{currentProject?.name || 'New Project'}</span>
         <span className="badge badge-accent">current</span>
-        <Edit2 size={16} />
       </button>
       <dialog className="modal" ref={modalRef}>
         <div className="modal-box">

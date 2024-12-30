@@ -3,7 +3,7 @@ import type { Layer as LayerType } from 'konva/lib/Layer';
 import { KonvaEventObject } from 'konva/lib/Node';
 import type { Stage as StageType } from 'konva/lib/Stage';
 import type { Rect as RectType } from 'konva/lib/shapes/Rect';
-import { RefObject, useEffect, useLayoutEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { Group, Rect as KonvaRect, Layer, Line, Stage } from 'react-konva';
 
 import { Debugger } from './Debugger';
@@ -48,6 +48,7 @@ export const Editor = () => {
   // 选择
   const selectedIds = useEditorStore((state) => state.selectedIds);
   const shapes = useEditorStore((state) => state.shapes);
+  const reversedShapes = useMemo(() => [...shapes].reverse(), [shapes]);
   // 绘制模式
   const isDrawMode = useEditorStore((state) => state.isDrawMode);
   // 选择
@@ -64,9 +65,6 @@ export const Editor = () => {
     handleDrag: handleSnapDrag,
     handleDragEnd: handleSnapDragEnd,
   } = useSnap({
-    shapes: shapes
-      .map((shape) => stageRef.current?.findOne(`#${shape.id}`))
-      .filter((item): item is NonNullable<typeof item> => Boolean(item)),
     threshold: 5 / editorProps.scaleX,
     enabled: !isDragMode,
     scale: editorProps.scaleX,
@@ -99,7 +97,9 @@ export const Editor = () => {
     <div
       className={clsx(
         `relative w-full h-full overflow-hidden transparent-bg-img`,
-        isAnimationPlaying && '!cursor-not-allowed pointer-events-none',
+        !import.meta.env.DEV &&
+          isAnimationPlaying &&
+          '!cursor-not-allowed pointer-events-none',
       )}
       onDragOver={(e) => e.preventDefault()}
       onDrop={(e) => {
@@ -116,7 +116,7 @@ export const Editor = () => {
       <Stage
         {...editorProps}
         ref={stageRef}
-        className={`${isDragMode ? '!cursor-grab' : ''}`}
+        className={clsx(isDragMode && '!cursor-grab')}
         onContextMenu={handleContextMenu}
         onMouseDown={(e) => {
           // handleFreeDrawMouseDown(e);
@@ -156,7 +156,7 @@ export const Editor = () => {
             {...safeArea}
           />
 
-          {shapes.map((shape) => {
+          {reversedShapes.map((shape) => {
             return renderShape({
               ...shape,
               listening: shape.isLocked ? false : shape.listening,

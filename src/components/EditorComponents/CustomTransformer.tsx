@@ -1,12 +1,17 @@
 import { Rect } from 'konva/lib/shapes/Rect';
-import { useEffect, useRef, useState } from 'react';
+import { Transformer as TransformerType } from 'konva/lib/shapes/Transformer';
+import { forwardRef, useEffect, useRef, useState } from 'react';
 import { Transformer } from 'react-konva';
 
 import { useEditorStore } from '../editor.store';
 import { useHeaderStore } from '../header.store';
 
 export const CustomTransformer = () => {
-  const transformerRef = useRef<any>(null);
+  const transformerRef = useRef<TransformerType>(null);
+  useEffect(() => {
+    useEditorStore.setState({ transformerRef });
+  }, []);
+
   const theme = useHeaderStore((state) => state.theme);
   const keepShiftKey = useEditorStore((state) => state.keepShiftKey);
   const isElementEditing = useEditorStore((state) => state.isElementEditing);

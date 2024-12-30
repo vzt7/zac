@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { persist } from 'zustand/middleware';
 
-import type { ProjectCanvas } from './editor.store';
+import { type ProjectCanvas, useEditorStore } from './editor.store';
 
 export interface Project {
   id: string;
@@ -26,6 +26,7 @@ const _useHeaderStore = create<{
   createProject: (val: Project) => void;
   selectProject: (val: Project | null) => void;
   currentProject: Project | null;
+  disabledProjectManager?: boolean;
 }>();
 
 export const useHeaderStore = _useHeaderStore(
@@ -78,6 +79,19 @@ useHeaderStore.subscribe(
     useHeaderStore.setState({
       currentProject:
         projects.find((item) => item.id === currentProject?.id) || null,
+    });
+  },
+);
+
+useEditorStore.subscribe(
+  (state) => ({
+    isAnimationPlaying: state.isAnimationPlaying,
+    isAnimationEditing: state.isAnimationEditing,
+  }),
+  ({ isAnimationPlaying, isAnimationEditing }) => {
+    const disabledProjectManager = isAnimationEditing || isAnimationPlaying;
+    useHeaderStore.setState({
+      disabledProjectManager,
     });
   },
 );

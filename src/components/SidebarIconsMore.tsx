@@ -1,3 +1,4 @@
+import { debug } from '@/utils/debug';
 import { getShapeRandomId } from '@/utils/getRandomId';
 import { Icon, IconifyIcon } from '@iconify/react';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -97,23 +98,24 @@ export const SidebarIconsMore = () => {
       ).then((res) => res.json());
       return res as {
         icons: Record<string, IconifyIcon>;
+        width: number;
+        height: number;
       };
     },
   });
 
   const handleAddIcon = async (iconSet: string, icon: string) => {
     setLoadingItem({ iconSet, icon });
-    const { icons } = await getIconData({
+    const { icons, width, height } = await getIconData({
       iconSet,
       icons: [icon],
     });
     for (const iconItem of Object.values(icons)) {
+      debug(`[SidebarIconsMore.handleAddIcon] icon`, iconItem);
       handleAddSvgByTagStr(
-        `<svg xmlns="http://www.w3.org/2000/svg">${iconItem.body}</svg>`,
+        `<svg xmlns="http://www.w3.org/2000/svg" width="${width}px" height="${height}px" viewBox="0 0 ${width} ${height}">${iconItem.body}</svg>`,
         {
           name: getShapeRandomId(`icon-${icon}`),
-          width: 64,
-          height: 64,
         },
       );
     }

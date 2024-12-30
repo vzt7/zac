@@ -20,15 +20,20 @@ export const SidebarCanvases = () => {
           className={`tab ${activeTab === 'default' ? 'tab-active' : ''}`}
           onClick={() => setActiveTab('default')}
         >
-          <Image size={24} className="mr-2" />
+          <Image size={22} className="mr-2" />
           <span>Image</span>
         </button>
         <button
-          className={`tab ${activeTab === 'more' ? 'tab-active' : ''}`}
+          className={`relative tab ${activeTab === 'more' ? 'tab-active' : ''}`}
           onClick={() => setActiveTab('more')}
+          disabled
         >
-          <Clapperboard size={24} className="mr-2" />
+          <Clapperboard size={22} className="mr-2" />
           <span>Animation</span>
+
+          <div className="absolute -right-5 -top-2 badge badge-secondary text-xs font-bold z-10 truncate">
+            Coming soon
+          </div>
         </button>
       </div>
 

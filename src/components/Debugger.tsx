@@ -25,10 +25,10 @@ const StageDebugger = () => {
   };
 
   return (
-    <div className="absolute bottom-0 left-[50%] translate-x-[-50%] bg-warning text-warning-content p-2 rounded-2xl">
+    <div className="absolute bottom-0 left-[50%] translate-x-[-50%] bg-warning text-warning-content p-2 rounded-2xl opacity-20 hover:opacity-100 transition-all duration-300">
       <div className="flex flex-col relative">
-        <span>
-          画布: {safeArea.width} x {safeArea.height}
+        <span className="font-bold text-center">
+          {safeArea.width} x {safeArea.height}
         </span>
         <button
           className="btn btn-sm my-1"
@@ -45,14 +45,14 @@ const StageDebugger = () => {
               Copy to clipboard
             </button>
             <textarea
-              className="textarea textarea-bordered textarea-xs w-full min-h-[400px] text-lg"
+              className="textarea textarea-bordered textarea-xs w-full min-h-[400px] text-lg text-base-content"
               value={shapesAsJson}
               onChange={() => null}
             ></textarea>
             {showCopyToast && (
               <div className="toast toast-center">
-                <div className="alert alert-success font-bold">
-                  <span>已复制到剪贴板</span>
+                <div className="alert alert-success font-bold items-center flex">
+                  <span>Copied to clipboard</span>
                 </div>
               </div>
             )}

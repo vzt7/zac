@@ -28,9 +28,18 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          simpleIcons: ['simple-icons'],
+          ffmpeg: ['@ffmpeg/ffmpeg', '@ffmpeg/util', '@ffmpeg/core-mt'],
         },
       },
+    },
+  },
+  optimizeDeps: {
+    exclude: ['@ffmpeg/ffmpeg', '@ffmpeg/util', '@ffmpeg/core-mt'],
+  },
+  server: {
+    headers: {
+      'Cross-Origin-Embedder-Policy': 'require-corp',
+      'Cross-Origin-Opener-Policy': 'same-origin',
     },
   },
 });

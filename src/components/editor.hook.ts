@@ -1,10 +1,14 @@
+import { KonvaAnimation } from '@/utils/animation';
+import { debug } from '@/utils/debug';
 import { isMacOs } from '@/utils/platform';
+import { FFmpeg } from '@ffmpeg/ffmpeg';
+import { fetchFile, toBlobURL } from '@ffmpeg/util';
 import dayjs from 'dayjs';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import { Node as KonvaNode } from 'konva/lib/Node';
 import type { Stage as StageType } from 'konva/lib/Stage';
 import { debounce } from 'lodash-es';
-import { useCallback, useEffect, useLayoutEffect } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo } from 'react';
 import { useState } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
 
@@ -99,14 +103,14 @@ export const useEditorHotkeys = () => {
 };
 
 // 添加导出功能
-export const useExport = () => {
-  const stageRef = useEditorStore((state) => state.stageRef);
-  const { safeArea, editorProps } = useEditorStore.getState();
-
+export const useExport = (options?: {
+  onProgress?: (progress: number) => void;
+}) => {
   const exportToPNG = (
     name: string,
     { pixelRatio = 1 }: { pixelRatio?: number } = {},
   ) => {
+    const { safeArea, stageRef } = useEditorStore.getState();
     const stage = stageRef.current;
     if (!stage) return;
 
@@ -159,7 +163,9 @@ export const useExport = () => {
     document.body.removeChild(link);
   };
 
-  return { exportToPNG };
+  return {
+    exportToPNG,
+  };
 };
 
 const getScaledPosition = (
@@ -475,18 +481,19 @@ interface SnapPoint {
 }
 
 interface UseSnapProps {
-  shapes: KonvaNode[];
   threshold: number;
   enabled: boolean;
   scale: number;
 }
 
-export const useSnap = ({
-  shapes,
-  threshold,
-  enabled,
-  scale,
-}: UseSnapProps) => {
+export const useSnap = ({ threshold, enabled, scale }: UseSnapProps) => {
+  const shapes = useEditorStore((state) => state.shapes);
+  const stageRef = useEditorStore((state) => state.stageRef);
+  const nodes = useMemo(() => {
+    return shapes
+      .map((shape) => stageRef.current?.findOne(`#${shape.id}`))
+      .filter((item): item is NonNullable<typeof item> => Boolean(item));
+  }, [shapes, stageRef]);
   const [snapLines, setSnapLines] = useState<SnapLine[]>([]);
 
   const handleDrag = useCallback(
@@ -520,7 +527,7 @@ export const useSnap = ({
 
       // safeArea 吸附点
       const safeAreaSnapPoints = [
-        // 左边缘
+        // 左边
         { point: nodeX, guide: safeArea.x, orientation: 'V' },
         // 右边缘
         { point: nodeRight, guide: safeAreaRight, orientation: 'V' },
@@ -559,7 +566,7 @@ export const useSnap = ({
       });
 
       // 检查其他元素的吸附
-      shapes.forEach((shape) => {
+      nodes.forEach((shape) => {
         if (shape === draggedNode) return;
 
         const shapeRect = shape.getClientRect({ relativeTo: stage });
@@ -617,7 +624,7 @@ export const useSnap = ({
           }
         });
 
-        // 检查垂直吸附点
+        // 检查���直吸附点
         verticalSnapPoints.forEach(({ point, guide }) => {
           if (Math.abs(point - guide) < adjustedThreshold) {
             snapPoints.push({
@@ -669,7 +676,7 @@ export const useSnap = ({
 
         draggedNode.position(newPosition);
 
-        // 更���吸附线
+        // 更新吸附线
         const newSnapLines: SnapLine[] = [];
 
         if (minVertical) {
@@ -705,7 +712,7 @@ export const useSnap = ({
         setSnapLines([]);
       }
     },
-    [enabled, shapes, threshold, scale],
+    [enabled, nodes, threshold, scale],
   );
 
   const handleDragEnd = useCallback(() => {

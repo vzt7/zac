@@ -1,7 +1,13 @@
 import { Shape, useEditorStore } from '@/components/editor.store';
 import { gsap } from 'gsap';
-import { Stage } from 'konva/lib/Stage';
-import { keyBy } from 'lodash-es';
+import Konva from 'konva';
+import {
+  differenceBy,
+  differenceWith,
+  isEqual,
+  keyBy,
+  unionWith,
+} from 'lodash-es';
 
 import { debug } from './debug';
 
@@ -35,75 +41,120 @@ export class KonvaAnimation {
   }
 
   currentTimeline: gsap.core.Timeline | null = null;
-  currentTimelineClearFn: CallableFunction | null = null;
 
-  play(
+  async ready(
     timeline: gsap.core.Timeline,
     /** 动画项索引，指定index播放时，store 中的 shapes必须为该index对应的shapes */
     animationItemIndex: number = 0,
   ) {
     const { animations, stageRef, shapes, setShapes } =
       useEditorStore.getState();
+    if (!stageRef.current) {
+      throw new Error('Stage is not ready');
+    }
 
     this.currentTimeline = timeline;
 
-    const currentShapes = [...shapes];
-    const timelineAddList: CallableFunction[][] = [];
-    const shapeAddList: Shape[] = [];
+    const originalShapes = [...shapes];
+    const originalShapesMap = keyBy(originalShapes, 'id');
+    let initShapes: Shape[] = [...originalShapes];
+    const timelineAddList: CallableFunction[] = [];
 
-    while (animationItemIndex < (animations || []).length) {
-      const nextShapes =
-        KonvaAnimation.getShapesByAnimationItemIndex(animationItemIndex) ||
-        shapes;
-      debug(`[KonvaAnimation.play] nextShapes`, nextShapes);
+    for (let i = animationItemIndex; i < (animations || []).length; i += 1) {
+      const prevShapes =
+        KonvaAnimation.getShapesByAnimationItemIndex(i - 1) || [];
+      const currentShapes =
+        KonvaAnimation.getShapesByAnimationItemIndex(i) || shapes;
+      debug(`[KonvaAnimation.play] currentShapes`, currentShapes);
 
-      const timelineAddFns: ((
-        timeline: gsap.core.Timeline,
-        timelineLabel?: string,
-      ) => void)[] = [];
-      for (let i = 0; i < nextShapes.length; i++) {
-        const nextItem = nextShapes[i];
-        this.addItem2Timeline(timelineAddFns, shapeAddList, {
-          stage: stageRef.current!,
-          nextItem,
+      // 增
+      const added = differenceBy(currentShapes, prevShapes, 'id');
+      const addedMap = keyBy(added, 'id');
+      // 删
+      const removed = differenceBy(prevShapes, currentShapes, 'id');
+      const removedMap = keyBy(removed, 'id');
+      // 改
+      const updated = differenceWith(prevShapes, currentShapes, isEqual);
+      const updatedMap = keyBy(updated, 'id');
+
+      initShapes = unionWith(
+        initShapes,
+        currentShapes,
+        (a, b) => a.id === b.id,
+      );
+
+      // 计算每一动画项下各元素的 zIndex
+      const zIndexMap = Object.fromEntries(
+        [...initShapes].map((item) => {
+          const _index = currentShapes.findIndex(
+            (shape) => shape.id === item.id,
+          );
+          if (_index < 0) {
+            return [item.id, initShapes.length] as const;
+          }
+          return [item.id, initShapes.length - _index] as const; // +1 因为 0 是遮罩占用了
+        }),
+      );
+
+      const actions: ((timelineIndex: number, index: number) => void)[] = [];
+      currentShapes.map((item) => {
+        const fn = (timelineLabelIndex: number) => {
+          const node = stageRef.current!.findOne(`#${item.id}`)!;
+          return this.getTimelineActionItem({
+            node,
+            item,
+            timeline,
+            timelineLabelIndex,
+            timelinePosition: `${timelineLabelIndex}`,
+            added,
+            addedMap,
+            updated,
+            updatedMap,
+            removed,
+            removedMap,
+            zIndexMap,
+          });
+        };
+        actions.push(fn);
+      });
+      timelineAddList.push((timelineLabelIndex: number) => {
+        timeline.addLabel(String(timelineLabelIndex));
+        actions.map((fn, index) => {
+          fn(timelineLabelIndex, index);
         });
-      }
-      timelineAddList.push([...timelineAddFns]);
+      });
 
-      animationItemIndex += 1;
+      debug(`[KonvaAnimation.ready] ${i}`, prevShapes, currentShapes);
     }
 
-    const tempShapes = currentShapes.concat(
-      Object.values(keyBy(shapeAddList.reverse(), 'id')), // 后面会把前面的覆盖，反转后即优先取前面的
+    setShapes(
+      initShapes.map((item) => {
+        return {
+          ...item,
+          opacity: originalShapesMap[item.id] ? 1 : 0, // 初始值取决于默认canvas内是否存在该元素，否则由动画控制
+        };
+      }),
     );
-    setShapes(tempShapes);
 
-    const go2Play = (maxDelay: number = 2000) => {
+    const go2Ready = (callback: () => void, maxDelay: number = 2000) => {
       if (maxDelay <= 0) {
         throw new Error('Animation is not ready with unknown element');
       }
-      const isReady = shapeAddList.every((shape) => {
+      const isReady = initShapes.every((shape) => {
         const node = stageRef.current?.findOne(`#${shape.id}`);
         return node;
       });
       if (!isReady) {
-        setTimeout(() => go2Play(maxDelay - 200), 200);
+        setTimeout(() => go2Ready(callback, maxDelay - 200), 200);
       } else {
-        timelineAddList.forEach((fnList, listIndex) => {
-          timeline.addLabel(`${listIndex}`);
-          fnList.forEach((fn, index) =>
-            fn(timeline, index === 0 ? `${listIndex}` : '<'),
-          );
-        });
-        timeline.play();
+        timelineAddList.forEach((fn, index) => fn(index));
+        setTimeout(() => callback(), 100);
       }
     };
 
-    go2Play();
-
-    return () => {
-      this.currentTimelineClearFn?.();
-    };
+    await new Promise((resolve) => {
+      go2Ready(() => resolve(1), 2000);
+    });
   }
 
   stop(timeline: gsap.core.Timeline) {
@@ -120,83 +171,117 @@ export class KonvaAnimation {
     }
   }
 
-  addItem2Timeline(
-    timelineAddFns: CallableFunction[],
-    shapeAddList: Shape[],
-    {
-      stage,
-      nextItem,
-    }: {
-      stage: Stage;
-      nextItem: Shape;
-    },
-  ) {
-    const node = stage.findOne(`#${nextItem.id}`);
-    const isDynamicAdded = !node;
-    if (isDynamicAdded) {
-      shapeAddList.push({
-        ...nextItem,
-        isLocked: true,
-        visible: false,
-        _animationKeyFrameRecords: {},
-        _animation_isDynamicAdded: true,
-      });
+  getTimelineActionItem({
+    node,
+    item,
+    timeline,
+    timelineLabelIndex,
+    timelinePosition,
+    added,
+    addedMap,
+    updated,
+    updatedMap,
+    removed,
+    removedMap,
+    onStart,
+    zIndexMap,
+  }: {
+    node: Konva.Node;
+    item: Shape;
+    timeline: gsap.core.Timeline;
+    timelineLabelIndex: number;
+    timelinePosition: string;
+    added: Shape[];
+    addedMap: Record<string, Shape>;
+    updated: Shape[];
+    updatedMap: Record<string, Shape>;
+    removed: Shape[];
+    removedMap: Record<string, Shape>;
+    zIndexMap: Record<string, number>;
+    onStart?: () => void;
+  }) {
+    if (removedMap[item.id]) {
+      debug(
+        `[KonvaAnimation.getTimelineActionItem] set opacity 0 for removed ${item.name || item.id} on ${timelinePosition}`,
+      );
+      timeline.to(
+        node,
+        {
+          opacity: 0,
+          duration: 0.00001,
+        },
+        timelinePosition,
+      );
+      return;
     }
 
-    timelineAddFns.push(
-      (timeline: gsap.core.Timeline, timelineLabel?: string) => {
-        const _node = stage.findOne(`#${nextItem.id}`);
+    if (!addedMap[item.id] && !updatedMap[item.id]) {
+      debug(
+        `[KonvaAnimation.getTimelineActionItem] do nothing for not added or updated "${item.name || item.id}" on ${timelinePosition}`,
+      );
+      return;
+    }
 
-        const duration = nextItem._animationKeyFrameRecords?.duration ?? 0;
-        const ease = nextItem._animationKeyFrameRecords?.ease ?? null;
-        console.log('timelineLabel', timelineLabel, duration, ease, nextItem);
+    // if (addedMap[item.id]) {
+    //   debug(
+    //     `[KonvaAnimation.getTimelineActionItem] set opacity 1 for added "${item.name || item.id}" on ${timelinePosition}`,
+    //   );
+    //   timeline.to(
+    //     node,
+    //     {
+    //       opacity: 1,
+    //       duration: 0.00001,
+    //     },
+    //     timelinePosition,
+    //   );
+    // }
 
-        if (ease === null) {
-          timeline.to(
-            _node!,
-            {
-              ...this.mapKonvaProperty2GsapProperty(nextItem),
-              duration: 0.001,
-            },
-            timelineLabel,
-          );
-          timeline.to(
-            _node!,
-            {
-              // ...this.mapKonvaProperty2GsapProperty(nextItem),
-              ...nextItem._animationKeyFrameRecords,
-              duration: duration <= 0 ? 0.001 : duration,
-              onStart: () => {
-                if (isDynamicAdded && nextItem.visible !== false) {
-                  _node?.setAttr('visible', true);
-                }
-              },
-            },
-            timelineLabel,
-          );
-          return;
-        }
+    const interceptedItem = item;
 
-        timeline.to(
-          _node!,
-          {
-            ...this.mapKonvaProperty2GsapProperty(nextItem),
-            ...nextItem._animationKeyFrameRecords,
-            duration: duration <= 0 ? 0.001 : duration,
-            onStart: () => {
-              if (isDynamicAdded && nextItem.visible !== false) {
-                _node?.setAttr('visible', true);
-              }
-            },
-          },
-          timelineLabel,
-        );
+    const duration = interceptedItem._animationKeyFrameRecords?.duration ?? 0;
+    const ease = interceptedItem._animationKeyFrameRecords?.ease ?? null;
+
+    if (ease === null || duration <= 0) {
+      debug(
+        `[KonvaAnimation.getTimelineActionItem] set init position for "${interceptedItem.name || interceptedItem.id}" on ${timelinePosition}`,
+      );
+      timeline.to(
+        node,
+        {
+          ...this.mapKonvaProperty2GsapProperty(interceptedItem, node),
+          ...interceptedItem._animationKeyFrameRecords,
+          duration: 0.00001,
+          zIndex: zIndexMap[interceptedItem.id],
+        },
+        timelinePosition,
+      );
+    }
+
+    debug(
+      `[KonvaAnimation.getTimelineActionItem] set animation for "${interceptedItem.name || interceptedItem.id}" on ${timelinePosition}`,
+      {
+        ...this.mapKonvaProperty2GsapProperty(interceptedItem, node),
+        ...interceptedItem._animationKeyFrameRecords,
+        duration: duration <= 0 ? 0.00001 : duration,
       },
+    );
+    timeline.to(
+      node,
+      {
+        ...this.mapKonvaProperty2GsapProperty(interceptedItem, node),
+        ...interceptedItem._animationKeyFrameRecords,
+        duration: duration <= 0 ? 0.00001 : duration,
+        zIndex: zIndexMap[interceptedItem.id],
+        onStart() {
+          onStart?.();
+        },
+      },
+      timelinePosition,
     );
   }
 
-  private mapKonvaProperty2GsapProperty(shape: Shape) {
-    // Konva属性 映射到 gsap 动画属性
+  // Konva属性 映射到 gsap 动画属性
+  private mapKonvaProperty2GsapProperty(shape: Shape, node: Konva.Node) {
     return {
       x: shape.x,
       y: shape.y,
@@ -204,11 +289,15 @@ export class KonvaAnimation {
       offsetX: shape.offsetX ?? 0,
       offsetY: shape.offsetY ?? 0,
 
-      width: shape.width,
-      height: shape.height,
+      width: shape.width ?? node.width(),
+      height: shape.height ?? node.height(),
       scaleX: shape.scaleX ?? 1,
       scaleY: shape.scaleY ?? 1,
       opacity: shape.opacity ?? 1,
-    };
+
+      fill: shape.fill,
+      skewX: shape.skewX ?? 0,
+      skewY: shape.skewY ?? 0,
+    } as gsap.TweenVars;
   }
 }

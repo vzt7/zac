@@ -102,6 +102,12 @@ export const HelpCenter = () => {
                     <kbd className="kbd">Space</kbd>
                   </td>
                 </tr>
+                <tr>
+                  <td>Scaling from Center</td>
+                  <td>
+                    Holding <kbd className="kbd">Shift</kbd> while scaling
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>

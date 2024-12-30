@@ -28,6 +28,8 @@ const _useSidebarStore = create<{
   currentTab: SIDEBAR_TABS;
   setCurrentTab: (tab: SIDEBAR_TABS) => void;
 
+  disabledSidebarTabs?: SIDEBAR_TABS[];
+
   fonts: FontItem[];
   upsertFont: (font: FontItem) => void;
 
@@ -125,6 +127,28 @@ useEditorStore.subscribe(
         isUsed: usingFonts.includes(f.value),
       })),
     });
+  },
+);
+
+useEditorStore.subscribe(
+  (state) => ({
+    isAnimationPlaying: state.isAnimationPlaying,
+    isAnimationEditing: state.isAnimationEditing,
+  }),
+  ({ isAnimationPlaying, isAnimationEditing }) => {
+    if (isAnimationPlaying) {
+      useSidebarStore.setState({
+        disabledSidebarTabs: [...Object.values(SIDEBAR_TABS)],
+      });
+    } else if (isAnimationEditing) {
+      useSidebarStore.setState({
+        disabledSidebarTabs: [SIDEBAR_TABS.CANVAS],
+      });
+    } else {
+      useSidebarStore.setState({
+        disabledSidebarTabs: [],
+      });
+    }
   },
 );
 

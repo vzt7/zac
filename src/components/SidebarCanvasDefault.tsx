@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import { useEffect, useState } from 'react';
 
 import { canvases as defaultCanvases } from './SidebarCanvasDefaultData';
@@ -88,12 +89,17 @@ export const SidebarCanvasDefault = (
       ).map(([category, items]) => (
         <div key={category}>
           <h3 className="text-sm font-medium px-2 mb-2">{category}</h3>
-          <div className="flex flex-row flex-wrap gap-3 text-black dark:text-white">
+          <div
+            className={clsx(
+              'grid grid-cols-2 gap-4 text-black dark:text-white',
+              items[0].id === 'custom' && '!grid-cols-1',
+            )}
+          >
             {items.map((item) => (
               <button
                 key={item.name}
                 onClick={() => setSelected(item)}
-                className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 border-gray-300 dark:border-gray-700 w-32 transition-all hover:bg-base-300 hover:border-primary/50 ${
+                className={`flex flex-col items-center justify-center p-4 py-6 rounded-lg border-2 border-gray-300 dark:border-gray-700 transition-all hover:bg-base-300 hover:border-primary/50 ${
                   selected?.id === item.id
                     ? 'border-primary bg-primary/10'
                     : `border-base/5`
@@ -153,6 +159,7 @@ export const SidebarCanvasDefault = (
                 onClick={() =>
                   handleSelectCanvas({
                     id: 'custom',
+                    type: 'canvas_image',
                     name: 'Custom',
                     category: 'Custom',
                     safeArea: {

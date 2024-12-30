@@ -86,7 +86,7 @@ export const PixabayImageList = ({
                 alt={image.tags}
                 className="w-full h-48 object-cover transition-all duration-500"
               />
-              <div className="absolute bottom-0 left-0 w-full p-2 text-xs opacity-70 bg-base-100/50 hover:bg-base-100/80 transition-all cursor-auto">
+              <div className="absolute bottom-0 left-0 w-full p-2 text-xs opacity-70 bg-base-100/50 hover:bg-base-100/80 hover:opacity-100 transition-all cursor-auto">
                 By{' '}
                 <a
                   href={image.pageURL}

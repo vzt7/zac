@@ -6,13 +6,16 @@ import type { KonvaEventObject, Node } from 'konva/lib/Node';
 import { debounce, keyBy } from 'lodash-es';
 import { parseSync as svgParseSync } from 'svgson';
 
+import { getDefaultShapeProps } from './editor.shape';
 import { Shape } from './editor.store';
 import { useEditorStore } from './editor.store';
 
 // 创建一个防抖的添加历史记录函数
 const debouncedAddToHistory = debounce((shapes: Shape[]) => {
   addToHistory(shapes);
-}, 100); // 100ms 内的多次调用会被合并
+}, 300); // 300ms 内的多次调用会被合并
+
+const MAX_HISTORY_LENGTH = 500;
 
 export const addToHistory = (newShapes: Shape[]) => {
   const {
@@ -40,6 +43,11 @@ export const addToHistory = (newShapes: Shape[]) => {
 
   const newHistory = history.slice(0, historyIndex + 1);
   newHistory.push(newHistoryState);
+
+  if (newHistory.length > MAX_HISTORY_LENGTH) {
+    newHistory.shift();
+  }
+
   setHistory(newHistory);
   setHistoryIndex(newHistory.length - 1);
 };
@@ -151,6 +159,7 @@ export const createShape = (type: string, shape?: Partial<Shape>) => {
 
   const newShape = {
     type,
+    ...(getDefaultShapeProps(type) || {}),
     ...baseShape,
   } as Shape;
 
@@ -261,14 +270,14 @@ export const getCacheUpdatedAt = (projectId: string) => {
 };
 
 export const handleSave = (projectId: string) => {
-  const { shapes, safeArea, editorProps, animations, backupShapes } =
+  const { shapes, safeArea, editorProps, animations, tempShapes } =
     useEditorStore.getState();
   const data = JSON.stringify({
     shapes,
     safeArea,
     editorProps,
     animations,
-    backupShapes,
+    tempShapes,
     cacheUpdatedAt: new Date().toISOString(),
   });
 
@@ -283,7 +292,7 @@ export const handleLoad = (projectId: string) => {
       safeArea,
       editorProps,
       animations = null,
-      backupShapes = [],
+      tempShapes = [],
     } = JSON.parse(data);
     useEditorStore.setState({
       shapes,
@@ -291,7 +300,7 @@ export const handleLoad = (projectId: string) => {
       safeArea,
       editorProps,
       animations,
-      backupShapes,
+      tempShapes,
       history: [
         {
           shapes,
@@ -312,9 +321,7 @@ export const handleAddText = (textShape?: Partial<Shape>) => {
     x: safeArea.x + safeArea.width / 2,
     y: safeArea.y + safeArea.height / 2,
   };
-  const newShape: Shape = {
-    id: `text-${getRandomId()}`,
-    type: 'text',
+  const newShape = createShape('text', {
     x: editorCenter.x + Math.random() * 100,
     y: editorCenter.y + Math.random() * 100,
     text: 'Default Text',
@@ -324,8 +331,7 @@ export const handleAddText = (textShape?: Partial<Shape>) => {
     scaleY: editorProps.scaleY,
     fill: '#000000',
     ...textShape,
-  };
-
+  });
   const newShapes = [...shapes, newShape];
   setShapes(newShapes);
   addToHistory(newShapes);
@@ -382,9 +388,7 @@ const createImageShape = (
       }
 
       // 调整位置，使拖放点位于图片中心
-      const newShape: Shape = {
-        id: `image-${getRandomId()}`,
-        type: 'image',
+      const newShape = createShape('image', {
         x: position.x - finalWidth / 2, // 从拖放位置减去宽度的一半
         y: position.y - finalHeight / 2, // 从拖放位置减去高度的一半
         width: finalWidth,
@@ -395,20 +399,17 @@ const createImageShape = (
         initialSrc: imageUrl,
         src: imageUrl,
         fill: 'transparent',
-      };
-
+      });
       callback(newShape);
     };
   } else {
     // 处理SVG
     const imageElement = imageUrl;
-    const newShape: Shape = {
-      id: `svg-${getRandomId()}`,
-      type: 'svg',
+    const newShape = createShape('svg', {
       imageElement,
       x: position.x - imageElement.width() / 2,
       y: position.y - imageElement.height() / 2,
-    };
+    });
     callback(newShape);
   }
 };
@@ -417,8 +418,6 @@ export const handleAddSvgByTagStr = async (
   svgString: string,
   shape?: Partial<Shape>,
 ) => {
-  const { shapes, setShapes, editorProps } = useEditorStore.getState();
-
   const svgAttrs = (() => {
     try {
       return svgParseSync(svgString, {
@@ -431,89 +430,91 @@ export const handleAddSvgByTagStr = async (
   if (!svgAttrs) {
     return;
   }
-
-  // TODO: 嵌套path或其他情况可能导致svg无法正常显示
-  debug('[handleAddSvgByTagStr] attrs', svgAttrs, 'rawSvgString:', svgString);
-
-  const canNotParsePerfectly = (
-    children: (typeof svgAttrs)['children'],
-  ): boolean =>
-    children.some(
-      (item) =>
-        item.name !== 'path' ||
-        (item.children && canNotParsePerfectly(item.children)),
-    );
-
-  if (canNotParsePerfectly(svgAttrs.children)) {
-    const url =
-      'data:image/svg+xml;charset=utf8,' + encodeURIComponent(svgString);
-    const img = new Image();
-    img.onload = () => {
-      const width =
-        shape?.width ||
-        Number(
-          svgAttrs.attributes.width ||
-            svgAttrs.attributes.viewBox?.split(' ')[2] ||
-            100,
-        );
-      const height =
-        shape?.height ||
-        Number(
-          svgAttrs.attributes.height ||
-            svgAttrs.attributes.viewBox?.split(' ')[3] ||
-            100,
-        );
-      handleAddImage(url, {
-        ...shape,
-        name: shape?.name,
-        scaleX: 3 * editorProps.scaleX,
-        scaleY: 3 * editorProps.scaleY,
-        width,
-        height,
-      });
-      debug('[handleAddSvgByTagStr] url', url, svgAttrs);
-    };
-    img.src = url;
-    return;
-  }
-
-  const createSvgWithGroup = (itemAttrs: typeof svgAttrs): Shape => {
-    return createShape('group', {
-      // ...itemAttrs.attributes,
-      isSvgGroup: true,
+  const url =
+    'data:image/svg+xml;charset=utf8,' + encodeURIComponent(svgString);
+  const img = new Image();
+  img.onload = () => {
+    const width =
+      shape?.width ||
+      Number(
+        svgAttrs.attributes.width?.match(/(\d+)px/)?.[1] ||
+          svgAttrs.attributes.viewBox?.split(' ')[2] ||
+          100,
+      );
+    const height =
+      shape?.height ||
+      Number(
+        svgAttrs.attributes.height?.match(/(\d+)px/)?.[1] ||
+          svgAttrs.attributes.viewBox?.split(' ')[3] ||
+          100,
+      );
+    const scaleX = width > 100 ? 100 / width : (100 - width) / width;
+    const scaleY = height > 100 ? 100 / height : (100 - height) / height;
+    handleAddImage(url, {
+      ...shape,
       name: shape?.name,
-      fill:
-        itemAttrs.attributes.fill === 'none'
-          ? undefined
-          : itemAttrs.attributes.fill || '#000000',
-      children: itemAttrs.children
-        .map((item) => {
-          if (item.name === 'path') {
-            return createShape('path', {
-              ...item.attributes,
-              ...shape,
-              data: item.attributes.d,
-              fill:
-                item.attributes.fill === 'none'
-                  ? undefined
-                  : item.attributes.fill || '#000000',
-              scaleX: 5 * editorProps.scaleX,
-              scaleY: 5 * editorProps.scaleY,
-              name: `path-${getRandomId()}`,
-              x: 0,
-              y: 0,
-            });
-          }
-        })
-        .filter((item): item is NonNullable<typeof item> => Boolean(item)),
+      scaleX,
+      scaleY,
+      width,
+      height,
+    });
+    debug(`[handleAddSvgByTagStr] svgAttrs`, svgAttrs, {
+      url,
+      width,
+      height,
     });
   };
+  img.src = url;
+  return;
 
-  const newShape = createSvgWithGroup(svgAttrs);
-  if (!newShape) return;
-  const newShapes = [...shapes, newShape];
-  setShapes(newShapes);
-  addToHistory(newShapes);
+  // const { shapes, setShapes, editorProps } = useEditorStore.getState();
+  // TODO: 嵌套path或其他情况可能导致svg无法正常显示
+  // debug('[handleAddSvgByTagStr] attrs', svgAttrs, 'rawSvgString:', svgString);
+  // const canNotParsePerfectly = (
+  //   children: (typeof svgAttrs)['children'],
+  // ): boolean =>
+  //   children.some(
+  //     (item) =>
+  //       item.name !== 'path' ||
+  //       (item.children && canNotParsePerfectly(item.children)),
+  //   );
+  // const createSvgWithGroup = (itemAttrs: typeof svgAttrs): Shape => {
+  //   debug(`[handleAddSvgByTagStr.createSvgWithGroup] itemAttrs`, itemAttrs);
+  //   return createShape('group', {
+  //     // ...itemAttrs.attributes,
+  //     isSvgGroup: true,
+  //     name: shape?.name,
+  //     fill:
+  //       itemAttrs.attributes.fill === 'none'
+  //         ? undefined
+  //         : itemAttrs.attributes.fill || '#000000',
+  //     children: itemAttrs.children
+  //       .map((item) => {
+  //         if (item.name === 'path') {
+  //           return createShape('path', {
+  //             ...item.attributes,
+  //             ...shape,
+  //             data: item.attributes.d,
+  //             fill:
+  //               item.attributes.fill === 'none'
+  //                 ? undefined
+  //                 : item.attributes.fill || '#000000',
+  //             scaleX: 5 * editorProps.scaleX,
+  //             scaleY: 5 * editorProps.scaleY,
+  //             name: `path-${getRandomId()}`,
+  //             x: 0,
+  //             y: 0,
+  //           });
+  //         }
+  //       })
+  //       .filter((item): item is NonNullable<typeof item> => Boolean(item)),
+  //   });
+  // };
+  // const newShape = createSvgWithGroup(svgAttrs);
+  // if (!newShape) return;
+  // const newShapes = [...shapes, newShape];
+  // setShapes(newShapes);
+  // addToHistory(newShapes);
 };
 
 // 修改文件类型检查函数
@@ -733,9 +734,9 @@ export const handleUpdate = (
   item: Partial<Shape> & { id: Shape['id'] },
   interceptor?: (nextShapes: Shape[]) => Shape[],
 ) => {
-  const { selectedIds, shapes } = useEditorStore.getState();
+  const { shapes } = useEditorStore.getState();
   const _newShapes = shapes.map((shape) => {
-    if (selectedIds.includes(shape.id)) {
+    if (item.id === shape.id) {
       return { ...shape, ...item };
     }
     return shape;
@@ -907,10 +908,7 @@ export const handleGroup = (selectedShapes: Shape[]) => {
   );
 
   // 创建新的组合
-  const groupId = `group-${getRandomId()}`;
-  const group: GroupShape = {
-    id: groupId,
-    type: 'group',
+  const group = createShape('group', {
     children: selectedShapes.map((shape) => ({
       ...shape,
       // 调整子元素相对于组的位置
@@ -927,7 +925,7 @@ export const handleGroup = (selectedShapes: Shape[]) => {
     scaleY: 1,
     zIndex: Math.max(...selectedShapes.map((s) => s.zIndex || 0)),
     fill: 'transparent',
-  };
+  });
 
   requestAnimationFrame(() => {
     // 从画布中移除原始图形
@@ -939,7 +937,7 @@ export const handleGroup = (selectedShapes: Shape[]) => {
     newShapes.push(group);
 
     setShapes(newShapes);
-    setSelectedIds([groupId]);
+    setSelectedIds([group.id]);
     addToHistory(newShapes);
   });
 };
@@ -1001,8 +999,8 @@ export const handlePaste = () => {
       ...(shapesMap[shape.id]
         ? {
             id: `${shape.type}-${getRandomId()}`,
-            x: shape.x + 20, // 偏移一点距离以区分
-            y: shape.y + 20,
+            x: shape.x + Math.round(5 + 15 * Math.random()), // 偏移一点距离以区分
+            y: shape.y + Math.round(5 + 15 * Math.random()),
           }
         : {}),
     }));

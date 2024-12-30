@@ -1,6 +1,7 @@
 import { debug } from '@/utils/debug';
 import { ShapeConfig } from 'konva/lib/Shape';
 import type { Stage as StageType } from 'konva/lib/Stage';
+import { Transformer as TransformerType } from 'konva/lib/shapes/Transformer';
 import { ComponentProps, MutableRefObject } from 'react';
 import { Stage } from 'react-konva';
 import { create } from 'zustand';
@@ -36,6 +37,9 @@ export interface Shape extends ShapeConfig {
   _animationKeyFrameRecords?: Record<string, any>;
   _animationTargetIndex?: number;
   _animationItemIndex?: number; // 动画编辑模式下，当前编辑的动画项索引
+  _zIndex4AnimationItem?: number; // 动画编辑模式下，当前编辑的动画项的 zIndex
+  _offset4Transform?: { offsetXPercent: number; offsetYPercent: number }; // 百分比偏移量，方面下次直接读取展示，不用再计算
+  [key: string]: any;
 }
 
 export interface ProjectCanvas {
@@ -76,6 +80,7 @@ export interface EditorStore {
   projectId?: string | null;
 
   stageRef: MutableRefObject<StageType | null>;
+  transformerRef: MutableRefObject<TransformerType | null>;
 
   isDragMode: boolean;
   isDrawMode: boolean;
@@ -92,6 +97,8 @@ export interface EditorStore {
   keepShiftKey: boolean;
   // 是否按住鼠标中键
   keepMouseMiddleButton: boolean;
+  // 是否隐藏画布
+  hideCanvas?: boolean;
 
   // 正在使用的字体
   usingFonts: string[];
@@ -148,6 +155,7 @@ export interface EditorStore {
         id: string;
         name: string;
         shapes: Shape[];
+        _color?: string;
       }[]
     | null;
 
@@ -156,6 +164,7 @@ export interface EditorStore {
 
 const initialState = {
   stageRef: { current: null },
+  transformerRef: { current: null },
 
   isDragMode: false,
   isDrawMode: false,

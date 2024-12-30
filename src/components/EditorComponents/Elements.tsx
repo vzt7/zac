@@ -30,9 +30,6 @@ import useImage from 'use-image';
 
 import { Shape } from '../editor.store';
 
-const DEFAULT_FILL = '#000000';
-const DEFAULT_WIDTH = 100;
-
 // 合并后的渲染方法
 export const renderShape = (shape: Shape) => {
   const commonProps = shape;
@@ -53,32 +50,16 @@ export const renderShape = (shape: Shape) => {
         </Group>
       );
     case 'rect':
-      return (
-        <Rect
-          key={commonProps.id}
-          {...commonProps}
-          width={commonProps.width || DEFAULT_WIDTH}
-          height={commonProps.height || DEFAULT_WIDTH}
-        />
-      );
+      return <Rect key={commonProps.id} {...commonProps} />;
     case 'circle':
-      return (
-        <Circle
-          key={commonProps.id}
-          {...commonProps}
-          width={commonProps.width || DEFAULT_WIDTH}
-          height={commonProps.height || DEFAULT_WIDTH}
-          radius={commonProps.radius || DEFAULT_WIDTH / 2}
-        />
-      );
+      return <Circle key={commonProps.id} {...commonProps} />;
     case 'triangle':
       return (
         <RegularPolygon
           key={commonProps.id}
           {...commonProps}
-          radius={commonProps.radius || 50}
-          sides={commonProps.sides || 3}
-          points={commonProps.points || [0, -50, 50, 50, -50, 50]}
+          radius={commonProps.radius!}
+          sides={commonProps.sides!}
         />
       );
     case 'polygon':
@@ -86,9 +67,8 @@ export const renderShape = (shape: Shape) => {
         <RegularPolygon
           key={commonProps.id}
           {...commonProps}
-          fill={commonProps.fill || DEFAULT_FILL}
-          sides={commonProps.sides || 6}
-          radius={commonProps.radius || 50}
+          sides={commonProps.sides!}
+          radius={commonProps.radius!}
         />
       );
     case 'star':
@@ -96,51 +76,22 @@ export const renderShape = (shape: Shape) => {
         <Star
           key={commonProps.id}
           {...commonProps}
-          numPoints={commonProps.numPoints || 5}
-          innerRadius={commonProps.innerRadius || 20}
-          outerRadius={commonProps.outerRadius || 50}
-          fill={commonProps.fill || DEFAULT_FILL}
-          points={
-            commonProps.points || [
-              0, -50, 10, -20, 40, -20, 20, 0, 30, 30, 0, 20, -30, 30, -20, 0,
-              -40, -20, -10, -20,
-            ]
-          }
+          numPoints={commonProps.numPoints}
+          innerRadius={commonProps.innerRadius}
+          outerRadius={commonProps.outerRadius}
         />
       );
     case 'text':
-      return (
-        <TextElement
-          key={commonProps.id}
-          {...commonProps}
-          fill={commonProps.fill || DEFAULT_FILL}
-        />
-      );
+      return <TextElement key={commonProps.id} {...commonProps} />;
     // return <SvgElement src={commonProps.image as string} />;
     case 'svg':
-      return (
-        <Image
-          {...commonProps}
-          image={commonProps.image}
-          fill={commonProps.fill || DEFAULT_FILL}
-        />
-      );
+      return <Image {...commonProps} image={commonProps.image} />;
     case 'image':
       return (
         <ImageElement key={commonProps.id} {...commonProps} src={shape.src!} />
       );
     case 'line':
-      return (
-        <Line
-          key={commonProps.id}
-          {...commonProps}
-          points={commonProps.points || [0, 0, 100, 0]}
-          lineCap={commonProps.lineCap || 'round'}
-          lineJoin={commonProps.lineJoin || 'round'}
-          strokeWidth={commonProps.strokeWidth || 2}
-          fill={commonProps.fill || ''}
-        />
-      );
+      return <Line key={commonProps.id} {...commonProps} />;
     // case 'freedraw':
     //   return (
     //     <Line
@@ -164,13 +115,7 @@ export const renderShape = (shape: Shape) => {
     // case 'arrow':
     //   return <ArrowElement key={commonProps.id} {...commonProps} />;
     case 'path':
-      return (
-        <Path
-          key={commonProps.id}
-          {...commonProps}
-          fill={commonProps.fill || DEFAULT_FILL}
-        />
-      );
+      return <Path key={commonProps.id} {...commonProps} />;
     default:
       return null;
   }
@@ -227,10 +172,10 @@ const ImageElement = ({
     <Image
       {...restProps}
       image={image}
-      ref={(ref) => {
-        ref?.cache();
-        ref?.drawHitFromCache();
-      }}
+      // ref={(ref) => {
+      //   ref?.cache?.();
+      //   ref?.drawHitFromCache?.();
+      // }}
     />
   );
 };

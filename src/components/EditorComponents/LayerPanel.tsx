@@ -6,12 +6,17 @@ import {
   useSensors,
 } from '@dnd-kit/core';
 import {
+  restrictToParentElement,
+  restrictToVerticalAxis,
+} from '@dnd-kit/modifiers';
+import {
   SortableContext,
   arrayMove,
   useSortable,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import clsx from 'clsx';
 import { debounce } from 'lodash-es';
 import {
   Check,
@@ -35,6 +40,7 @@ import {
   handleUnselect,
   handleUpdate,
 } from '../editor.handler';
+import { handleUpdateAnimationItemShapes } from '../editor.handler.animation';
 import { Shape, useEditorStore } from '../editor.store';
 import { renderIconShape } from './Elements';
 
@@ -77,6 +83,8 @@ export const LayersPanel = () => {
   });
 
   const [isExpanded, setIsExpanded] = useState(true);
+
+  const isFilteredMode = filteredShapes.some((shape) => shape.isFiltered);
 
   return (
     <div
@@ -126,10 +134,11 @@ export const LayersPanel = () => {
 
         <div
           ref={layerPanelRef}
-          className="max-h-[400px] pb-4 overflow-x-hidden overflow-y-auto scrollbar-thin scrollbar-thumb-base-300 scrollbar-thumb-rounded-full scrollbar-track-transparent"
+          className="max-h-[400px] pb-2 overflow-x-hidden overflow-y-auto scrollbar-thin scrollbar-thumb-base-300 scrollbar-thumb-rounded-full scrollbar-track-transparent"
         >
           <DndContext
             sensors={sensors}
+            modifiers={[restrictToVerticalAxis, restrictToParentElement]}
             collisionDetection={closestCenter}
             onDragEnd={(event) => {
               const { active, over } = event;
@@ -156,6 +165,7 @@ export const LayersPanel = () => {
                   id={item.id}
                   shape={item}
                   isFiltered={item.isFiltered}
+                  disableDrag={isFilteredMode}
                 />
               ))}
             </SortableContext>
@@ -170,10 +180,12 @@ const SortableItem = ({
   id,
   shape,
   isFiltered,
+  disableDrag = true,
 }: {
   id: string;
   shape: Shape;
   isFiltered?: boolean;
+  disableDrag?: boolean;
 }) => {
   const keepShiftKey = useEditorStore((state) => state.keepShiftKey);
   const selectedIds = useEditorStore((state) => state.selectedIds);
@@ -187,11 +199,16 @@ const SortableItem = ({
   }, [shape]);
   const handleSubmit = () => {
     handleUpdate({ id, name: newName });
+    handleUpdateAnimationItemShapes({ id, name: newName });
     setIsEditMode(false);
   };
 
+  const canDrag = !isEditMode && !disableDrag;
   const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({ id, disabled: isEditMode });
+    useSortable({
+      id,
+      disabled: !canDrag,
+    });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -219,9 +236,19 @@ const SortableItem = ({
     >
       <div
         key={shape.id}
-        className={`flex flex-row justify-between items-center hover:bg-base-300 cursor-move ${selected ? 'bg-base-300' : ''} ${isFiltered ? 'font-bold' : ''} transition-all`}
+        className={clsx(
+          `flex flex-row justify-between items-center hover:bg-base-300 transition-all`,
+          selected && 'bg-base-300',
+          isFiltered && 'font-bold',
+          canDrag ? 'cursor-move' : 'cursor-pointer',
+        )}
       >
-        <div className="flex flex-row items-center gap-2 p-2 w-[200px] h-[25px]">
+        <div
+          className={clsx(
+            'flex flex-row items-center gap-2 p-2 h-[25px]',
+            'w-[200px]',
+          )}
+        >
           <div className="flex-shrink-0">{renderIconShape(shape)}</div>
           {isEditMode ? (
             <input
@@ -253,8 +280,9 @@ const SortableItem = ({
               e.stopPropagation();
               if (isEditMode) {
                 handleSubmit();
+              } else {
+                setIsEditMode(true);
               }
-              setIsEditMode(!isEditMode);
             }}
           >
             {isEditMode ? <Check size={16} /> : <Edit size={16} />}
