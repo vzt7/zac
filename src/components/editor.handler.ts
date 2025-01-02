@@ -707,9 +707,9 @@ export const handleMoveToTop = (id: string | string[]) => {
     const newShapesBail: typeof shapes = [];
     for (const item of shapes) {
       if (ids.includes(item.id)) {
-        newShapesBail.push(item);
-      } else {
         newShapesHead.push(item);
+      } else {
+        newShapesBail.push(item);
       }
     }
     const newShapes = [...newShapesHead, ...newShapesBail];
@@ -727,9 +727,9 @@ export const handleMoveToBottom = (id: string | string[]) => {
     const newShapesBail: typeof shapes = [];
     for (const item of shapes) {
       if (ids.includes(item.id)) {
-        newShapesHead.push(item);
-      } else {
         newShapesBail.push(item);
+      } else {
+        newShapesHead.push(item);
       }
     }
     const newShapes = [...newShapesHead, ...newShapesBail];
