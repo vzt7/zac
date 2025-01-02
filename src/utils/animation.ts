@@ -265,8 +265,8 @@ export class KonvaAnimation {
       );
     }
 
-    const isImageType =
-      item.type === 'image' && item.src ? node.getAttr('image') : false;
+    const isSvgImageType = item.type === 'image' && item.isSvgImage && item.src;
+    let svgImage: any = null;
 
     const animationOptions: gsap.TweenVars = {
       ...this.mapKonvaProperty2GsapProperty(interceptedItem, node),
@@ -279,7 +279,8 @@ export class KonvaAnimation {
       onStart() {
         onStart?.();
 
-        if (isImageType) {
+        if (isSvgImageType) {
+          svgImage = node.getAttr('image');
           const img = new Image();
           img.src = item.src!;
           // @ts-ignore
@@ -287,9 +288,9 @@ export class KonvaAnimation {
         }
       },
       onReverseComplete() {
-        if (isImageType) {
+        if (isSvgImageType && svgImage) {
           // @ts-ignore
-          node.image(isImageType);
+          node.image(isSvgImageType);
         }
       },
     };
