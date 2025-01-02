@@ -326,7 +326,7 @@ export const AnimationHelperModalButton = () => {
         <HelpCircle size={24} strokeWidth={1.5} />
       </button>
       <dialog ref={dialogRef} className="modal">
-        <div className="modal-box max-w-3xl flex flex-col gap-4">
+        <div className="modal-box max-w-3xl flex flex-col gap-4 p-11">
           <div>
             <h3 className="font-bold text-lg mb-2 flex flex-row items-center gap-2">
               <HelpCircle size={18} strokeWidth={2.5} />

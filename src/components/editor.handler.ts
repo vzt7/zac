@@ -16,6 +16,26 @@ const debouncedAddToHistory = debounce((shapes: Shape[]) => {
   addToHistory(shapes);
 }, 300); // 300ms 内的多次调用会被合并
 
+export const addToTop = (newShapes: Shape | Shape[]) => {
+  const { shapes, setShapes } = useEditorStore.getState();
+  const nextShapes = [
+    ...(Array.isArray(newShapes) ? newShapes : [newShapes]),
+    ...shapes,
+  ];
+  setShapes(nextShapes);
+  addToHistory(nextShapes);
+};
+
+export const addToBottom = (newShapes: Shape | Shape[]) => {
+  const { shapes, setShapes } = useEditorStore.getState();
+  const nextShapes = [
+    ...shapes,
+    ...(Array.isArray(newShapes) ? newShapes : [newShapes]),
+  ];
+  setShapes(nextShapes);
+  addToHistory(nextShapes);
+};
+
 const MAX_HISTORY_LENGTH = 500;
 
 export const addToHistory = (newShapes: Shape[]) => {
@@ -168,12 +188,9 @@ export const createShape = (type: string, shape?: Partial<Shape>) => {
 };
 
 export const handleAddShape = (type: string, shape?: Partial<Shape>) => {
-  const { shapes, setShapes } = useEditorStore.getState();
   const newShape = createShape(type, { ...shape });
   if (!newShape) return;
-  const newShapes = [...shapes, newShape];
-  setShapes(newShapes);
-  addToHistory(newShapes);
+  addToTop(newShape);
 };
 
 export const handleTransformEnd = (e: any) => {
@@ -323,8 +340,7 @@ export const handleLoad = (
 
 // 添加文本
 export const handleAddText = (textShape?: Partial<Shape>) => {
-  const { shapes, setShapes, safeArea, editorProps } =
-    useEditorStore.getState();
+  const { safeArea, editorProps } = useEditorStore.getState();
   const editorCenter = {
     x: safeArea.x + safeArea.width / 2,
     y: safeArea.y + safeArea.height / 2,
@@ -340,22 +356,12 @@ export const handleAddText = (textShape?: Partial<Shape>) => {
     fill: '#000000',
     ...textShape,
   });
-  const newShapes = [...shapes, newShape];
-  setShapes(newShapes);
-  addToHistory(newShapes);
+  addToTop(newShape);
 };
 
 // 处理文编辑
 export const handleTextEdit = (id: string, newText: string) => {
-  const { shapes, setShapes } = useEditorStore.getState();
-  const newShapes = shapes.map((shape) => {
-    if (shape.id === id) {
-      return { ...shape, text: newText };
-    }
-    return shape;
-  });
-  setShapes(newShapes);
-  addToHistory(newShapes);
+  handleUpdate({ id, text: newText });
 };
 
 // 创建一个统一的图片处理函数
@@ -540,7 +546,7 @@ export const handleAddImage = (
   shape?: Partial<Shape>,
   { insertTo = 'top' }: { insertTo?: 'bottom' | 'top' } = {},
 ) => {
-  const { shapes, setShapes, safeArea } = useEditorStore.getState();
+  const { safeArea } = useEditorStore.getState();
   if (typeof imageShapeOrUrl === 'string') {
     createImageShape(
       imageShapeOrUrl,
@@ -549,18 +555,19 @@ export const handleAddImage = (
         y: safeArea.y + safeArea.height / 2,
       },
       (newShape) => {
-        const newShapes =
-          insertTo === 'bottom'
-            ? [{ ...newShape, ...shape }, ...shapes]
-            : [...shapes, { ...newShape, ...shape }];
-        setShapes(newShapes);
-        addToHistory(newShapes);
+        const nextShape = {
+          ...newShape,
+          ...shape,
+        };
+        if (insertTo === 'bottom') {
+          addToBottom(nextShape);
+        } else {
+          addToTop(nextShape);
+        }
       },
     );
   } else {
-    const newShapes = [...shapes, imageShapeOrUrl];
-    setShapes(newShapes);
-    addToHistory(newShapes);
+    addToTop(imageShapeOrUrl);
   }
 };
 
@@ -568,7 +575,7 @@ export const handleAddImage = (
 export const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
   const file = e.target.files?.[0];
   if (file && isImageFile(file.type)) {
-    const { safeArea, shapes, setShapes } = useEditorStore.getState();
+    const { safeArea } = useEditorStore.getState();
     const editorCenter = {
       x: safeArea.x + safeArea.width / 2,
       y: safeArea.y + safeArea.height / 2,
@@ -580,9 +587,7 @@ export const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         reader.result as string,
         { x: editorCenter.x, y: editorCenter.y },
         (newShape) => {
-          const newShapes = [...shapes, newShape];
-          setShapes(newShapes);
-          addToHistory(newShapes);
+          addToTop(newShape);
         },
       );
     };
@@ -616,9 +621,7 @@ export const handleFileDrop = (e: React.DragEvent<HTMLDivElement>) => {
       const reader = new FileReader();
       reader.onload = () => {
         createImageShape(reader.result as string, dropPosition, (newShape) => {
-          const newShapes = [...shapes, newShape];
-          setShapes(newShapes);
-          addToHistory(newShapes);
+          addToTop(newShape);
         });
       };
       reader.readAsDataURL(file);
@@ -628,9 +631,7 @@ export const handleFileDrop = (e: React.DragEvent<HTMLDivElement>) => {
   else if (isImageUrl(e.dataTransfer.getData('text'))) {
     const imageUrl = e.dataTransfer.getData('text');
     createImageShape(imageUrl, dropPosition, (newShape) => {
-      const newShapes = [...shapes, newShape];
-      setShapes(newShapes);
-      addToHistory(newShapes);
+      addToTop(newShape);
     });
   }
 };
@@ -648,7 +649,7 @@ export const handleDelete = (id: string | string[]) => {
 };
 
 export const handleDuplicate = (id: string | string[]) => {
-  const { shapes, setShapes } = useEditorStore.getState();
+  const { shapes } = useEditorStore.getState();
   const ids = ([] as string[]).concat(id);
   const shapesToDuplicate = shapes.filter((shape) => ids.includes(shape.id));
   if (shapesToDuplicate.length > 0) {
@@ -661,10 +662,8 @@ export const handleDuplicate = (id: string | string[]) => {
         y: shapeToDuplicate.y + 20,
       };
     });
-    const newShapes = [...shapes, ..._newShapes];
-    setShapes(newShapes);
+    addToTop(_newShapes);
     setTimeout(() => handleSelect(_newShapes.map((shape) => shape.id)), 0);
-    addToHistory(newShapes);
   }
 };
 
@@ -917,7 +916,7 @@ export const handleGroup = (selectedShapes: Shape[]) => {
 
   // 创建新的组合
   const group = createShape('group', {
-    children: selectedShapes.map((shape) => ({
+    children: [...selectedShapes].reverse().map((shape) => ({
       ...shape,
       // 调整子元素相对于组的位置
       x: shape.x - bounds.left,
@@ -942,11 +941,11 @@ export const handleGroup = (selectedShapes: Shape[]) => {
     );
 
     // 添加组合
-    newShapes.push(group);
-
+    // addToTop 添加到最前面，以确保组合在其他图形之上
+    newShapes.unshift(group);
     setShapes(newShapes);
-    setSelectedIds([group.id]);
     addToHistory(newShapes);
+    setTimeout(() => setSelectedIds([group.id]), 0);
   });
 };
 
@@ -963,24 +962,27 @@ export const handleUngroup = (selectedShapes: Shape[]) => {
     let newShapes = [...shapes];
     const newSelectedShapes: Shape[] = [];
 
-    groupsToUngroup.forEach((group) => {
+    [...groupsToUngroup].reverse().forEach((group) => {
       // 移除组合
       newShapes = newShapes.filter((shape) => shape.id !== group.id);
 
       // 添加子图形，并调整位置
-      const children = (group as GroupShape).children.map((child) => ({
-        ...child,
-        x: child.x + group.x,
-        y: child.y + group.y,
-      }));
+      const children = [...(group as GroupShape).children]
+        .reverse()
+        .map((child) => ({
+          ...child,
+          x: child.x + group.x,
+          y: child.y + group.y,
+        }));
 
-      newShapes.push(...children);
-      newSelectedShapes.push(...children);
+      // addToTop 添加到最前面，以确保组合在其他图形之上
+      newShapes.unshift(...children);
+      newSelectedShapes.unshift(...children);
     });
 
     setShapes(newShapes);
-    setSelectedIds([]);
     addToHistory(newShapes);
+    setSelectedIds([]);
   });
 };
 
@@ -1017,10 +1019,7 @@ export const handlePaste = () => {
       return shape;
     });
 
-    const updatedShapes = [...shapes, ...newShapes];
-
-    useEditorStore.setState({ shapes: updatedShapes });
-    addToHistory(updatedShapes);
+    addToTop(newShapes);
 
     // 选中新粘贴的图形
     handleSelect(newShapes.map((shape: Shape) => shape.id));

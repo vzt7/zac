@@ -309,7 +309,7 @@ function BarCodeFunction() {
       {text && (
         <div
           ref={barCodeWrapperRef}
-          className={`w-[200px] bg-transparent mx-auto p-2 *:object-contain *:object-center`}
+          className={`w-[200px] bg-white mx-auto p-2 *:object-contain *:object-center`}
         >
           <BarCode
             ref={barCodeRef}

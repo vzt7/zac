@@ -26,12 +26,6 @@ export const SidebarCanvasDefault = (
   const [selected, setSelected] = useState<(typeof canvases)[number] | null>(
     null,
   );
-  useEffect(() => {
-    setCustomConfig({
-      width: 1980,
-      height: 1080,
-    });
-  }, [selected]);
 
   const handleSelectCanvas = (canvas: ProjectCanvas) => {
     const { currentProject, selectProject } = useHeaderStore.getState();
@@ -64,6 +58,14 @@ export const SidebarCanvasDefault = (
     width: 1980,
     height: 1080,
   });
+  useEffect(() => {
+    if (currentProject?.canvas?.safeArea) {
+      setCustomConfig({
+        width: currentProject.canvas.safeArea.width,
+        height: currentProject.canvas.safeArea.height,
+      });
+    }
+  }, [currentProject?.canvas]);
   const isValidCustomConfig = Boolean(
     customConfig?.width &&
       customConfig?.height &&
@@ -129,7 +131,7 @@ export const SidebarCanvasDefault = (
                 <input
                   type="number"
                   placeholder="Width"
-                  className="input input-bordered w-full max-w-xs input-sm"
+                  className="input input-bordered w-full max-w-xs"
                   max={10000}
                   min={1}
                   value={customConfig.width}
@@ -144,7 +146,7 @@ export const SidebarCanvasDefault = (
                 <input
                   type="number"
                   placeholder="Height"
-                  className="input input-bordered w-full max-w-xs input-sm m-0"
+                  className="input input-bordered w-full max-w-xs m-0"
                   max={10000}
                   min={1}
                   value={customConfig.height}
@@ -159,10 +161,10 @@ export const SidebarCanvasDefault = (
               <button
                 onClick={() =>
                   handleSelectCanvas({
-                    id: 'custom',
-                    type: 'canvas_image',
-                    name: 'Custom',
-                    category: 'Custom',
+                    id: items[0].id || 'custom',
+                    type: items[0].type || 'canvas_image',
+                    name: items[0].name || 'Custom',
+                    category: items[0].category || 'Custom',
                     safeArea: {
                       width: customConfig.width!,
                       height: customConfig.height!,
@@ -171,7 +173,7 @@ export const SidebarCanvasDefault = (
                     },
                   })
                 }
-                className="btn btn-primary w-full btn-sm h-10 mt-4"
+                className="btn btn-primary w-full h-10 mt-4"
                 disabled={!selected || !isValidCustomConfig}
               >
                 {`Confirm ${selected.name}`}

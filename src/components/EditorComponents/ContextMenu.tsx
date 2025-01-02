@@ -173,7 +173,7 @@ export const ContextMenu = ({ x, y, onClose }: ContextMenuProps) => {
             >
               <Edit size={16} />
               <span>Edit Image</span>
-              <CommonChip className="absolute top-0 right-0 text-xs px-[6px] py-[2px] bg-gray-500/80 text-base-content">
+              <CommonChip className="absolute top-0 right-0 text-xs px-[6px] py-[2px] !bg-gray-500/80 text-base-content">
                 Coming Soon
               </CommonChip>
             </ContextMenuItemButton>
