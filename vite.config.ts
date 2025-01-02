@@ -45,10 +45,10 @@ export default defineConfig({
     exclude: ['@ffmpeg/ffmpeg', '@ffmpeg/util', 'simple-icons'],
   },
   server: {
-    headers: {
-      'Cross-Origin-Embedder-Policy': 'require-corp',
-      'Cross-Origin-Opener-Policy': 'same-origin',
-    },
+    // headers: {
+    //   'Cross-Origin-Embedder-Policy': 'require-corp',
+    //   'Cross-Origin-Opener-Policy': 'same-origin',
+    // },
   },
 });
 

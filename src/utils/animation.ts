@@ -265,6 +265,7 @@ export class KonvaAnimation {
       );
     }
 
+    // svg 图片可能会被编辑颜色，动画之间切换时需要修改源。普通图片由于可能是外部图片，所以不处理 并且一般不存在相同id情况下不同源的问题。
     const isSvgImageType = item.type === 'image' && item.isSvgImage && item.src;
     let svgImage: any = null;
 
@@ -289,8 +290,10 @@ export class KonvaAnimation {
       },
       onReverseComplete() {
         if (isSvgImageType && svgImage) {
+          // const img = new Image();
+          // img.src = item.src!;
           // @ts-ignore
-          node.image(isSvgImageType);
+          node.image(svgImage);
         }
       },
     };
