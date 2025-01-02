@@ -99,13 +99,14 @@ export const SidebarCanvasDefault = (
               <button
                 key={item.name}
                 onClick={() => setSelected(item)}
-                className={`flex flex-col items-center justify-center p-4 py-6 rounded-lg border-2 border-gray-300 dark:border-gray-700 transition-all hover:bg-base-300 hover:border-primary/50 ${
+                className={clsx(
+                  `flex flex-col items-center justify-center p-4 py-6 rounded-lg border-2 border-gray-300 dark:border-gray-700 transition-all hover:bg-base-300 hover:border-primary/50`,
                   selected?.id === item.id
                     ? 'border-primary bg-primary/10'
-                    : `border-base/5`
-                } ${isCanvasSelected ? 'opacity-60' : ''} ${
-                  items[0].id === 'custom' ? 'w-full' : ''
-                }`}
+                    : `border-base/5`,
+                  isCanvasSelected && 'opacity-60',
+                  items[0].id === 'custom' ? 'w-full' : 'min-h-40',
+                )}
               >
                 <div className="text-inherit text-4xl mb-2">{item.icon}</div>
                 <div className="text-inherit text-sm font-medium">

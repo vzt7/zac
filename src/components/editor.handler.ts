@@ -1,6 +1,7 @@
 import { transparentBackground } from '@/assets/transparent';
 import { debug } from '@/utils/debug';
 import getRandomId from '@/utils/getRandomId';
+import { parseSvgString2ImageSrc } from '@/utils/svg';
 import type { SceneContext } from 'konva/lib/Context';
 import type { KonvaEventObject, Node } from 'konva/lib/Node';
 import { debounce, keyBy } from 'lodash-es';
@@ -269,7 +270,10 @@ export const getCacheUpdatedAt = (projectId: string) => {
   return data?.cacheUpdatedAt;
 };
 
-export const handleSave = (projectId: string) => {
+export const handleSave = (
+  projectId: string,
+  onStringify?: (data: string) => void,
+) => {
   const { shapes, safeArea, editorProps, animations, tempShapes } =
     useEditorStore.getState();
   const data = JSON.stringify({
@@ -280,11 +284,14 @@ export const handleSave = (projectId: string) => {
     tempShapes,
     cacheUpdatedAt: new Date().toISOString(),
   });
-
   localStorage.setItem(getCacheKey(projectId), data);
+  onStringify?.(data);
 };
 
-export const handleLoad = (projectId: string) => {
+export const handleLoad = (
+  projectId: string,
+  onParse?: (data: string | null) => void,
+) => {
   const data = localStorage.getItem(getCacheKey(projectId));
   if (data) {
     const {
@@ -311,6 +318,7 @@ export const handleLoad = (projectId: string) => {
     });
     addToHistory(shapes);
   }
+  onParse?.(data);
 };
 
 // 添加文本
@@ -430,8 +438,7 @@ export const handleAddSvgByTagStr = async (
   if (!svgAttrs) {
     return;
   }
-  const url =
-    'data:image/svg+xml;charset=utf8,' + encodeURIComponent(svgString);
+  const url = parseSvgString2ImageSrc(svgString);
   const img = new Image();
   img.onload = () => {
     const width =
@@ -457,6 +464,7 @@ export const handleAddSvgByTagStr = async (
       scaleY,
       width,
       height,
+      isSvgImage: true,
     });
     debug(`[handleAddSvgByTagStr] svgAttrs`, svgAttrs, {
       url,
@@ -760,8 +768,8 @@ export const handleBackgroundClip = (ctx: SceneContext) => {
   ctx.rect(
     -editorProps.width,
     -editorProps.height,
-    editorProps.width * 4,
-    editorProps.height * 4,
+    editorProps.width * 20,
+    editorProps.height * 20,
   );
 
   // 4. 在遮罩中挖出安全区域
@@ -994,16 +1002,20 @@ export const handlePaste = () => {
     const copiedShapes = JSON.parse(clipboardData);
     const { shapes } = useEditorStore.getState();
     const shapesMap = keyBy(shapes, 'id');
-    const newShapes = copiedShapes.map((shape: Shape) => ({
-      ...shape,
-      ...(shapesMap[shape.id]
-        ? {
-            id: `${shape.type}-${getRandomId()}`,
-            x: shape.x + Math.round(5 + 15 * Math.random()), // 偏移一点距离以区分
-            y: shape.y + Math.round(5 + 15 * Math.random()),
-          }
-        : {}),
-    }));
+    const newShapes = copiedShapes.map((shape: Shape) => {
+      const existedShape = shapesMap[shape.id];
+      if (existedShape) {
+        const id = `${shape.type}-${getRandomId()}`;
+        return {
+          ...shape,
+          id,
+          name: `copied-${shape.name}`,
+          x: shape.x + Math.round(5 + 15 * Math.random()), // 偏移一点距离以区分
+          y: shape.y + Math.round(5 + 15 * Math.random()),
+        };
+      }
+      return shape;
+    });
 
     const updatedShapes = [...shapes, ...newShapes];
 
@@ -1044,4 +1056,12 @@ export const handleImageCrop = () => {
   const shape = selectedShapes[0];
   if (shape.type !== 'image') return;
   useEditorStore.setState({ isImageCropping: true });
+};
+
+export const handleImageEdit = () => {
+  const { selectedShapes } = useEditorStore.getState();
+  if (selectedShapes.length !== 1) return;
+  const shape = selectedShapes[0];
+  if (shape.type !== 'image') return;
+  useEditorStore.setState({ isImageEditing: true });
 };

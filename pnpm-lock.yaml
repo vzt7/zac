@@ -135,8 +135,8 @@ importers:
         specifier: ^16.2.0
         version: 16.2.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       simple-icons:
-        specifier: ^13.20.0
-        version: 13.20.0
+        specifier: 13.21.0
+        version: 13.21.0
       svgson:
         specifier: ^5.3.1
         version: 5.3.1
@@ -2292,8 +2292,8 @@ packages:
     resolution: {integrity: sha512-bzyZ1e88w9O1iNJbKnOlvYTrWPDl46O1bG0D3XInv+9tkPrxrN8jUUTiFlDkkmKWgn1M6CfIA13SuGqOa9Korw==}
     engines: {node: '>=14'}
 
-  simple-icons@13.20.0:
-    resolution: {integrity: sha512-8IQSSOaXhgG9fH0dJsUmlMlo0Jt0Xd1MwxsK75TlRZO0FR7P5UQ8TEaIPOwlRMHd/FzZJ0R3vFHW0kOH7PbdMw==}
+  simple-icons@13.21.0:
+    resolution: {integrity: sha512-LI5pVJPBv6oc79OMsffwb6kEqnmB8P1Cjg1crNUlhsxPETQ5UzbCKQdxU+7MW6+DD1qfPkla/vSKlLD4IfyXpQ==}
     engines: {node: '>=0.12.18'}
 
   source-map-js@1.2.1:
@@ -4577,7 +4577,7 @@ snapshots:
 
   signal-exit@4.1.0: {}
 
-  simple-icons@13.20.0: {}
+  simple-icons@13.21.0: {}
 
   source-map-js@1.2.1: {}
 

@@ -2,6 +2,7 @@ import clsx from 'clsx';
 import { Download, Film, ImagePlay } from 'lucide-react';
 import { forwardRef, useEffect, useRef, useState } from 'react';
 
+import { ChipPro, CommonChip } from '../ChipPro';
 import { handleSelect } from '../editor.handler';
 import { useExport as useExportImage } from '../editor.hook';
 import { useExport as useExportAnimation } from '../editor.hook.animation';
@@ -17,6 +18,8 @@ export const DownloadModal = forwardRef<HTMLButtonElement, any>(
     const currentProject = useHeaderStore((state) => state.currentProject);
     const isAnimationCanvas =
       currentProject?.canvas?.type === 'canvas_animation';
+
+    const isDownloading = useEditorStore((state) => state.isDownloading);
 
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const stageRef = useEditorStore((state) => state.stageRef);
@@ -75,8 +78,14 @@ export const DownloadModal = forwardRef<HTMLButtonElement, any>(
           </div>
           <form
             method="dialog"
-            className="modal-backdrop"
+            className={clsx(
+              'modal-backdrop',
+              isDownloading && 'pointer-events-none !cursor-not-allowed',
+            )}
             onSubmit={() => {
+              if (isDownloading) {
+                return;
+              }
               setIsOpen(false);
             }}
           >
@@ -156,6 +165,7 @@ const ImageDownload = ({ isOpen }: { isOpen: boolean }) => {
 const VideoDownload = ({ isOpen }: { isOpen: boolean }) => {
   // const { isAuthed } = useAuth();
   const isAuthed = false;
+  const isPro = false;
 
   const currentProject = useHeaderStore((state) => state.currentProject);
   const safeArea = useEditorStore((state) => state.safeArea);
@@ -173,6 +183,9 @@ const VideoDownload = ({ isOpen }: { isOpen: boolean }) => {
   const [error, setError] = useState<string | null>(null);
 
   const handleExport = async (format: 'gif' | 'mp4') => {
+    useEditorStore.setState({
+      isDownloading: true,
+    });
     const originalShapes = useEditorStore.getState().shapes;
     try {
       setIsRendering(format);
@@ -190,12 +203,21 @@ const VideoDownload = ({ isOpen }: { isOpen: boolean }) => {
     }
     useEditorStore.setState({
       shapes: originalShapes,
+      isDownloading: false,
     });
   };
 
   return (
     <div className="flex flex-col gap-2 pt-6 pb-2">
-      <div className={`${!isAuthed ? 'opacity-50 cursor-not-allowed' : ''}`}>
+      <div
+        className={clsx(
+          'relative',
+          !isPro && '[&>*]:opacity-50 [&>*]:cursor-not-allowed',
+        )}
+      >
+        <CommonChip className="-top-[2px] -right-0 py-[2px] px-2 !opacity-100 !bg-gray-500/60">
+          Coming Soon
+        </CommonChip>
         <label>
           Pixel Ratio{' '}
           <span className="text-xs text-gray-500">
@@ -205,8 +227,8 @@ const VideoDownload = ({ isOpen }: { isOpen: boolean }) => {
         <input
           id="pixel-ratio"
           type="range"
-          className="range mt-2"
-          disabled={!isAuthed}
+          className={clsx('range mt-2')}
+          disabled={!isPro}
           max={3}
           min={1}
           step={1}
@@ -237,27 +259,43 @@ const VideoDownload = ({ isOpen }: { isOpen: boolean }) => {
 
       <div
         className={clsx(
-          'mt-2',
-          !isAuthed ? 'opacity-50 [&_*]:!cursor-not-allowed' : '',
+          'relative mt-2',
+          !isPro && '[&>*]:opacity-50 [&>*]:cursor-not-allowed',
         )}
       >
-        <label>FPS</label>
+        <CommonChip className="-top-[2px] -right-0 py-[2px] px-2 !opacity-100 !bg-gray-500/60">
+          Coming Soon
+        </CommonChip>
+        <label className={clsx(!isPro && 'opacity-50 cursor-not-allowed')}>
+          <span>FPS</span>
+        </label>
         <div className={clsx('flex flex-row items-center gap-1')}>
           <input
             type="range"
-            className="range mt-2"
-            disabled={!isAuthed}
+            className={clsx(
+              'range mt-2',
+              !isPro && 'opacity-50 cursor-not-allowed',
+            )}
             max={240}
-            min={15}
+            min={0}
             step={1}
             value={fps}
-            onChange={(e) => setFps(Number(e.target.value))}
+            disabled={!isPro}
+            onChange={(e) => {
+              const val = Number(e.target.value);
+              setFps(val);
+            }}
           />
           <div className="text-center px-4">{fps}</div>
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 mt-6">
+      <p className="text-sm text-gray-500 py-4">
+        The rendering process may take a while. It depends on your computer's
+        performance and the complexity of the design.
+      </p>
+
+      <div className="flex flex-col gap-3">
         {error && <div className="text-error text-sm">{error}</div>}
 
         <button

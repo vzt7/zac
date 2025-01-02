@@ -35,7 +35,9 @@ export const Container = () => {
       )}
       ref={wrapperRef}
     >
-      <div className="">{safeArea.isInitialed && <Editor />}</div>
+      <div key={currentProjectId || ''} data-pid={currentProjectId || ''}>
+        {safeArea.isInitialed && <Editor />}
+      </div>
 
       <div className={`flex-shrink-0 w-[${ELEMENT_EDITOR_WIDTH}px]`}>
         <ElementEditor />

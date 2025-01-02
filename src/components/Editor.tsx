@@ -3,7 +3,7 @@ import type { Layer as LayerType } from 'konva/lib/Layer';
 import { KonvaEventObject } from 'konva/lib/Node';
 import type { Stage as StageType } from 'konva/lib/Stage';
 import type { Rect as RectType } from 'konva/lib/shapes/Rect';
-import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { Group, Rect as KonvaRect, Layer, Line, Stage } from 'react-konva';
 
 import { Debugger } from './Debugger';
@@ -36,11 +36,12 @@ import { useEditorStore } from './editor.store';
 
 export const Editor = () => {
   const stageRef = useRef<StageType>(null);
-  useLayoutEffect(() => {
-    useEditorStore.setState({ stageRef });
-  }, []);
   const layerRef = useRef<LayerType>(null);
   const backgroundRef = useRef<RectType>(null);
+  const storeStageRef = useEditorStore((state) => state.stageRef);
+  if (!storeStageRef.current && stageRef.current) {
+    useEditorStore.setState({ stageRef });
+  }
 
   // 画布
   const editorProps = useEditorStore((state) => state.editorProps);
@@ -66,7 +67,7 @@ export const Editor = () => {
     handleDragEnd: handleSnapDragEnd,
   } = useSnap({
     threshold: 5 / editorProps.scaleX,
-    enabled: !isDragMode,
+    enabled: !isDragMode && selectedIds.length <= 1,
     scale: editorProps.scaleX,
   });
   // 绘画

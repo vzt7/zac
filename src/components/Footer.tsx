@@ -1,8 +1,10 @@
+import { useNavigate } from '@tanstack/react-router';
 import { Mail } from 'lucide-react';
 
 import { HeaderLogo } from './Header';
 
 export const Footer = ({ className }: { className?: string }) => {
+  const navigate = useNavigate();
   return (
     <footer className={`bg-[#181c21] ${className}`}>
       <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
@@ -21,6 +23,10 @@ export const Footer = ({ className }: { className?: string }) => {
             <a
               className="text-gray-600 transition hover:text-gray-600/75"
               href="/"
+              onClick={(e) => {
+                e.preventDefault();
+                navigate({ to: '/' });
+              }}
             >
               Home
             </a>
@@ -29,7 +35,16 @@ export const Footer = ({ className }: { className?: string }) => {
           <li>
             <a
               className="text-gray-600 transition hover:text-gray-600/75"
-              href="/product"
+              href="/_"
+              onClick={(e) => {
+                e.preventDefault();
+                navigate({
+                  to: '/$projectId',
+                  params: {
+                    projectId: '_',
+                  },
+                });
+              }}
             >
               Product
             </a>
@@ -38,20 +53,27 @@ export const Footer = ({ className }: { className?: string }) => {
           <li>
             <a
               className="text-gray-600 transition hover:text-gray-600/75"
-              href="/pricing"
+              href="/_"
+              onClick={(e) => {
+                e.preventDefault();
+                navigate({
+                  // @ts-ignore
+                  to: '/pricing',
+                });
+              }}
             >
               Pricing
             </a>
           </li>
 
-          <li>
+          {/* <li>
             <a
               className="text-gray-600 transition hover:text-gray-600/75"
               href="/about"
             >
               About
             </a>
-          </li>
+          </li> */}
         </ul>
 
         <div className="mt-12 flex justify-center items-center gap-6 md:gap-8">
@@ -85,7 +107,9 @@ export const Footer = ({ className }: { className?: string }) => {
         <div className="divider h-2"></div>
 
         <div className="text-gray-500 flex flex-row justify-center gap-12">
-          <p>© 2024 PosterMaster, All rights reserved.</p>
+          <p>
+            © 2024 {import.meta.env.VITE_COMPANY_NAME}, All rights reserved.
+          </p>
         </div>
       </div>
     </footer>

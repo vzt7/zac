@@ -32,8 +32,9 @@ export const HomeDemoProjects = () => {
           title: 'How to center an element using JavaScript and jQuery',
           tags: ['Snippet', 'JavaScript'],
         },
-      ].map((item) => (
+      ].map((item, index) => (
         <article
+          key={index}
           className="relative overflow-hidden rounded-lg shadow hover:shadow-lg hover:border-primary border-2 border-transparent transition-all cursor-pointer backdrop-blur-md"
           onClick={handleClick}
         >

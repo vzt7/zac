@@ -34,6 +34,7 @@ export interface Shape extends ShapeConfig {
   textDecoration?: string;
   align?: string;
   isSvgGroup?: boolean;
+  isSvgImage?: boolean;
   _animationKeyFrameRecords?: Record<string, any>;
   _animationTargetIndex?: number;
   _animationItemIndex?: number; // 动画编辑模式下，当前编辑的动画项索引
@@ -82,15 +83,23 @@ export interface EditorStore {
   stageRef: MutableRefObject<StageType | null>;
   transformerRef: MutableRefObject<TransformerType | null>;
 
+  // 拖拽模式
   isDragMode: boolean;
+  // 绘制模式
   isDrawMode: boolean;
   drawingType: 'free' | null;
+  // 选择模式
   isSelectMode: boolean;
-  // TODO:
-  isElementEditing: boolean;
+  // 是否正在编辑图片
+  isImageEditing: boolean;
+  // 是否正在裁剪图片
   isImageCropping: boolean;
+  // 是否正在编辑动画
   isAnimationEditing: boolean;
+  // 是否正在播放动画
   isAnimationPlaying: boolean;
+  // 是否正在下载/导出
+  isDownloading: boolean;
   /** @deprecated */
   currentAnimationItemIndex?: number | null;
   // 是否按住 shift 键
@@ -170,10 +179,11 @@ const initialState = {
   isDrawMode: false,
   drawingType: null,
   isSelectMode: false,
-  isElementEditing: false,
+  isImageEditing: false,
   isImageCropping: false,
   isAnimationEditing: false,
   isAnimationPlaying: false,
+  isDownloading: false,
 
   keepShiftKey: false,
   keepMouseMiddleButton: false,

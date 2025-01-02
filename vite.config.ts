@@ -20,21 +20,29 @@ export default defineConfig({
     TanStackRouterVite(),
     react(),
     writeFontsIndex(),
-    writeIconsIndex(),
     writeSvgsIndex(),
     writeSitemap(),
+    writeSimpleIconsIndex(),
   ],
   build: {
     rollupOptions: {
       output: {
         manualChunks: {
-          ffmpeg: ['@ffmpeg/ffmpeg', '@ffmpeg/util', '@ffmpeg/core-mt'],
+          ffmpeg: ['@ffmpeg/ffmpeg', '@ffmpeg/util'],
+          core: ['konva', 'react-konva', 'react-konva-utils'],
+          dnd: [
+            '@dnd-kit/core',
+            '@dnd-kit/modifiers',
+            '@dnd-kit/sortable',
+            '@dnd-kit/utilities',
+          ],
+          simpleicons: ['simple-icons'],
         },
       },
     },
   },
   optimizeDeps: {
-    exclude: ['@ffmpeg/ffmpeg', '@ffmpeg/util', '@ffmpeg/core-mt'],
+    exclude: ['@ffmpeg/ffmpeg', '@ffmpeg/util', 'simple-icons'],
   },
   server: {
     headers: {
@@ -101,47 +109,6 @@ function writeFontsIndex() {
   };
 }
 
-function writeIconsIndex() {
-  return {
-    name: 'write-icons-index',
-    buildStart() {
-      const rootDir = path.dirname(fileURLToPath(import.meta.url));
-      const icons = [
-        ...fs
-          .readdirSync(path.resolve(rootDir, 'public/icons/filled'))
-          .map((item) => {
-            return {
-              name: item,
-              url: `/icons/filled/${item}`,
-            };
-          }),
-        ...fs
-          .readdirSync(path.resolve(rootDir, 'public/icons/outline/'))
-          .map((item) => {
-            return {
-              name: item,
-              url: `/icons/outline/${item}`,
-            };
-          }),
-      ];
-      // 将字体信息写入 icons/index.json
-      const targetPath = path.resolve(rootDir, 'src/assets/icons.json');
-      fs.writeFileSync(targetPath, JSON.stringify(icons, null, 2), {
-        flag: 'w',
-      });
-      console.log('[icons] json file added:', targetPath);
-    },
-    watch: {
-      // 监视 public/icons 目录的变化
-      include: 'public/icons/**',
-      handler: () => {
-        // @ts-ignore
-        this.buildStart();
-      },
-    },
-  };
-}
-
 function writeSvgsIndex() {
   return {
     name: 'write-svgs-index',
@@ -169,6 +136,33 @@ function writeSvgsIndex() {
         // @ts-ignore
         this.buildStart();
       },
+    },
+  };
+}
+
+function writeSimpleIconsIndex() {
+  const cdnUrl = `https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons`;
+  return {
+    name: 'write-simple-icons-index',
+    buildStart() {
+      const rootDir = path.dirname(fileURLToPath(import.meta.url));
+      const icons = [
+        ...fs
+          .readdirSync(
+            path.resolve(__dirname, 'node_modules/simple-icons/icons'),
+          )
+          .map((item) => {
+            return {
+              title: item.replace(/\.svg/, ''),
+              svgUrl: `${cdnUrl}/${item}`,
+            };
+          }),
+      ];
+      const targetPath = path.resolve(rootDir, 'src/assets/simpleIcons.json');
+      fs.writeFileSync(targetPath, JSON.stringify(icons, null, 2), {
+        flag: 'w',
+      });
+      console.log('[simpleIcons] json file added:', targetPath);
     },
   };
 }

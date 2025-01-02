@@ -15,11 +15,13 @@ import {
 } from 'lucide-react';
 import { ComponentProps, PropsWithChildren, useEffect, useRef } from 'react';
 
+import { CommonChip } from '../ChipPro';
 import {
   handleDelete,
   handleDuplicate,
   handleGroup,
   handleImageCrop,
+  handleImageEdit,
   handleLockToggle,
   handleMoveDown,
   handleMoveToBottom,
@@ -148,33 +150,52 @@ export const ContextMenu = ({ x, y, onClose }: ContextMenuProps) => {
       {selectedShapes.length === 1 && selectedShapes[0].type === 'image' && (
         <>
           <div className="divider m-0"></div>
+          {selectedShapes[0].isSvgImage ? (
+            <ContextMenuItemButton
+              onClick={() => {
+                // 调用图片编辑处理函数
+                handleImageEdit();
+                onClose();
+              }}
+              disabled={selectedShapes[0].isLocked}
+            >
+              <Edit size={16} />
+              <span>Edit Image</span>
+            </ContextMenuItemButton>
+          ) : (
+            <ContextMenuItemButton
+              onClick={() => {
+                // 调用图片编辑处理函数
+                handleImageEdit();
+                onClose();
+              }}
+              disabled={selectedShapes[0].isLocked || true}
+            >
+              <Edit size={16} />
+              <span>Edit Image</span>
+              <CommonChip className="absolute top-0 right-0 text-xs px-[6px] py-[2px] bg-gray-500/80 text-base-content">
+                Coming Soon
+              </CommonChip>
+            </ContextMenuItemButton>
+          )}
+        </>
+      )}
+
+      {selectedShapes.length === 1 &&
+        selectedShapes[0].type === 'image' &&
+        !selectedShapes[0].isSvgImage && (
           <ContextMenuItemButton
             onClick={() => {
-              // 调用图片编辑处理函数
-              // handleEditImage(selectedShapes[0].id);
+              // 调用裁剪处理函数
+              handleImageCrop();
               onClose();
             }}
             disabled={selectedShapes[0].isLocked}
           >
-            <Edit size={16} />
-            <span>Edit Image</span>
+            <Crop size={16} />
+            <span>Crop Image</span>
           </ContextMenuItemButton>
-        </>
-      )}
-
-      {selectedShapes.length === 1 && selectedShapes[0].type === 'image' && (
-        <ContextMenuItemButton
-          onClick={() => {
-            // 调用裁剪处理函数
-            handleImageCrop();
-            onClose();
-          }}
-          disabled={selectedShapes[0].isLocked}
-        >
-          <Crop size={16} />
-          <span>Crop Image</span>
-        </ContextMenuItemButton>
-      )}
+        )}
 
       <div className="divider m-0"></div>
 
@@ -249,7 +270,7 @@ const ContextMenuItemButton = ({
   return (
     <button
       {...restProps}
-      className={`w-full px-4 py-2 text-left hover:bg-base-300 flex items-center gap-2 ${restProps.disabled ? 'text-gray-500 cursor-not-allowed hover:bg-none' : ''} ${restProps.className}`}
+      className={`relative w-full px-4 py-2 text-left hover:bg-base-300 flex items-center gap-2 ${restProps.disabled ? 'text-gray-500 cursor-not-allowed hover:bg-none' : ''} ${restProps.className}`}
     >
       {children}
     </button>

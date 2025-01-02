@@ -2,6 +2,7 @@ import {
   SiAmazon,
   SiFacebook,
   SiInstagram,
+  SiTiktok,
   SiX,
   SiYoutube,
 } from '@icons-pack/react-simple-icons';
@@ -22,6 +23,19 @@ export const canvases: (ProjectCanvas & { icon: React.ReactNode })[] = [
       y: 0,
     },
     icon: <ChevronsLeftRightEllipsis size={24} />,
+  },
+  {
+    id: 'tiktok_cover',
+    category: 'Tiktok',
+    name: 'Tiktok Cover',
+    type: 'canvas_image',
+    safeArea: {
+      width: 1080,
+      height: 1920,
+      x: 0,
+      y: 0,
+    },
+    icon: <SiTiktok size={24} />,
   },
   {
     id: 'youtube_channel_cover',

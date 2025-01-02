@@ -80,7 +80,12 @@ export const ElementEditorItem4KeyFrame = ({
     });
   };
 
-  const records = selectedShape._animationKeyFrameRecords || {};
+  const records = {
+    ...(selectedShape._animationKeyFrameRecords || {}),
+    ease: selectedShape._animationKeyFrameRecords?.ease || 'none',
+    duration: selectedShape._animationKeyFrameRecords?.duration ?? 1,
+    delay: selectedShape._animationKeyFrameRecords?.delay ?? 0,
+  };
 
   const easePreviewTargetRef = useRef<HTMLDivElement>(null);
   const handleEasePlay = (ease: string) => {

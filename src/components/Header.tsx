@@ -1,12 +1,12 @@
 import { useAuth } from '@/hooks/useAuth';
 import { Link, useMatch, useRouterState } from '@tanstack/react-router';
+import clsx from 'clsx';
 import i18n from 'i18next';
 import { Gem, Languages, LogOut, Moon, Sun, User } from 'lucide-react';
 import { forwardRef, useEffect, useRef, useState } from 'react';
 
 import { HeaderProfile } from './HeaderProfile';
 import { HeaderProjectManager } from './HeaderProjectManager';
-import { useEditorStore } from './editor.store';
 import { useHeaderStore } from './header.store';
 
 export const HEADER_HEIGHT = 66;
@@ -71,7 +71,12 @@ export const Header = forwardRef<
   return (
     <header
       ref={ref}
-      className={`sticky top-0 box-border border-b-2 border-gray-200 dark:border-gray-800 ${isScrolled ? 'shadow-lg' : ''} z-50 bg-base-100 transition-all ${className}`}
+      className={clsx(
+        `sticky top-0 z-50 bg-base-100 transition-all`,
+        'box-border border-b-2 border-gray-200 dark:border-gray-800',
+        isScrolled && 'shadow-lg',
+        className,
+      )}
       style={{ height: HEADER_HEIGHT }}
     >
       <div className="flex h-16 items-center justify-between mx-auto px-4 sm:px-6 lg:px-8">
@@ -170,7 +175,7 @@ export const Header = forwardRef<
               </ul>
             </div>
           ) : (
-            <div className="flex items-center gap-4">
+            <div className="items-center gap-4 md:flex hidden">
               <div className="flex flex-row items-center gap-4">
                 <button
                   className="btn btn-primary btn-sm h-10 px-6 font-medium shadow animate-none"
@@ -205,32 +210,30 @@ const HeaderNav = () => {
   const isAbout = matches.some((match) => match.pathname === '/about');
 
   return (
-    <div className="hidden lg:block">
-      <nav aria-label="Global">
-        <ul className="flex items-center gap-12 text-lg -mr-36">
-          <li>
-            <Link
-              className={`link link-primary transition no-underline outline-none ${
-                isHome ? 'font-bold' : ''
-              }`}
-              href="/home"
-            >
-              {' '}
-              Home{' '}
-            </Link>
-          </li>
-          <li>
-            <Link
-              className={`link link-primary transition no-underline outline-none ${
-                isPricing ? 'font-bold' : ''
-              }`}
-              href="/pricing"
-            >
-              {' '}
-              Pricing{' '}
-            </Link>
-          </li>
-          <li>
+    <ul className="hidden lg:flex items-center gap-12 text-lg">
+      <li>
+        <Link
+          className={`link link-primary transition no-underline outline-none ${
+            isHome ? 'font-bold' : ''
+          }`}
+          href="/home"
+        >
+          {' '}
+          Home{' '}
+        </Link>
+      </li>
+      <li>
+        <Link
+          className={`link link-primary transition no-underline outline-none ${
+            isPricing ? 'font-bold' : ''
+          }`}
+          href="/pricing"
+        >
+          {' '}
+          Pricing{' '}
+        </Link>
+      </li>
+      {/* <li>
             <Link
               className={`link link-primary transition no-underline outline-none ${
                 isAbout ? 'font-bold' : ''
@@ -240,9 +243,7 @@ const HeaderNav = () => {
               {' '}
               About{' '}
             </Link>
-          </li>
-        </ul>
-      </nav>
-    </div>
+          </li> */}
+    </ul>
   );
 };

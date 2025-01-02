@@ -1,6 +1,7 @@
 import { Redo, Undo } from 'lucide-react';
 
 import { handleRedo, handleUndo } from '../editor.handler';
+import { MAX_SCALE, MIN_SCALE } from '../editor.resize';
 
 interface ControlPanelRightBottomProps {
   scale: number;
@@ -12,11 +13,11 @@ export const ControlPanel4Scale = ({
   onFitScreen,
 }: ControlPanelRightBottomProps) => {
   const handleZoomIn = () => {
-    onFitScreen(Math.min(scale * 1.2, 1.5));
+    onFitScreen(Math.min(scale * 1.2, MAX_SCALE));
   };
 
   const handleZoomOut = () => {
-    onFitScreen(Math.max(scale * 0.8, 0.5));
+    onFitScreen(Math.max(scale * 0.8, MIN_SCALE));
   };
 
   return (

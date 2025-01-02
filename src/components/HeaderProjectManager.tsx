@@ -1,8 +1,9 @@
 import getRandomId from '@/utils/getRandomId';
 import { useNavigate } from '@tanstack/react-router';
+import clsx from 'clsx';
 import dayjs from 'dayjs';
 import { Box, Check, Edit, Edit2, Plus, Trash2 } from 'lucide-react';
-import React, { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 import { getCacheKey } from './editor.handler';
 import { Project, useHeaderStore } from './header.store';
@@ -71,18 +72,33 @@ export const HeaderProjectManager = () => {
     });
   };
 
-  const isMaxProjects = projects.length >= 3;
+  const isMaxProjects = projects.length >= 1;
+
+  useEffect(() => {
+    if (projects.length <= 0) {
+      handleOpenModal();
+    }
+  }, []);
 
   return (
     <div className="flex flex-row items-center gap-2">
       <button
-        className="btn btn-ghost btn-sm h-10 px-4 text-base"
+        className={clsx(
+          'btn btn-ghost btn-sm h-10 px-4 text-base',
+          !currentProject && 'opacity-60',
+        )}
         onClick={handleOpenModal}
         disabled={disabledProjectManager}
       >
         <Box size={16} />
-        <span>{currentProject?.name || 'New Project'}</span>
-        <span className="badge badge-accent">current</span>
+        {currentProject ? (
+          <>
+            <span>{currentProject.name}</span>
+            <span className="badge badge-accent">current</span>
+          </>
+        ) : (
+          <span>Waiting for project</span>
+        )}
       </button>
       <dialog className="modal" ref={modalRef}>
         <div className="modal-box">
@@ -135,7 +151,7 @@ export const HeaderProjectManager = () => {
                         )}
                       </span>
                       <span className="text-sm text-base-content/60">
-                        Last update:{' '}
+                        Last saved:{' '}
                         {dayjs(project.updatedAt).format('YYYY-MM-DD HH:mm')}
                       </span>
                     </>
@@ -145,7 +161,9 @@ export const HeaderProjectManager = () => {
                   {editingId === project.id ? (
                     <button
                       className="btn btn-ghost btn-sm"
-                      onClick={() => handleSaveEdit(project)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                      }}
                     >
                       <Check size={18} strokeWidth={2} />
                     </button>

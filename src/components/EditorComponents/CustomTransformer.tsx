@@ -14,7 +14,7 @@ export const CustomTransformer = () => {
 
   const theme = useHeaderStore((state) => state.theme);
   const keepShiftKey = useEditorStore((state) => state.keepShiftKey);
-  const isElementEditing = useEditorStore((state) => state.isElementEditing);
+  const isImageEditing = useEditorStore((state) => state.isImageEditing);
 
   const colors = {
     light: {
@@ -44,7 +44,7 @@ export const CustomTransformer = () => {
     }
   }, [selectedIds]);
 
-  if (isElementEditing) {
+  if (isImageEditing) {
     return null;
   }
 

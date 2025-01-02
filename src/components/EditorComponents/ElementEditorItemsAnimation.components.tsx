@@ -323,11 +323,64 @@ export const AnimationHelperModalButton = () => {
         <HelpCircle size={24} strokeWidth={1.5} />
       </button>
       <dialog ref={dialogRef} className="modal">
-        <div className="modal-box">
-          <h3 className="font-bold text-lg mb-4">Help</h3>
+        <div className="modal-box max-w-3xl flex flex-col gap-4">
+          <div>
+            <h3 className="font-bold text-lg mb-2 flex flex-row items-center gap-2">
+              <HelpCircle size={18} strokeWidth={2.5} />
+              <span>Animation Key Frames</span>
+            </h3>
+            <p>
+              You can create animation by adding key frames. Key frames are
+              points in the animation timeline that define the state of the
+              element at a specific time.
+            </p>
+          </div>
           <div className="flex flex-col gap-2">
-            <p>How to use animation?</p>
-            <p>TODO:</p>
+            <h4 className="font-bold">How to use?</h4>
+            <ul className="list-decimal list-inside">
+              <li>
+                Add key frames by clicking the 'Add Animation Key Frame' button.
+              </li>
+              <li>
+                Then click the key frame card to edit it. You can change the
+                position, shape, color, etc.
+              </li>
+              <li>
+                After editing the key frame, click the 'Complete' button to
+                complete the key frame.
+              </li>
+              <li>
+                Preview the animation by clicking the 'Play Animation' button.
+              </li>
+              <li>
+                Download the animation GIF/MP4 by clicking the 'Download'
+                button.
+              </li>
+            </ul>
+          </div>
+          <div className="flex flex-col gap-2">
+            <h4 className="font-bold">Why not animation effects?</h4>
+            <ul className="list-disc list-inside">
+              <li>
+                Check out the element is the same as which in the previous key
+                frame. You can copy it across key frames, so the element will
+                keep the same identity.
+              </li>
+            </ul>
+          </div>
+          <div className="flex flex-col gap-2">
+            <h4 className="font-bold">How to rotate by center?</h4>
+            <ul className="list-disc list-inside">
+              <li>
+                You can set the transform origin to the center of the element by
+                the 'Transform Origin' property setting.
+              </li>
+              <li>
+                The key frame will be affected by previous key frame, so maybe
+                you need to set the transform origin for the previous key frame
+                as well.
+              </li>
+            </ul>
           </div>
         </div>
         <form method="dialog" className="modal-backdrop">

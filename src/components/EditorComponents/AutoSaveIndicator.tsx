@@ -7,9 +7,15 @@ import { useHeaderStore } from '../header.store';
 
 type SaveStatus = 'idle' | 'pending' | 'saving' | 'done';
 
+const AUTO_SAVE_INTERVAL = 1000 * 10;
+
 export const AutoSaveIndicator = () => {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  useEffect(() => {
+    lastSavedRef.current = lastSaved;
+  }, [lastSaved]);
+  const lastSavedRef = useRef<Date | null>(null);
 
   const currentProject = useHeaderStore((state) => state.currentProject);
   const currentProjectId = currentProject?.id;
@@ -20,6 +26,12 @@ export const AutoSaveIndicator = () => {
     }
 
     const autoSave = () => {
+      if (
+        lastSavedRef.current &&
+        Date.now() - lastSavedRef.current.getTime() < AUTO_SAVE_INTERVAL / 2
+      ) {
+        return;
+      }
       const projectId = useEditorStore.getState().projectId;
       if (projectId !== currentProjectId) {
         return;
@@ -27,7 +39,7 @@ export const AutoSaveIndicator = () => {
       saveContent(currentProjectId);
     };
 
-    const intervalId = setInterval(autoSave, 1000 * 10);
+    const intervalId = setInterval(autoSave, AUTO_SAVE_INTERVAL);
     return () => clearInterval(intervalId);
   }, [currentProjectId]);
 
@@ -41,7 +53,7 @@ export const AutoSaveIndicator = () => {
     }
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 500));
       setSaveStatus('saving');
       await handleSave(currentProjectId);
       await new Promise((resolve) => setTimeout(resolve, 500));

@@ -74,8 +74,8 @@ export const HomeComments = () => {
               rating: 4,
               comment: '整体体验不错，值得购买。',
             },
-          ].map((item) => (
-            <div className="mb-8 sm:break-inside-avoid">
+          ].map((item, index) => (
+            <div key={index} className="mb-8 sm:break-inside-avoid">
               <blockquote className="rounded-lg bg-gray-100/50 backdrop-blur-md p-6 shadow-sm sm:p-8">
                 <div className="flex items-center gap-4">
                   <img

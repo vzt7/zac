@@ -39,7 +39,7 @@ export const HelpCenter = () => {
             <h2 className="text-xl font-semibold">Auto Save</h2>
             <p className="text-sm text-gray-500">
               Automatically save your projects in local browser storage every 10
-              seconds.
+              seconds for basic plan users.
             </p>
           </div>
 
@@ -88,12 +88,6 @@ export const HelpCenter = () => {
                   <td>Paste</td>
                   <td>
                     {modKey} + <kbd className="kbd">V</kbd>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Save</td>
-                  <td>
-                    {modKey} + <kbd className="kbd">S</kbd>
                   </td>
                 </tr>
                 <tr>

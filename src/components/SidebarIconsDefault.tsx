@@ -1,8 +1,6 @@
-import icons from '@/assets/icons.json';
+import simpleIcons from '@/assets/simpleIcons.json';
 import { getShapeRandomId } from '@/utils/getRandomId';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { SimpleIcon } from 'simple-icons';
-import * as simpleIcons from 'simple-icons';
 
 import { handleAddSvgByTagStr } from './editor.handler';
 import { useHeaderStore } from './header.store';
@@ -10,23 +8,13 @@ import { useHeaderStore } from './header.store';
 const ITEMS_PER_PAGE = 300;
 
 export const SidebarIconsDefault = () => {
-  const [filteredIcons, setFilteredIcons] = useState<
-    ((typeof icons)[number] | SimpleIcon)[]
-  >([]);
-  const [displayedIcons, setDisplayedIcons] = useState<
-    ((typeof icons)[number] | SimpleIcon)[]
-  >([]);
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const observerTarget = useRef<HTMLDivElement>(null);
 
-  const [allIcons] = useState(
-    () =>
-      [...icons, ...Object.values(simpleIcons)] as (
-        | (typeof icons)[number]
-        | SimpleIcon
-      )[],
-  );
+  const [allIcons] = useState(() => [...Object.values(simpleIcons)]);
+  const [filteredIcons, setFilteredIcons] = useState<typeof allIcons>([]);
+  const [displayedIcons, setDisplayedIcons] = useState<typeof allIcons>([]);
   // 初始化图标
   useEffect(() => {
     setFilteredIcons(allIcons);
@@ -105,9 +93,7 @@ export const SidebarIconsDefault = () => {
               const filtered = allIcons.filter((icon) =>
                 'title' in icon
                   ? icon.title.toLowerCase().includes(searchTerm)
-                  : 'name' in icon
-                    ? icon.name.toLocaleLowerCase().includes(searchTerm)
-                    : false,
+                  : false,
               );
               setFilteredIcons(filtered);
               setDisplayedIcons(filtered.slice(0, ITEMS_PER_PAGE));
@@ -125,37 +111,43 @@ export const SidebarIconsDefault = () => {
               key={`${('name' in item && item.name) || ('title' in item && item.title) || ''}-${index}`}
               className="flex flex-col items-center p-2 border-2 rounded-lg cursor-pointer hover:bg-base-300 bg-base-200 dark:border-gray-600 border-gray-300 hover:border-primary transition-colors"
               onClick={async () => {
-                if ('svg' in item && item?.svg) {
-                  handleAddSvgByTagStr(item.svg, {
-                    name: getShapeRandomId(`icon-${item.title}`),
-                  });
-                }
-                if ('url' in item && item.url) {
-                  const svg = await fetch(item.url)
+                if ('svgUrl' in item && item?.svgUrl) {
+                  const svg = await fetch(item.svgUrl)
                     .then((res) => res.text())
                     .catch(() => null);
                   if (!svg) {
                     return;
                   }
                   handleAddSvgByTagStr(svg, {
-                    name: getShapeRandomId(`icon-${item.name}`),
+                    name: getShapeRandomId(`icon-${item.title}`),
                   });
                 }
+                // if ('url' in item && item.url) {
+                //   const svg = await fetch(item.url)
+                //     .then((res) => res.text())
+                //     .catch(() => null);
+                //   if (!svg) {
+                //     return;
+                //   }
+                //   handleAddSvgByTagStr(svg, {
+                //     name: getShapeRandomId(`icon-${item.name}`),
+                //   });
+                // }
               }}
             >
               <div
                 className={`w-16 h-16 flex items-center justify-center rounded-md overflow-hidden *:object-cover ${theme === 'dark' ? '*:fill-[#cccccc]' : '*:fill-[#000000]'}`}
-                dangerouslySetInnerHTML={
-                  'svg' in item && item?.svg
-                    ? {
-                        __html: item.svg,
-                      }
-                    : undefined
-                }
               >
-                {'url' in item && item.url ? (
+                {/* {'url' in item && item.url ? (
                   <img
                     src={item.url}
+                    className="w-full h-full"
+                    style={{ filter: theme === 'dark' ? 'invert(80%)' : '' }}
+                  />
+                ) : null} */}
+                {'svgUrl' in item && item.svgUrl ? (
+                  <img
+                    src={item.svgUrl}
                     className="w-full h-full"
                     style={{ filter: theme === 'dark' ? 'invert(80%)' : '' }}
                   />

@@ -225,7 +225,7 @@ export const ElementEditorItemsAnimation = () => {
         </div>
         <div
           className={clsx(
-            'grid grid-cols-3 gap-2',
+            'grid grid-cols-3 gap-2 max-h-[500px] overflow-y-auto scroll-smooth !scrollbar-none',
             animations.length <= 0 && 'hidden',
           )}
         >

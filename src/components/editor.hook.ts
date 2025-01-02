@@ -4,6 +4,7 @@ import { isMacOs } from '@/utils/platform';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
 import dayjs from 'dayjs';
+import Konva from 'konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import { Node as KonvaNode } from 'konva/lib/Node';
 import type { Stage as StageType } from 'konva/lib/Stage';
@@ -504,7 +505,9 @@ export const useSnap = ({ threshold, enabled, scale }: UseSnapProps) => {
       const stage = draggedNode.getStage();
       if (!stage) return;
 
+      // 获取所有选中的节点
       const draggedRect = draggedNode.getClientRect({ relativeTo: stage });
+
       const nodeX = draggedRect.x;
       const nodeY = draggedRect.y;
       const nodeWidth = draggedRect.width;
@@ -624,7 +627,7 @@ export const useSnap = ({ threshold, enabled, scale }: UseSnapProps) => {
           }
         });
 
-        // 检查���直吸附点
+        // 检查垂直吸附点
         verticalSnapPoints.forEach(({ point, guide }) => {
           if (Math.abs(point - guide) < adjustedThreshold) {
             snapPoints.push({

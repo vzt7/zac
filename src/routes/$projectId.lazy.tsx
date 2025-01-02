@@ -4,6 +4,7 @@ import { SIDEBAR_TABS, useSidebarStore } from '@/components/sidebar.store';
 import { useAuth } from '@/hooks/useAuth';
 import { useProjectPageStore } from '@/store/projectPage';
 import { createLazyFileRoute, useNavigate } from '@tanstack/react-router';
+import dayjs from 'dayjs';
 import { useEffect } from 'react';
 
 import { Header } from '../components/Header';
@@ -14,27 +15,32 @@ export const Route = createLazyFileRoute('/$projectId')({
 });
 
 function RouteComponent() {
-  const { isAuthed } = useAuth();
-  const navigate = useNavigate();
-  useEffect(() => {
-    if (isAuthed === false) {
-      navigate({
-        to: '/home',
-      });
-    }
-  }, [isAuthed, navigate]);
-
   // Read projectId from route params
+  const navigate = useNavigate();
   const { projectId } = Route.useParams();
   const projects = useHeaderStore((state) => state.projects);
 
   useEffect(() => {
-    const targetProject =
-      projects.find((item) => item.id === projectId) || null;
-    useHeaderStore.setState({
-      currentProject: targetProject,
-    });
-  }, [projectId, projects]);
+    if (!projectId || projectId === '_') {
+      const targetProject = projects.sort((a, b) =>
+        dayjs(a.updatedAt).isAfter(b.updatedAt) ? -1 : 1,
+      )[0];
+      navigate({
+        to: '/$projectId',
+        params: {
+          projectId: targetProject?.id || '_',
+        },
+        replace: true,
+      });
+    } else {
+      const targetProject =
+        projects.find((item) => item.id === projectId) || null;
+
+      useHeaderStore.setState({
+        currentProject: targetProject,
+      });
+    }
+  }, [navigate, projectId, projects]);
 
   // prevent default drag and drop behavior
   useEffect(() => {
@@ -85,7 +91,7 @@ function RouteComponent() {
         {isCanvasReady && isFontsReady ? (
           <Container />
         ) : (
-          <div className="grid w-full h-full place-content-center px-4 bg-base-300 text-center">
+          <div className="grid w-full h-full min-w-[500px] place-content-center px-4 bg-base-300 text-center">
             <h1 className="uppercase tracking-widest pointer-events-none text-2xl">
               {!isCanvasReady
                 ? 'Waiting for initial canvas'

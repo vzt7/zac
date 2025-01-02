@@ -1,4 +1,5 @@
 import Konva from 'konva';
+import { Image as ImageType } from 'konva/lib/shapes/Image';
 import {
   ArrowRight as LucideArrowRight,
   Box as LucideBox,
@@ -161,23 +162,7 @@ const ImageElement = ({
   ...restProps
 }: Omit<ComponentProps<typeof Image>, 'image'> & { src: string }) => {
   const [image] = useImage(src, 'anonymous', 'origin');
-
-  useEffect(() => {
-    if (image) {
-      image.src = src;
-    }
-  }, [src]);
-
-  return (
-    <Image
-      {...restProps}
-      image={image}
-      // ref={(ref) => {
-      //   ref?.cache?.();
-      //   ref?.drawHitFromCache?.();
-      // }}
-    />
-  );
+  return <Image {...restProps} image={image} />;
 };
 
 const TextElement = (props: Shape) => {

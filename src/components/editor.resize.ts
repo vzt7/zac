@@ -6,8 +6,8 @@ import { SIDEBAR_WIDTH } from './Sidebar';
 import { useEditorStore } from './editor.store';
 
 // 限制最小和最大缩放
-const MIN_SCALE = 0.5;
-const MAX_SCALE = 2;
+export const MIN_SCALE = 0.1;
+export const MAX_SCALE = 2;
 
 const MIN_WIDTH = 980;
 const MIN_HEIGHT = 720;

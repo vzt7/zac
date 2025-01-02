@@ -26,7 +26,7 @@ export class KonvaAnimation {
 
     const timeline = gsap.timeline({
       repeat: 0,
-      repeatDelay: 1,
+      repeatDelay: 0,
       paused: true,
       ...options,
       onUpdate: () => {
@@ -183,8 +183,10 @@ export class KonvaAnimation {
     updatedMap,
     removed,
     removedMap,
-    onStart,
     zIndexMap,
+    onStart,
+    onComplete,
+    onReverseComplete,
   }: {
     node: Konva.Node;
     item: Shape;
@@ -199,6 +201,8 @@ export class KonvaAnimation {
     removedMap: Record<string, Shape>;
     zIndexMap: Record<string, number>;
     onStart?: () => void;
+    onComplete?: () => void;
+    onReverseComplete?: () => void;
   }) {
     if (removedMap[item.id]) {
       debug(
@@ -238,45 +242,61 @@ export class KonvaAnimation {
 
     const interceptedItem = item;
 
-    const duration = interceptedItem._animationKeyFrameRecords?.duration ?? 0;
-    const ease = interceptedItem._animationKeyFrameRecords?.ease ?? null;
+    const animationKeyFrameRecords = {
+      ...(interceptedItem._animationKeyFrameRecords || {}),
+      duration: interceptedItem._animationKeyFrameRecords?.duration ?? 1,
+      ease: interceptedItem._animationKeyFrameRecords?.ease ?? 'none',
+    };
 
-    if (ease === null || duration <= 0) {
+    if (
+      !animationKeyFrameRecords.ease ||
+      animationKeyFrameRecords.duration <= 0
+    ) {
+      const animationOptions: gsap.TweenVars = {
+        ...this.mapKonvaProperty2GsapProperty(interceptedItem, node),
+        ...animationKeyFrameRecords,
+        duration: 0.00001,
+        zIndex: zIndexMap[interceptedItem.id],
+      };
+      timeline.to(node, animationOptions, timelinePosition);
       debug(
         `[KonvaAnimation.getTimelineActionItem] set init position for "${interceptedItem.name || interceptedItem.id}" on ${timelinePosition}`,
-      );
-      timeline.to(
-        node,
-        {
-          ...this.mapKonvaProperty2GsapProperty(interceptedItem, node),
-          ...interceptedItem._animationKeyFrameRecords,
-          duration: 0.00001,
-          zIndex: zIndexMap[interceptedItem.id],
-        },
-        timelinePosition,
+        animationOptions,
       );
     }
 
+    const isImageType =
+      item.type === 'image' && item.src ? node.getAttr('image') : false;
+
+    const animationOptions: gsap.TweenVars = {
+      ...this.mapKonvaProperty2GsapProperty(interceptedItem, node),
+      ...animationKeyFrameRecords,
+      duration:
+        animationKeyFrameRecords.duration <= 0
+          ? 0.00001
+          : animationKeyFrameRecords.duration,
+      zIndex: zIndexMap[interceptedItem.id],
+      onStart() {
+        onStart?.();
+
+        if (isImageType) {
+          const img = new Image();
+          img.src = item.src!;
+          // @ts-ignore
+          node.image(img);
+        }
+      },
+      onReverseComplete() {
+        if (isImageType) {
+          // @ts-ignore
+          node.image(isImageType);
+        }
+      },
+    };
+    timeline.to(node, animationOptions, timelinePosition);
     debug(
       `[KonvaAnimation.getTimelineActionItem] set animation for "${interceptedItem.name || interceptedItem.id}" on ${timelinePosition}`,
-      {
-        ...this.mapKonvaProperty2GsapProperty(interceptedItem, node),
-        ...interceptedItem._animationKeyFrameRecords,
-        duration: duration <= 0 ? 0.00001 : duration,
-      },
-    );
-    timeline.to(
-      node,
-      {
-        ...this.mapKonvaProperty2GsapProperty(interceptedItem, node),
-        ...interceptedItem._animationKeyFrameRecords,
-        duration: duration <= 0 ? 0.00001 : duration,
-        zIndex: zIndexMap[interceptedItem.id],
-        onStart() {
-          onStart?.();
-        },
-      },
-      timelinePosition,
+      animationOptions,
     );
   }
 
@@ -296,8 +316,6 @@ export class KonvaAnimation {
       opacity: shape.opacity ?? 1,
 
       fill: shape.fill,
-      skewX: shape.skewX ?? 0,
-      skewY: shape.skewY ?? 0,
     } as gsap.TweenVars;
   }
 }

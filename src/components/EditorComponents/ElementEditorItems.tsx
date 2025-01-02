@@ -6,6 +6,7 @@ import { useHeaderStore } from '../header.store.ts';
 import { ElementEditorItem4AdvancedSettings } from './ElementEditorItem4AdvancedSettings';
 import { ElementEditorItem4BasicStyle } from './ElementEditorItem4BasicStyle.tsx';
 import { ElementEditorItem4ImageCrop } from './ElementEditorItem4ImageCrop';
+import { ElementEditorItem4ImageEdit } from './ElementEditorItem4ImageEdit.tsx';
 import { ElementEditorItem4KeyFrame } from './ElementEditorItem4KeyFrame.tsx';
 import { ElementEditorItem4RichText } from './ElementEditorItem4RichText';
 import { ElementEditorItem4Transform } from './ElementEditorItem4Transform.tsx';
@@ -48,7 +49,12 @@ export const ElementEditorItems = () => {
     }
   }, []);
 
-  if (!selectedShape) return null;
+  if (!selectedShape)
+    return (
+      <div className="p-12 flex justify-center items-center text-gray-400 dark:text-gray-600">
+        No element selected
+      </div>
+    );
 
   return (
     <>
@@ -133,8 +139,14 @@ export const ElementEditorItems = () => {
           </div>
         </div>
 
-        {/* If the selected element is an image element, show the image cropper (invoked via right-click menu) */}
-        {selectedShape.type === 'image' && <ElementEditorItem4ImageCrop />}
+        {selectedShape.type === 'image' && (
+          <>
+            {/* If the selected element is an image element, show the image cropper (invoked via right-click menu) */}
+            <ElementEditorItem4ImageCrop />
+            {/* Same as image crop */}
+            <ElementEditorItem4ImageEdit />
+          </>
+        )}
       </div>
     </>
   );

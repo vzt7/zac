@@ -8,7 +8,7 @@ export const SidebarIcons = () => {
 
   return (
     <div className="flex flex-col gap-4 pb-10">
-      <div className="tabs tabs-boxed tabs-lg border-2 border-base-300">
+      <div className="tabs tabs-boxed tabs-lg border-2 border-gray-200 dark:border-gray-800">
         <button
           className={`tab ${activeTab === 'default' ? 'tab-active' : ''}`}
           onClick={() => setActiveTab('default')}
