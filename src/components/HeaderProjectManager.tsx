@@ -1,11 +1,11 @@
 import getRandomId from '@/utils/getRandomId';
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate, useParams } from '@tanstack/react-router';
 import clsx from 'clsx';
 import dayjs from 'dayjs';
 import { Box, Check, Edit, Edit2, Plus, Trash2 } from 'lucide-react';
 import React, { useEffect, useRef } from 'react';
 
-import { getCacheKey } from './editor.handler';
+import { getCacheKey, handleClearStorage } from './editor.handler';
 import { Project, useHeaderStore } from './header.store';
 
 export const HeaderProjectManager = () => {
@@ -57,7 +57,7 @@ export const HeaderProjectManager = () => {
         useHeaderStore.getState().selectProject(null);
       }
 
-      localStorage.removeItem(getCacheKey(project.id));
+      handleClearStorage(project.id);
     }
   };
 
@@ -69,6 +69,7 @@ export const HeaderProjectManager = () => {
       params: {
         projectId: project.id,
       },
+      replace: true,
     });
   };
 

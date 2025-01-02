@@ -12,7 +12,7 @@ export const initEditorCanvas = ({
   specifiedCanvas: ProjectCanvas;
   currentProject: Project;
 }) => {
-  const { editorProps, safeArea, shapes } = useEditorStore.getState();
+  const { editorProps, safeArea, shapes, stageRef } = useEditorStore.getState();
 
   const CONTAINER_WIDTH =
     window.innerWidth - SIDEBAR_WIDTH - ELEMENT_EDITOR_WIDTH;
@@ -42,4 +42,8 @@ export const initEditorCanvas = ({
   addToHistory(shapes);
 
   handleSave(currentProject.id);
+
+  setTimeout(() => {
+    stageRef.current?.draw();
+  }, 0);
 };

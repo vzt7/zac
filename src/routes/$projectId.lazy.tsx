@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useProjectPageStore } from '@/store/projectPage';
 import { createLazyFileRoute, useNavigate } from '@tanstack/react-router';
 import dayjs from 'dayjs';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Header } from '../components/Header';
 import { Sidebar } from '../components/Sidebar';
@@ -18,20 +18,26 @@ function RouteComponent() {
   // Read projectId from route params
   const navigate = useNavigate();
   const { projectId } = Route.useParams();
-  const projects = useHeaderStore((state) => state.projects);
+  const [isProjectReady, setIsProjectReady] = useState(false);
+  useEffect(() => {
+    setIsProjectReady(false);
+  }, [projectId]);
 
   useEffect(() => {
+    const projects = useHeaderStore.getState().projects;
     if (!projectId || projectId === '_') {
       const targetProject = projects.sort((a, b) =>
         dayjs(a.updatedAt).isAfter(b.updatedAt) ? -1 : 1,
       )[0];
-      navigate({
-        to: '/$projectId',
-        params: {
-          projectId: targetProject?.id || '_',
-        },
-        replace: true,
-      });
+      if (targetProject) {
+        navigate({
+          to: '/$projectId',
+          params: {
+            projectId: targetProject?.id || '_',
+          },
+          replace: true,
+        });
+      }
     } else {
       const targetProject =
         projects.find((item) => item.id === projectId) || null;
@@ -40,7 +46,8 @@ function RouteComponent() {
         currentProject: targetProject,
       });
     }
-  }, [navigate, projectId, projects]);
+    setIsProjectReady(true);
+  }, [navigate, projectId]);
 
   // prevent default drag and drop behavior
   useEffect(() => {
@@ -67,7 +74,7 @@ function RouteComponent() {
   );
   useEffect(() => {
     useProjectPageStore.setState({
-      isProjectReady: isCanvasReady && isFontsReady,
+      isProjectReady: isProjectReady && isCanvasReady && isFontsReady,
       isCanvasReady: isCanvasReady,
       isFontsReady: isFontsReady,
     });
@@ -76,7 +83,7 @@ function RouteComponent() {
         currentTab: SIDEBAR_TABS.FONT,
       });
     }
-  }, [isCanvasReady, isFontsReady]);
+  }, [isProjectReady, isCanvasReady, isFontsReady]);
 
   return (
     <div className="flex flex-col h-full bg-base-100">
@@ -88,7 +95,7 @@ function RouteComponent() {
 
         <div className="divider divider-horizontal m-0 w-0"></div>
 
-        {isCanvasReady && isFontsReady ? (
+        {isProjectReady && isCanvasReady && isFontsReady ? (
           <Container />
         ) : (
           <div className="grid w-full h-full min-w-[500px] place-content-center px-4 bg-base-300 text-center">

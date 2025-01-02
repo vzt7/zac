@@ -132,13 +132,16 @@ export const SidebarCanvasDefault = (
                   type="number"
                   placeholder="Width"
                   className="input input-bordered w-full max-w-xs"
-                  max={10000}
+                  max={7680}
                   min={1}
                   value={customConfig.width}
                   onChange={(e) =>
                     setCustomConfig((prev) => ({
                       ...prev,
-                      width: parseInt(e.target.value, 10),
+                      width: Math.max(
+                        Math.min(parseInt(e.target.value, 10), 7680),
+                        1,
+                      ),
                     }))
                   }
                 />
@@ -147,13 +150,16 @@ export const SidebarCanvasDefault = (
                   type="number"
                   placeholder="Height"
                   className="input input-bordered w-full max-w-xs m-0"
-                  max={10000}
+                  max={4320}
                   min={1}
                   value={customConfig.height}
                   onChange={(e) =>
                     setCustomConfig((prev) => ({
                       ...prev,
-                      height: parseInt(e.target.value, 10),
+                      height: Math.max(
+                        Math.min(parseInt(e.target.value, 10), 4320),
+                        1,
+                      ),
                     }))
                   }
                 />

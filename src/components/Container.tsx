@@ -21,10 +21,11 @@ export const Container = () => {
       return;
     }
 
-    resetEditorStore();
-
     // 切换项目时恢复Editor数据
     handleLoad(currentProjectId);
+    return () => {
+      resetEditorStore();
+    };
   }, [currentProjectId]);
 
   return (

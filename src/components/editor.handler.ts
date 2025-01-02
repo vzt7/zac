@@ -8,7 +8,7 @@ import { debounce, keyBy } from 'lodash-es';
 import { parseSync as svgParseSync } from 'svgson';
 
 import { getDefaultShapeProps } from './editor.shape';
-import { Shape } from './editor.store';
+import { Shape, resetEditorStore } from './editor.store';
 import { useEditorStore } from './editor.store';
 
 // 创建一个防抖的添加历史记录函数
@@ -336,6 +336,10 @@ export const handleLoad = (
     addToHistory(shapes);
   }
   onParse?.(data);
+};
+
+export const handleClearStorage = (projectId: string) => {
+  localStorage.removeItem(getCacheKey(projectId));
 };
 
 // 添加文本
