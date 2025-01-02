@@ -183,8 +183,14 @@ export const AnimationTimeline: React.FC<{
 
   // const { isAnimationPlaying } = useEditorStore((state) => state);
   const duration = timeline.duration();
-  const pointScale = ~~Math.sqrt(duration); // TODO: 根据动画时长动态调整
-  const points = Array(Math.ceil(duration * pointScale) || 0).fill(1);
+  const pointStep = 10;
+  const points = Array(50).fill(1);
+  const formatNum = (num: number) => {
+    if (num < 1 && num > 0) {
+      return num.toFixed(1);
+    }
+    return num.toFixed(0);
+  };
 
   const animations = useEditorStore((state) => state.animations);
   const colors = animations?.map((item) => item._color || '#c6c6c6') || [];
@@ -221,8 +227,6 @@ export const AnimationTimeline: React.FC<{
       labels,
       'duration',
       duration,
-      'pointScale',
-      pointScale,
       'children',
       timeline.getChildren(),
     );
@@ -259,21 +263,20 @@ export const AnimationTimeline: React.FC<{
                 <div
                   className={clsx(
                     'divider divider-horizontal h-2 m-0 p-0 w-0 before:bg-base-content/40 after:bg-base-content/40',
-                    index % pointScale === 0 && 'h-3',
+                    index % pointStep === 0 && 'h-3',
                   )}
                 ></div>
                 {/* 100ms * pointScale */}
-                {index % pointScale === 0 &&
-                  ~~(index / pointScale) % (pointScale / 2) === 0 && (
-                    <div
-                      className="absolute bottom-0 left-[50%] -translate-x-[50%] p-1 cursor-pointer"
-                      onClick={() => {
-                        timeline.progress(index / points.length);
-                      }}
-                    >
-                      {~~(index / pointScale)}
-                    </div>
-                  )}
+                {(index % pointStep === 0 || index === points.length - 1) && (
+                  <div
+                    className="absolute bottom-0 left-[50%] -translate-x-[50%] p-1 cursor-pointer"
+                    onClick={() => {
+                      timeline.progress(index / points.length);
+                    }}
+                  >
+                    {formatNum((index / (points.length - 1)) * duration)}
+                  </div>
+                )}
                 {/* {(index % 10 === 0 && (
                     <div className="absolute bottom-0 left-[50%] -translate-x-[50%]">
                       {~~(index / 10)}
